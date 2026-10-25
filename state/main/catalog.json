@@ -1,0 +1,115 @@
+{
+  "1Ur0vGYjA6kOLGOq9X1p2gSqTsN2AUc4u": {
+    "analysed_at": "2026-10-25T14:23:17+00:00",
+    "analysis": {
+      "category": "night",
+      "colors": [
+        "black",
+        "silver grey",
+        "white",
+        "charcoal"
+      ],
+      "description": "A close-up of a waxing gibbous moon against a pure black sky, lit from the right with the shadowed edge on the left. Dark maria and bright cratered highlands are clearly visible, with fine crater texture near the terminator at the bottom. Detail is good for a phone shot, though slightly soft overall.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "mood": "calm",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "autumn",
+      "setting": "Night sky seen from the city",
+      "shows_private_home": false,
+      "subject": "Waxing gibbous moon",
+      "themes": [
+        "moon photography",
+        "lunar surface detail",
+        "mobile zoom photography",
+        "night sky watching",
+        "astronomy lovers",
+        "Bengaluru evenings",
+        "mobile photography enthusiasts"
+      ],
+      "time_of_day": "evening"
+    },
+    "fingerprint": "06190e070383460c",
+    "name": "IMG20261020182518.jpg"
+  },
+  "1qzx8AOtngJFIzi18wP6MqNZ1b9M6unK6": {
+    "analysed_at": "2026-10-25T14:23:07+00:00",
+    "analysis": {
+      "category": "macro",
+      "colors": [
+        "amber",
+        "green",
+        "reddish brown",
+        "pale grey",
+        "soft pink"
+      ],
+      "description": "A close-up of an amber dragonfly clinging to a green plant stem, its large reddish-brown eyes and fuzzy golden thorax sharply in focus. Its translucent, finely veined wings spread across the frame against a soft, blurred background of green leaves and pale grey.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "mood": "calm",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "autumn",
+      "setting": "garden plant or potted greenery",
+      "shows_private_home": false,
+      "subject": "Dragonfly resting on a green stem",
+      "themes": [
+        "dragonfly macro",
+        "insect wing details",
+        "garden insects of Bengaluru",
+        "macro photography",
+        "mobile photography",
+        "nature close-ups",
+        "wildlife lovers"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "b595d9f3313190d8",
+    "name": "IMG20261018104837.jpg"
+  },
+  "1znL4RtciJ2JxztK8bzlHOoLoqIZjD0Vw": {
+    "analysed_at": "2026-10-25T14:22:59+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "sky blue",
+        "pale white",
+        "soft grey"
+      ],
+      "description": "A waxing gibbous moon hangs alone in a clear, even blue afternoon sky. Craters and darker maria are visible across its pale surface, with the shadowed edge fading softly into the blue. The minimal composition leaves plenty of empty space around the moon.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "mood": "calm",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "autumn",
+      "setting": "clear afternoon sky",
+      "shows_private_home": false,
+      "subject": "Daytime gibbous moon in blue sky",
+      "themes": [
+        "daytime moon",
+        "moon photography",
+        "lunar craters",
+        "minimal sky",
+        "mobile zoom photography",
+        "Bengaluru skies",
+        "astronomy lovers",
+        "nature photography",
+        "minimalism"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "48f6d88cc6647865",
+    "name": "IMG20261020170330.jpg"
+  }
+}

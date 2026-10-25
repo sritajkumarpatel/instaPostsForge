@@ -17,7 +17,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 3. **Planner** (AI): picks today's photo from the unposted ones and chooses the caption angle. If it fails, or returns an ID that isn't in the list, the run falls back to a random photo.
 4. **Prepare image** (code): converts to JPEG and keeps the aspect ratio. A border is added only outside 4:5 to 1.91:1; nothing is cropped.
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
-7. **Reviewer** (AI): approves the post, or sends it back with feedback. The number of revisions is limited by `ai.max_revisions`.
+7. **Reviewer** (AI): approves the post, or sends it back with feedback. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
 8. **Publish** (code): stages the JPEG on the `media` branch, posts it through the Instagram API, then deletes the staged file.
 9. **Record** (code): writes `state/<profile>/posts.json`, keyed by Drive file ID.
 

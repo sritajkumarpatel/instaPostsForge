@@ -50,7 +50,7 @@ defaults:
       max: 5                  # Instagram allows at most 5 hashtags per post
     max_caption_chars: 2200
     review: true              # the reviewer checks every post before it goes out
-    max_revisions: 1          # how many times the reviewer may send a post back
+    max_revisions: 2          # how many times the reviewer may send a post back
     on_review_reject: skip    # skip (no post that day) | post (post the last draft anyway)
     max_new_analyses_per_run: 20
     extra_instructions: ""    # optional, anything the AI should always keep in mind

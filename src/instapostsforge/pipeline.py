@@ -19,7 +19,7 @@ from .agents.playbooks import NO_QUOTE_CATEGORIES
 from .captions import CaptionError, CaptionRules, normalize_caption
 from .config import Profile
 from .hosting import ImageHost, build_host
-from .imaging import PreparedImage, fingerprint, fingerprint_distance, prepare_image
+from .imaging import PreparedImage, fingerprint, fingerprint_distance, name_time, prepare_image
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 
 DRAFTS_DIR = Path("drafts")
 ANALYSIS_FIELDS = (
-    "category", "mood", "subject", "setting", "place_name", "colors", "season", "time_of_day", "quality_score", "themes",
+    "category", "mood", "subject", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
 )
 NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
 
@@ -107,6 +107,11 @@ class Run:
             self._images[photo.id] = prepare_image(self.c.source.download(photo), self.profile.image)
         return self._images[photo.id]
 
+    def taken_at(self, photo: Photo) -> str | None:
+        """When the photo was taken, from EXIF or the file name, as the AI steps see it."""
+        when = self.image(photo).taken_at or name_time(photo.name)
+        return when.strftime("%A %d %B %Y, %H:%M") if when else None
+
     # --- AI steps ----------------------------------------------------------
 
     def analyse_new(self, photos: list[Photo]) -> None:
@@ -121,6 +126,8 @@ class Run:
             try:
                 preview = self.image(photo).preview_jpeg
                 analysis = self.c.ai.analyze(preview, photo_name=photo.name)
+                if taken := self.taken_at(photo):
+                    analysis["taken_at"] = taken  # from metadata, not the model, so later steps can trust it
                 self.c.state.save_analysis(photo.id, photo.name, analysis, fingerprint(preview))
             except Exception as err:
                 log.warning("Could not analyse %s: %s", photo.name, err)
@@ -230,36 +237,46 @@ class Run:
         ai, state, settings = self.c.ai, self.c.state, self.profile.ai
         preview = self.image(photo).preview_jpeg
         analysis = dict(state.analysis_for(photo.id) or {})
+        if "taken_at" not in analysis and (taken := self.taken_at(photo)):
+            analysis["taken_at"] = taken
         if analysis.get("shows_private_home"):
             analysis["place_name"] = None  # never name the location of a private home
         rules = CaptionRules.from_settings(settings)
-        max_revisions = int(settings.get("max_revisions", 1))
+        max_revisions = int(settings.get("max_revisions", 2))
         feedback = ""
         last_problem = ""
         reviewed_draft: Caption | None = None
+        draft: Caption | None = None
+        tags: list[str] = []
+        redo_caption = redo_tags = True
         for attempt in range(max_revisions + 1):
-            draft = ai.write_caption(
-                preview,
-                analysis=analysis,
-                angle=plan_item.angle,
-                recent_captions=state.recent_captions(),
-                top_captions=state.top_captions(),
-                feedback=feedback,
-            )
-            if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
-                draft.quote = draft.quote_author = None
-            draft.hashtags = ai.choose_hashtags(
-                analysis=analysis,
-                caption_text=draft.text,
-                recent_tag_sets=state.recent_tag_sets(),
-                tag_stats=state.tag_stats(),
-                feedback=feedback,
-            )
+            # Only the part the reviewer faulted is redone, so a fix to one part can't break another.
+            if redo_caption or draft is None:
+                draft = ai.write_caption(
+                    preview,
+                    analysis=analysis,
+                    angle=plan_item.angle,
+                    recent_captions=state.recent_captions(),
+                    top_captions=state.top_captions(),
+                    feedback=feedback,
+                )
+                if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
+                    draft.quote = draft.quote_author = None
+            if redo_tags or not tags:
+                tags = ai.choose_hashtags(
+                    analysis=analysis,
+                    caption_text=draft.text,
+                    recent_tag_sets=state.recent_tag_sets(),
+                    tag_stats=state.tag_stats(),
+                    feedback=feedback,
+                )
+            draft.hashtags = list(tags)
             try:
                 caption = normalize_caption(draft, rules)
             except CaptionError as err:
                 feedback = last_problem = f"The post broke a rule: {err}"
                 log.warning("Attempt %d: %s", attempt + 1, last_problem)
+                redo_caption = redo_tags = True
                 continue
             if not settings.get("review", True):
                 return caption
@@ -268,6 +285,9 @@ class Run:
                 return caption
             reviewed_draft = caption
             feedback = last_problem = review.feedback or "The reviewer asked for a revision."
+            failed = set(review.failed)
+            redo_tags = not failed or "hashtags" in failed
+            redo_caption = not failed or bool(failed - {"hashtags"})
             log.info("Attempt %d sent back by the reviewer: %s", attempt + 1, feedback)
         if settings.get("on_review_reject", "skip") == "post" and reviewed_draft is not None:
             self.notes.append(f"Posted although the reviewer still had a concern: {last_problem}")

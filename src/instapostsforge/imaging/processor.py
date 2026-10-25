@@ -8,7 +8,9 @@ nothing is ever cropped.
 from __future__ import annotations
 
 import io
+import re
 from dataclasses import dataclass
+from datetime import datetime
 
 from PIL import Image, ImageOps, ImageStat
 
@@ -27,6 +29,7 @@ class PreparedImage:
     height: int
     padded: bool
     preview_jpeg: bytes  # a smaller copy for the caption writer
+    taken_at: datetime | None = None  # from the photo's EXIF, when it has one
 
 
 def _pad_color(image: Image.Image, setting: str) -> tuple[int, int, int]:
@@ -75,6 +78,7 @@ def _to_jpeg(image: Image.Image, quality: int) -> bytes:
 
 def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     image = Image.open(io.BytesIO(original))
+    taken_at = exif_time(image)
     image = ImageOps.exif_transpose(image).convert("RGB")
 
     padded = False
@@ -99,7 +103,36 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
         height=image.height,
         padded=padded,
         preview_jpeg=_to_jpeg(preview, 85),
+        taken_at=taken_at,
     )
+
+
+_EXIF_IFD = 0x8769
+_DATE_TIME_ORIGINAL = 36867
+_DATE_TIME = 306
+# Phone file names such as IMG20261018104837.jpg, IMG_20261018_104837.jpg or PXL_20261018_104837123.jpg
+_NAME_TIME = re.compile(r"(20\d{2})(\d{2})(\d{2})[_-]?(\d{2})(\d{2})(\d{2})")
+
+
+def exif_time(image: Image.Image) -> datetime | None:
+    """When the photo was taken, from its EXIF data."""
+    try:
+        exif = image.getexif()
+        raw = exif.get_ifd(_EXIF_IFD).get(_DATE_TIME_ORIGINAL) or exif.get(_DATE_TIME)
+        return datetime.strptime(str(raw).strip("\x00 "), "%Y:%m:%d %H:%M:%S") if raw else None
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def name_time(file_name: str) -> datetime | None:
+    """When the photo was taken, from a phone-style file name."""
+    match = _NAME_TIME.search(file_name)
+    if not match:
+        return None
+    try:
+        return datetime(*(int(g) for g in match.groups()))
+    except ValueError:
+        return None
 
 
 def fingerprint(jpeg: bytes) -> str:

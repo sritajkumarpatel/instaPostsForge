@@ -35,11 +35,11 @@ flowchart TB
 | 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A border is added only if the photo is outside 4:5 to 1.91:1; nothing is cropped. |
 | 5 | Caption writer | AI | Writes a hook, a caption in the photo's tone, a quote when one fits, and alt text, in English. A quote's author is kept only when the model is certain of it. |
 | 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
-| 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back once with feedback. |
+| 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. |
 | 8 | Publish | code | Stages the JPEG on this repo's `media` branch, posts through the official Instagram API, then deletes the staged file. |
 | 9 | Record | code | Saves the post by Drive file ID in `state/<profile>/posts.json`, so the photo is never picked again. |
 
-Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer rejects the post twice, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
+Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer still rejects the post after two revisions, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
 
 ## Design pattern
 

@@ -119,7 +119,7 @@ def image_block(image_jpeg: bytes) -> dict:
 class ClaudeWorkflow(AIWorkflow):
     def __init__(self, settings: dict, client: anthropic.Anthropic | None = None, usage_log: UsageLog | None = None):
         self.settings = settings
-        self.model = settings.get("model", "claude-opus-5-5")
+        self.model = settings.get("model", "claude-sonnet-5-5")
         self.client = client or anthropic.Anthropic()
         self.usage_log = usage_log
         self.account_notes = self._account_notes(settings)

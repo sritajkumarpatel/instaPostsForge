@@ -76,15 +76,32 @@ Some rules are enforced in code, whatever the AI says:
 - No quote on food or animal posts, and no place named when a private home or address is visible.
 - If any item on the reviewer's 8-point checklist fails, the post is revised, even if the reviewer said approve.
 
-The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. Every step runs on Claude Sonnet 5.5 by default, with low effort (medium for the caption writer). For example, to give only the caption writer the strongest model:
+The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. `CLAUDE.md` explains the architecture and the rules to keep for anyone (including Claude) working on the code.
+
+## Choosing the model
+
+Every AI step runs on **Claude Sonnet 5.5**. The first runs used Opus 5.5 at medium to high effort and cost about $0.20 per post, which is too much for a daily job. Sonnet costs half as much per token and handles these tasks well: describing a photo, picking from a short list, writing a few sentences, and checking them against a checklist. Code enforces the hard rules anyway, so the model doesn't need to be the strongest.
+
+**Effort** controls how much the model thinks before it answers. Thinking tokens are billed as output, so lower effort costs less.
+
+| Step | Model | Effort | Why |
+| --- | --- | --- | --- |
+| `analyst` | Sonnet 5.5 | low | Labelling a photo is a description task, and it runs only once per photo |
+| `planner` | Sonnet 5.5 | low | Picks from a short list with clear rules; code re-checks variety |
+| `caption_writer` | Sonnet 5.5 | medium | The only text people read, so it gets more thought |
+| `hashtags` | Sonnet 5.5 | low | Chooses 3 to 5 tags from clear roles; code removes banned tags |
+| `reviewer` | Sonnet 5.5 | low | Works through a fixed 8-item checklist |
+
+Every call is capped at 8,000 output tokens. To trade cost for quality, change one step in `config/profiles.yaml`:
 
 ```yaml
 ai:
   agents:
-    caption_writer: { model: claude-opus-5-5, effort: medium }
+    caption_writer: { model: claude-opus-5-5, effort: medium }  # best captions, about 2x the cost
+    hashtags:       { model: claude-haiku-5-5 }                 # cheapest, fine for simple steps
 ```
 
-`CLAUDE.md` explains the architecture and the rules to keep for anyone (including Claude) working on the code.
+Check the effect with `forge usage -p main`, which totals tokens and estimated cost per step from the audit log.
 
 ## Token usage audit log
 
@@ -103,7 +120,7 @@ Instagram only accepts a public image link. It rejects Google Drive links, even 
 
 ### Never posting a photo twice
 
-Posted photos are tracked by their Drive file ID, so renaming a file doesn't make it eligible again. A photo is recorded only after Instagram confirms the post. When every photo has been posted, the run stops with "add more photos". You can set `selection.when_exhausted: recycle` to start over instead.
+Posted photos are tracked by their Drive file ID in `state/<profile>/posts.json`, so renaming a file doesn't make it eligible again. A photo is recorded only after Instagram confirms the post, and the workflow commits `state/` back to the repo after every run, so the next run (on any machine) knows what was posted. A copy of a recently posted photo saved under a new file is caught too: each photo gets a visual fingerprint, and a near-identical one is held back for 30 days. When every photo has been posted, the run stops with "add more photos". You can set `selection.when_exhausted: recycle` to start over instead.
 
 ## Project layout
 
@@ -179,9 +196,19 @@ forge usage -p main              # AI tokens and estimated cost this month
 
 Instagram tokens last about 60 days. On GitHub, the Refresh Instagram token workflow renews them on the 1st of every month if `GH_SECRETS_TOKEN` is set. Otherwise run `forge refresh-token` at least every 50 days and update `.env` and the GitHub secret.
 
-## Posting automatically every day
+## GitHub workflows
 
-Everything runs on GitHub Actions, so your laptop isn't needed. `.github/workflows/daily-post.yml` is scheduled for 13:30 UTC (7:00 pm IST) every day.
+Everything runs on GitHub Actions, so your laptop isn't needed.
+
+| Workflow | File | Runs when | What it does |
+| --- | --- | --- | --- |
+| Daily post | `daily-post.yml` | Every day at 13:30 UTC (7:00 pm IST), or by hand | Runs the whole workflow for each profile. By hand you pick a mode: **check**, **plan**, **preview** or **post**. Scheduled runs always post, but only once the `AUTO_POST` variable is `true`. Commits `state/` afterwards. Runs one at a time, so two runs can never post together. |
+| Refresh Instagram token | `refresh-token.yml` | 03:00 UTC on the 1st of each month, or by hand | Renews each profile's Instagram token and saves it back to its secret with `GH_SECRETS_TOKEN`. Without that secret it only warns. |
+| Tests | `tests.yml` | Every push and pull request | Runs the test suite. It uses no keys and calls no real services. |
+
+The run name shows the mode, for example "Daily post: preview". A preview's summary says plainly that nothing was posted.
+
+## Posting automatically every day
 
 1. Under Settings → Actions → General, allow actions and set Workflow permissions to **Read and write**, so runs can commit `state/` and use the `media` branch.
 2. Add the secrets above.

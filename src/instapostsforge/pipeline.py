@@ -23,6 +23,7 @@ from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
 from .state import ProfileState
+from .usage import UsageLog
 
 log = logging.getLogger(__name__)
 
@@ -47,15 +48,18 @@ class Components:
     state: ProfileState
     host: ImageHost | None = None
     publisher: Publisher | None = None
+    usage: UsageLog | None = None
 
     @classmethod
-    def from_profile(cls, profile: Profile, *, publish: bool, with_insights: bool = False) -> "Components":
+    def from_profile(cls, profile: Profile, *, publish: bool, command: str = "", with_insights: bool = False) -> "Components":
+        usage = UsageLog(profile.name, pricing=profile.ai.get("pricing"), command=command)
         return cls(
             source=build_source(profile.source),
-            ai=build_workflow(profile.ai),
+            ai=build_workflow(profile.ai, usage_log=usage),
             state=ProfileState(profile.name),
             host=build_host(profile.hosting) if publish else None,
             publisher=InstagramPublisher(profile.instagram) if (publish or with_insights) else None,
+            usage=usage,
         )
 
 
@@ -209,6 +213,8 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
 
     result = PostResult(profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason)
     result.notes.extend(r.notes)
+    if components.usage is not None:
+        result.usage = components.usage.summary()
     if prepared.padded:
         result.notes.append("Photo was outside Instagram's 4:5 to 1.91:1 range, so a border was added.")
 
@@ -243,6 +249,8 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
     )
     result.published = True
     result.media_id = media_id
+    if components.usage is not None:
+        result.usage = components.usage.summary()
     return result
 
 

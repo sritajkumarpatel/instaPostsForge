@@ -50,4 +50,5 @@ class PostResult:
     media_id: str | None = None
     draft_dir: str | None = None
     plan_reason: str = ""
+    usage: dict = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)

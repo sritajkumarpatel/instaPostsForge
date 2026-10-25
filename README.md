@@ -20,7 +20,35 @@ It never asks for your Instagram password. You grant it an access token that you
 
 Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer rejects the post twice, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
 
-The prompts for each agent are plain text in `src/instapostsforge/prompts/`. Edit them to change how an agent behaves.
+## Steering the AI
+
+| To change | Edit |
+| --- | --- |
+| The voice and rules for every AI step | `config/ai-instructions.md` |
+| What one agent is asked to do | `src/instapostsforge/prompts/<agent>.md` |
+| Which model each agent uses, its effort and token limit | `ai.model`, `ai.effort`, `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
+| Quote policy, hashtag count, review and revisions | `ai.quote`, `ai.hashtags`, `ai.review`, `ai.max_revisions` |
+
+The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. For example, to run hashtags on a cheaper model:
+
+```yaml
+ai:
+  agents:
+    hashtags: { model: claude-sonnet-5-5, effort: medium }
+```
+
+`CLAUDE.md` explains the architecture and the rules to keep for anyone (including Claude) working on the code.
+
+## Token usage audit log
+
+Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run, agent, model, input, output and cache tokens, time taken, and estimated cost. Each run prints a table of its usage, which also appears on the GitHub Actions run page. For a monthly total:
+
+```bash
+forge usage -p main                  # this month
+forge usage -p main --month 2026-11
+```
+
+Costs are estimates from the per-model prices in `ai.pricing`. Update those if Anthropic's prices change.
 
 ### Why the photo is staged on GitHub
 
@@ -33,9 +61,11 @@ Posted photos are tracked by their Drive file ID, so renaming a file doesn't mak
 ## Project layout
 
 ```
-config/profiles.yaml        one entry per Instagram account (public: names secrets, never holds them)
+config/profiles.yaml        accounts and AI settings (public: names secrets, never holds them)
+config/ai-instructions.md   standing instructions every AI step follows
+CLAUDE.md                   guidance for Claude working on this repo
 .env                        your secrets, local only (copy from .env.example)
-state/<profile>/            posts.json, catalog.json, insights.json (committed after each run)
+state/<profile>/            posts.json, catalog.json, insights.json, usage/ (committed after each run)
 src/instapostsforge/
   pipeline.py               the daily workflow
   agents/                   AI agents: analyst, planner, caption writer, hashtag strategist, reviewer
@@ -46,6 +76,7 @@ src/instapostsforge/
   hosting/                  temporary public link for Instagram (GitHub media branch)
   publishers/               Instagram API: publish, insights, token refresh
   state/                    what the workflow remembers per profile
+  usage.py                  token audit log
   cli.py                    the `forge` command
 tests/                      run without any accounts or keys
 .github/workflows/          daily posting job and tests
@@ -85,6 +116,7 @@ forge preview -p main            # full workflow, saved to drafts/, nothing post
 forge check -p main              # verify the token, quota and Drive folder
 forge post -p main               # post today's photo (needs GITHUB_TOKEN in .env)
 forge refresh-token -p main      # extend the Instagram token by 60 days
+forge usage -p main              # AI tokens and estimated cost this month
 ```
 
 Instagram tokens last about 60 days. Run `forge refresh-token` about once a month, then update `.env` and the GitHub secret.
@@ -106,4 +138,4 @@ Copy the `main` block in `config/profiles.yaml` under a new name. Point it at ne
 
 ## Cost
 
-With Claude Opus 5.5, expect roughly $0.10 to $0.30 per daily post (about $3 to $9 a month), plus about $0.02 the first time each photo is analysed. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend less, set `ai.model` to `claude-sonnet-5-5`. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
+With Claude Opus 5.5, expect roughly $0.10 to $0.30 per daily post (about $3 to $9 a month), plus about $0.02 the first time each photo is analysed. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend less, move some agents to `claude-sonnet-5-5` or lower their effort. `forge usage` shows where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.

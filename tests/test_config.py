@@ -51,3 +51,5 @@ def test_shipped_config_loads():
     assert "folder_url" not in profile.source  # the link lives in a secret, not the public repo
     assert profile.ai["hashtags"]["max"] == 5
     assert profile.hosting["type"] == "github"
+    assert set(profile.ai["agents"]) == {"analyst", "planner", "caption_writer", "hashtags", "reviewer"}
+    assert profile.ai["model"] in profile.ai["pricing"]

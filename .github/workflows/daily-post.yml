@@ -44,8 +44,8 @@ jobs:
       - run: pip install .
       - run: forge "$MODE" --profile "$PROFILE"
       - name: Save what the workflow learned
-        # Commits posts, photo analyses and insights, even when the run stops early.
-        if: always() && env.MODE != 'plan'
+        # Commits posts, photo analyses, insights and the token usage log, even when the run stops early.
+        if: always()
         run: |
           git config user.name "instaPostsForge bot"
           git config user.email "actions@users.noreply.github.com"

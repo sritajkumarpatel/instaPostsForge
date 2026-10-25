@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from . import pipeline
 from .config import DEFAULT_CONFIG_PATH, ConfigError, env_value, list_profiles, load_profile
+from .usage import format_table, load_month, summarize
 
 
 def _summary_lines(result) -> list[str]:
@@ -28,6 +29,8 @@ def _summary_lines(result) -> list[str]:
         f"**Alt text:** {result.caption.alt_text}",
     ]
     lines += [f"- {note}" for note in result.notes]
+    if result.usage:
+        lines += ["", "**AI usage this run**", "", *format_table(result.usage)]
     return lines
 
 
@@ -48,21 +51,40 @@ def cmd_profiles(args) -> int:
 
 def cmd_preview(args) -> int:
     profile = load_profile(args.profile, args.config)
-    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=False), publish=False))
+    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=False, command="preview"), publish=False))
     return 0
 
 
 def cmd_post(args) -> int:
     profile = load_profile(args.profile, args.config)
-    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=True), publish=True))
+    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=True, command="post"), publish=True))
     return 0
 
 
 def cmd_plan(args) -> int:
     profile = load_profile(args.profile, args.config)
-    plan = pipeline.plan_days(profile, pipeline.Components.from_profile(profile, publish=False), args.days)
+    components = pipeline.Components.from_profile(profile, publish=False, command="plan")
+    plan = pipeline.plan_days(profile, components, args.days)
     for day, (photo, item) in enumerate(plan, start=1):
         print(f"Day {day}: {photo.name}\n  Why: {item.reason}\n  Angle: {item.angle}\n")
+    print("\n".join(format_table(components.usage.summary())))
+    return 0
+
+
+def cmd_usage(args) -> int:
+    from datetime import date
+
+    month = args.month or date.today().strftime("%Y-%m")
+    entries = load_month(args.profile, month)
+    if not entries:
+        print(f"No AI usage recorded for profile '{args.profile}' in {month}.")
+        return 0
+    runs = len({e["run_id"] for e in entries})
+    failed = sum(1 for e in entries if not e.get("ok", True))
+    print(f"AI usage for '{args.profile}' in {month}: {runs} runs, {len(entries)} calls, {failed} failed\n")
+    print("\n".join(format_table(summarize(entries))))
+    models = sorted({e["model"] for e in entries})
+    print(f"\nModels used: {', '.join(models)}. Costs are estimates from ai.pricing in config/profiles.yaml.")
     return 0
 
 
@@ -107,11 +129,14 @@ def build_parser() -> argparse.ArgumentParser:
         ("plan", cmd_plan, "Show which photos the planner would post over the next days"),
         ("check", cmd_check, "Verify the Instagram token, quota and photo source"),
         ("refresh-token", cmd_refresh_token, "Extend the Instagram access token by 60 days"),
+        ("usage", cmd_usage, "Show AI token usage and estimated cost for a month"),
     ):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--profile", "-p", default="main")
         if name == "plan":
             p.add_argument("--days", type=int, default=7)
+        if name == "usage":
+            p.add_argument("--month", help="YYYY-MM, default this month")
         p.set_defaults(func=func)
     return parser
 

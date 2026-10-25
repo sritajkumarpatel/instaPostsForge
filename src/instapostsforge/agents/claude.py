@@ -5,7 +5,9 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import time
 from datetime import date
+from pathlib import Path
 from importlib import resources
 from string import Template
 from typing import Literal, TypeVar
@@ -14,10 +16,13 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from ..models import Caption
+from ..usage import UsageLog
 from .base import AIWorkflow, PlanItem, Review
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
+
+AGENTS = ("analyst", "planner", "caption_writer", "hashtags", "reviewer")
 
 QUOTE_RULES = {
     "always": "Always include one quote that fits the mood of the photo.",
@@ -84,33 +89,76 @@ def image_block(image_jpeg: bytes) -> dict:
 
 
 class ClaudeWorkflow(AIWorkflow):
-    def __init__(self, settings: dict, client: anthropic.Anthropic | None = None):
+    def __init__(self, settings: dict, client: anthropic.Anthropic | None = None, usage_log: UsageLog | None = None):
         self.settings = settings
         self.model = settings.get("model", "claude-opus-5-5")
         self.client = client or anthropic.Anthropic()
+        self.usage_log = usage_log
         notes = []
         if settings.get("account_theme"):
             notes.append(f"The account's overall theme: {settings['account_theme']}")
         if settings.get("extra_instructions"):
             notes.append(f"Additional instructions from the account owner: {settings['extra_instructions']}")
         self.account_notes = ("\n" + "\n".join(notes)) if notes else ""
+        self.standing_instructions = self._load_instructions(settings.get("instructions_file"))
 
-    def _ask(self, system: str, content: list[dict], schema: type[T]) -> T:
-        response = self.client.messages.parse(
-            model=self.model,
-            max_tokens=16000,
+    @staticmethod
+    def _load_instructions(path: str | None) -> str:
+        if not path:
+            return ""
+        file = Path(path)
+        if not file.exists():
+            log.warning("AI instructions file %s not found; continuing without it.", path)
+            return ""
+        return file.read_text(encoding="utf-8").strip()
+
+    def agent_settings(self, agent: str) -> dict:
+        """Model, effort and token limit for one agent: its own entry overrides the ai defaults."""
+        own = (self.settings.get("agents") or {}).get(agent) or {}
+        return {
+            "model": own.get("model", self.model),
+            "effort": own.get("effort", self.settings.get("effort")),
+            "max_tokens": int(own.get("max_tokens", self.settings.get("max_tokens", 16000))),
+        }
+
+    def _ask(self, agent: str, system: str, content: list[dict], schema: type[T]) -> T:
+        cfg = self.agent_settings(agent)
+        if self.standing_instructions:
+            system += "\n\n# Standing instructions from the account owner\n\n" + self.standing_instructions
+        kwargs = dict(
+            model=cfg["model"],
+            max_tokens=cfg["max_tokens"],
             system=system,
             messages=[{"role": "user", "content": content}],
             output_format=schema,
         )
+        if cfg["effort"]:
+            kwargs["output_config"] = {"effort": cfg["effort"]}
+        started = time.monotonic()
+        try:
+            response = self.client.messages.parse(**kwargs)
+        except Exception as err:
+            if self.usage_log:
+                self.usage_log.record(agent=agent, model=cfg["model"], seconds=time.monotonic() - started, ok=False, error=str(err))
+            raise
+        if self.usage_log:
+            self.usage_log.record(
+                agent=agent,
+                model=cfg["model"],
+                usage=getattr(response, "usage", None),
+                seconds=time.monotonic() - started,
+                ok=response.stop_reason not in ("refusal", "max_tokens"),
+                error="" if response.stop_reason not in ("refusal", "max_tokens") else f"stop_reason={response.stop_reason}",
+            )
         if response.stop_reason == "refusal":
-            raise RuntimeError(f"The model declined the {schema.__name__} request.")
+            raise RuntimeError(f"The model declined the {agent} request.")
         if response.parsed_output is None:
             raise RuntimeError(f"No usable {schema.__name__} returned (stop reason: {response.stop_reason}).")
         return response.parsed_output
 
     def analyze(self, image_jpeg: bytes, *, photo_name: str) -> dict:
         result = self._ask(
+            "analyst",
             load_prompt("analyst"),
             [image_block(image_jpeg), {"type": "text", "text": f"File name: {photo_name}\n\nAnalyse this photo."}],
             PhotoAnalysis,
@@ -126,6 +174,7 @@ class ClaudeWorkflow(AIWorkflow):
             "recent_posts_newest_first": history,
         }
         result = self._ask(
+            "planner",
             load_prompt("planner"),
             [{"type": "text", "text": json.dumps(brief, ensure_ascii=False, indent=1)}],
             Plan,
@@ -142,11 +191,11 @@ class ClaudeWorkflow(AIWorkflow):
             f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}\n\n"
             f"Angle chosen by the planner: {angle or 'your choice'}\n\n"
             f"Recent captions (do not repeat their openings):\n" + ("\n---\n".join(recent_captions) or "(none yet)") + "\n\n"
-            f"Captions that performed best so far:\n" + ("\n---\n".join(top_captions) or "(no results yet)")
+            "Captions that performed best so far:\n" + ("\n---\n".join(top_captions) or "(no results yet)")
         )
         if feedback:
             text += f"\n\nThe reviewer sent the previous draft back with this feedback:\n{feedback}"
-        draft = self._ask(system, [image_block(image_jpeg), {"type": "text", "text": text}], CaptionDraft)
+        draft = self._ask("caption_writer", system, [image_block(image_jpeg), {"type": "text", "text": text}], CaptionDraft)
         return Caption(
             text=draft.caption,
             hashtags=[],
@@ -169,7 +218,7 @@ class ClaudeWorkflow(AIWorkflow):
         text = json.dumps(brief, ensure_ascii=False, indent=1)
         if feedback:
             text += f"\n\nThe reviewer's feedback on the previous set:\n{feedback}"
-        result = self._ask(system, [{"type": "text", "text": text}], HashtagSet)
+        result = self._ask("hashtags", system, [{"type": "text", "text": text}], HashtagSet)
         for t in result.hashtags:
             log.info("Hashtag %s (%s): %s", t.tag, t.role, t.reason)
         return [t.tag for t in result.hashtags]
@@ -180,5 +229,5 @@ class ClaudeWorkflow(AIWorkflow):
             f"{' by ' + caption.quote_author if caption.quote_author else ''}\n\n"
             f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {caption.alt_text}"
         )
-        result = self._ask(load_prompt("reviewer"), [image_block(image_jpeg), {"type": "text", "text": text}], ReviewResult)
+        result = self._ask("reviewer", load_prompt("reviewer"), [image_block(image_jpeg), {"type": "text", "text": text}], ReviewResult)
         return Review(approved=result.verdict == "approve", feedback=result.feedback)

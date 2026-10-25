@@ -29,6 +29,7 @@ class Caption:
     alt_text: str
     quote: str | None = None
     quote_author: str | None = None
+    more_alt_texts: list[str] = field(default_factory=list)  # one per extra photo of a multi-photo post
 
     def render(self) -> str:
         """The full caption as it appears on Instagram."""
@@ -48,7 +49,7 @@ class PostResult:
     """Outcome of one pipeline run."""
 
     profile: str
-    photo: Photo
+    photo: Photo  # the photo posted, or the cover of a multi-photo post
     caption: Caption
     published: bool
     media_id: str | None = None
@@ -56,3 +57,8 @@ class PostResult:
     plan_reason: str = ""
     usage: dict = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    more_photos: list[Photo] = field(default_factory=list)  # the other photos of a multi-photo post
+
+    @property
+    def photos(self) -> list[Photo]:
+        return [self.photo, *self.more_photos]

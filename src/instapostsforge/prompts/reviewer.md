@@ -23,6 +23,10 @@ Fail the matching item whenever any of these is true:
 - An attributed quote whose author you are not certain of (quote).
 - A hashtag in the caption text itself (hashtags).
 
+## Multi-photo posts
+
+When you are shown several photos, they go out together, photo 1 first as the cover. Judge accuracy against every photo, check that each photo has its own plain alt text, and allow the caption up to 60 characters more than the playbook range. The playbook is the cover's.
+
 Approve only if every item passes. If any fails, choose "revise" and write feedback that names each failed item and says exactly what to change, for example: "hook: 112 characters, cut to under 90". Don't rewrite the caption yourself.
 
 # Playbook for this photo

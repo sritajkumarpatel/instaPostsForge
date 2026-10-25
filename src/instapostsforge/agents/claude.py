@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from ..models import Caption
 from ..usage import UsageLog
-from .base import AIWorkflow, PlanItem, Review
+from .base import AIWorkflow, PlanItem, Review, SetPhoto
 from .playbooks import Playbooks
 
 log = logging.getLogger(__name__)
@@ -69,7 +69,11 @@ class PhotoAnalysis(BaseModel):
 
 
 class PlannedPhoto(BaseModel):
-    photo_id: str
+    photo_id: str = Field(description="The photo to post, or the cover (first photo) of a multi-photo post.")
+    extra_photo_ids: list[str] = Field(
+        default_factory=list,
+        description="For a multi-photo post only: the other photos, in the order to show them, all from the cover's set. Empty for a single photo.",
+    )
     reason: str
     angle: str
 
@@ -83,7 +87,10 @@ class CaptionDraft(BaseModel):
     quote: str | None = None
     quote_author: str | None = None
     quote_is_attributed: bool = Field(default=False, description="True only if certain who said the quote.")
-    alt_text: str
+    alt_text: str = Field(description="Alt text for the photo, or for the cover of a multi-photo post.")
+    more_alt_texts: list[str] = Field(
+        default_factory=list, description="Multi-photo posts only: one alt text for each other photo, in order."
+    )
 
 
 class ChosenTag(BaseModel):
@@ -207,7 +214,9 @@ class ClaudeWorkflow(AIWorkflow):
         )
         return result.model_dump()
 
-    def plan(self, candidates: list[dict], history: list[dict], *, today: date, horizon: int) -> list[PlanItem]:
+    def plan(
+        self, candidates: list[dict], history: list[dict], *, today: date, horizon: int, photo_sets: dict | None = None
+    ) -> list[PlanItem]:
         planning = self.settings.get("planning") or {}
         brief = {
             "today": today.isoformat(),
@@ -216,6 +225,10 @@ class ClaudeWorkflow(AIWorkflow):
             "unposted_photos": candidates,
             "recent_posts_newest_first": history,
         }
+        if photo_sets:
+            brief["photo_sets"] = photo_sets
+        else:
+            brief["photo_sets"] = "Multi-photo posts are off today: plan single photos only."
         result = self._ask(
             "planner",
             self._prompt(
@@ -226,39 +239,56 @@ class ClaudeWorkflow(AIWorkflow):
             [{"type": "text", "text": json.dumps(brief, ensure_ascii=False, indent=1)}],
             Plan,
         )
-        return [PlanItem(p.photo_id, p.reason, p.angle) for p in result.order]
+        return [PlanItem(p.photo_id, p.reason, p.angle, list(p.extra_photo_ids)) for p in result.order]
 
-    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback=""):
+    @staticmethod
+    def _photos_content(image_jpeg: bytes, analysis: dict, more_photos: list[SetPhoto] | None) -> tuple[list[dict], str]:
+        """The image blocks and the analyst's notes, for one photo or every photo of a multi-photo post."""
+        if not more_photos:
+            return [image_block(image_jpeg)], f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}"
+        blocks, notes = [], []
+        for n, (jpeg, notes_for) in enumerate([(image_jpeg, analysis), *((p.image_jpeg, p.analysis) for p in more_photos)], 1):
+            blocks += [{"type": "text", "text": f"Photo {n}{' (cover)' if n == 1 else ''}:"}, image_block(jpeg)]
+            notes.append(f"Photo {n}: {json.dumps(notes_for, ensure_ascii=False)}")
+        intro = f"This is a multi-photo post of {len(blocks) // 2} photos, shown in this order; photo 1 is the cover."
+        return blocks, intro + "\n\nAnalyst's notes:\n" + "\n".join(notes)
+
+    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None):
         system = self._prompt(
             "caption_writer",
             quote_rule=QUOTE_RULES.get(self.settings.get("quote", "when_fitting"), QUOTE_RULES["when_fitting"]),
             language=self.settings.get("language", "English"),
             playbook=self.playbooks.for_photo(analysis),
         )
+        blocks, notes = self._photos_content(image_jpeg, analysis, more_photos)
         text = (
-            f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}\n\n"
+            f"{notes}\n\n"
             f"Angle chosen by the planner: {angle or 'your choice'}\n\n"
             f"Recent captions (do not repeat their openings):\n" + ("\n---\n".join(recent_captions) or "(none yet)") + "\n\n"
             "Captions that performed best so far:\n" + ("\n---\n".join(top_captions) or "(no results yet)")
         )
         if feedback:
             text += f"\n\nThe reviewer sent the previous draft back with this feedback:\n{feedback}"
-        draft = self._ask("caption_writer", system, [image_block(image_jpeg), {"type": "text", "text": text}], CaptionDraft)
+        draft = self._ask("caption_writer", system, [*blocks, {"type": "text", "text": text}], CaptionDraft)
+        more_alts = list(draft.more_alt_texts[: len(more_photos or [])])
+        more_alts += [""] * (len(more_photos or []) - len(more_alts))  # a missing alt text is left out, never invented
         return Caption(
             text=draft.caption,
             hashtags=[],
             alt_text=draft.alt_text,
             quote=draft.quote,
             quote_author=draft.quote_author if draft.quote_is_attributed else None,
+            more_alt_texts=more_alts,
         )
 
-    def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback=""):
+    def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback="", more_analyses=None):
         tags = self.settings.get("hashtags") or {}
         system = self._prompt(
             "hashtags", min_tags=tags.get("min", 3), max_tags=tags.get("max", 5), playbook=self.playbooks.for_photo(analysis)
         )
         brief = {
             "photo": analysis,
+            **({"other_photos_in_this_multi_photo_post": more_analyses} if more_analyses else {}),
             "caption": caption_text,
             "recent_tag_sets_newest_first": recent_tag_sets,
             "tag_results": tag_stats,
@@ -271,16 +301,20 @@ class ClaudeWorkflow(AIWorkflow):
             log.info("Hashtag %s (%s): %s", t.tag, t.role, t.reason)
         return [t.tag for t in result.hashtags]
 
-    def review(self, image_jpeg, *, caption, analysis=None):
+    def review(self, image_jpeg, *, caption, analysis=None, more_photos=None):
         analysis = analysis or {}
+        blocks, notes = self._photos_content(image_jpeg, analysis, more_photos)
+        alt = caption.alt_text
+        if more_photos:
+            alt = "\n".join(f"Photo {n}: {a or '(none)'}" for n, a in enumerate([caption.alt_text, *caption.more_alt_texts], 1))
         text = (
-            f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}\n\n"
+            f"{notes}\n\n"
             f"Caption:\n{caption.text}\n\nQuote: {caption.quote or '(none)'}"
             f"{' by ' + caption.quote_author if caption.quote_author else ''}\n\n"
-            f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {caption.alt_text}"
+            f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {alt}"
         )
         system = self._prompt("reviewer", playbook=self.playbooks.for_photo(analysis))
-        result = self._ask("reviewer", system, [image_block(image_jpeg), {"type": "text", "text": text}], ReviewResult)
+        result = self._ask("reviewer", system, [*blocks, {"type": "text", "text": text}], ReviewResult)
         failed = [c for c in result.checks if not c.passed]
         # A failed checklist item means revise, even if the model's verdict said approve.
         if result.verdict == "approve" and not failed:

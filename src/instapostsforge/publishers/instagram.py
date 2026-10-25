@@ -77,6 +77,31 @@ class InstagramPublisher(Publisher):
         self._wait_until_ready(container_id)
         return self._call("POST", f"{self.user_id}/media_publish", creation_id=container_id)["id"]
 
+    def publish_carousel(self, image_urls: list[str], caption: str, alt_texts: list[str | None] | None = None) -> str:
+        """One container per photo, then a carousel container that holds them, then publish.
+
+        Docs: https://developers.facebook.com/docs/instagram-platform/content-publishing#carousel-posts"""
+        if not 2 <= len(image_urls) <= 10:
+            raise PublishError(f"A multi-photo post needs 2 to 10 photos, not {len(image_urls)}.")
+        alt_texts = list(alt_texts or [])
+        children = []
+        for i, url in enumerate(image_urls):
+            params = {"image_url": url, "is_carousel_item": "true"}
+            alt = alt_texts[i] if i < len(alt_texts) else None
+            try:
+                child = self._call("POST", f"{self.user_id}/media", **params, **({"alt_text": alt} if alt else {}))
+            except PublishError:
+                if not alt:
+                    raise
+                child = self._call("POST", f"{self.user_id}/media", **params)  # in case alt text isn't accepted on carousel items
+            self._wait_until_ready(child["id"])
+            children.append(child["id"])
+        container_id = self._call(
+            "POST", f"{self.user_id}/media", media_type="CAROUSEL", children=",".join(children), caption=caption
+        )["id"]
+        self._wait_until_ready(container_id)
+        return self._call("POST", f"{self.user_id}/media_publish", creation_id=container_id)["id"]
+
     def _wait_until_ready(self, container_id: str, attempts: int = 10, delay: float = 5.0) -> None:
         for _ in range(attempts):
             status = self._call("GET", container_id, fields="status_code").get("status_code")

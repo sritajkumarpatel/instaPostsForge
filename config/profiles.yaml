@@ -66,6 +66,16 @@ defaults:
     skip_screenshots: true    # never post screenshots, memes or photos of documents
     allow_children: false     # photos where a child is visible are skipped unless true
     near_duplicate_days: 30   # keep a near-identical photo at least this many days from the first
+    # Multi-photo (carousel) posts: on some days the planner may post 2 to max_photos photos from
+    # one outing or one place instead of a single photo. The MULTI_PHOTO environment variable
+    # (a repository variable in GitHub Actions) overrides "enabled": set it to false to turn
+    # multi-photo posts off without a commit.
+    multi_photo:
+      enabled: true
+      max_photos: 5           # Instagram allows up to 10
+      max_per_7_days: 3       # at most this many multi-photo posts in any 7 posts
+      group_hours: 3          # photos taken within this many hours of the previous one form an outing
+      group_km: 2             # ...and within this many km of it, when both have GPS (never saved)
   image:
     keep_aspect_ratio: true
     min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape
@@ -73,6 +83,7 @@ defaults:
     max_width: 1440
     jpeg_quality: 90
     pad_color: auto           # auto (picks from the photo) or a hex colour like "#ffffff"
+    multi_photo_border: blur  # in a multi-photo post, photos shaped unlike the cover get this border: blur, auto or a hex colour
   hosting:
     type: github              # Instagram can't read Drive links; the photo is staged here briefly
     branch: media

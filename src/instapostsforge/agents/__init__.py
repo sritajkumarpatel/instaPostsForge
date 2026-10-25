@@ -6,7 +6,7 @@ Swap in another provider by implementing AIWorkflow and registering it in build_
 from __future__ import annotations
 
 from ..config import ConfigError
-from .base import AIWorkflow, PlanItem, Review
+from .base import AIWorkflow, PlanItem, Review, SetPhoto
 
 
 def build_workflow(settings: dict, usage_log=None) -> AIWorkflow:
@@ -18,4 +18,4 @@ def build_workflow(settings: dict, usage_log=None) -> AIWorkflow:
     raise ConfigError(f"Unknown AI provider '{provider}'.")
 
 
-__all__ = ["AIWorkflow", "PlanItem", "Review", "build_workflow"]
+__all__ = ["AIWorkflow", "PlanItem", "Review", "SetPhoto", "build_workflow"]

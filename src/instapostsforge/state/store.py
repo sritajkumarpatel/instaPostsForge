@@ -1,6 +1,7 @@
 """Everything the workflow remembers for one profile, kept in state/<profile>/.
 
-posts.json     every photo posted, by Drive file ID, so none is ever reused
+posts.json     every post, by its (cover) photo's key; a multi-photo post lists its other photos
+               under "more_photos", so none of them is ever reused either
 catalog.json   the photo analyst's notes per photo, so each photo is analysed once
 insights.json  reach, likes, saves and shares per post, used by the planner and hashtag strategist
 
@@ -60,10 +61,15 @@ class ProfileState:
     # --- posts -------------------------------------------------------------
 
     def posted_ids(self) -> set[str]:
-        return set(self.posts)
+        """Keys of every photo posted, including the other photos of multi-photo posts."""
+        return set(self.posts) | {k for post in self.posts.values() for k in post.get("more_photos", [])}
 
     def is_posted(self, photo_id: str) -> bool:
-        return photo_key(photo_id) in self.posts
+        return photo_key(photo_id) in self.posted_ids()
+
+    def _subjects(self, key: str, post: dict) -> list[str]:
+        keys = [key, *post.get("more_photos", [])]
+        return [s for k in keys if (s := self.catalog.get(k, {}).get("analysis", {}).get("main_subject"))]
 
     def history(self, limit: int = 30) -> list[dict]:
         """Recent posts, newest first, joined with their analysis and results."""
@@ -78,6 +84,8 @@ class ProfileState:
                     "mood": analysis.get("mood"),
                     "subject": analysis.get("subject"),
                     "main_subject": analysis.get("main_subject"),
+                    "all_subjects": self._subjects(key, post),
+                    "photo_count": 1 + len(post.get("more_photos", [])),
                     "hashtags": post.get("hashtags", []),
                     "results": self.insights.get(post.get("media_id", ""), {}).get("metrics"),
                 }
@@ -115,8 +123,18 @@ class ProfileState:
             for tag in uses
         }
 
-    def record_post(self, photo_id: str, *, photo_name: str, media_id: str, caption: str, hashtags: list[str], plan_reason: str) -> None:
-        self.posts[photo_key(photo_id)] = {
+    def record_post(
+        self,
+        photo_id: str,
+        *,
+        photo_name: str,
+        media_id: str,
+        caption: str,
+        hashtags: list[str],
+        plan_reason: str,
+        more_photo_ids: list[str] | None = None,
+    ) -> None:
+        entry = {
             "name": photo_name,
             "media_id": media_id,
             "caption": caption,
@@ -124,6 +142,9 @@ class ProfileState:
             "plan_reason": plan_reason,
             "posted_at": _now(),
         }
+        if more_photo_ids:
+            entry["more_photos"] = [photo_key(i) for i in more_photo_ids]
+        self.posts[photo_key(photo_id)] = entry
         self._save("posts.json", self.posts)
 
     def forget_posts(self) -> None:
@@ -156,7 +177,8 @@ class ProfileState:
             fp
             for key, post in self.posts.items()
             if post.get("posted_at") and datetime.fromisoformat(post["posted_at"]).timestamp() >= cutoff
-            if (fp := self.catalog.get(key, {}).get("fingerprint"))
+            for k in (key, *post.get("more_photos", []))
+            if (fp := self.catalog.get(k, {}).get("fingerprint"))
         ]
 
     # --- insights ----------------------------------------------------------

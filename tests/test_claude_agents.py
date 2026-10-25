@@ -148,3 +148,23 @@ def test_account_profile_and_rules_fill_every_prompt():
         assert "street photography in Pune" in call["system"] and "wanderlust" in call["system"]
         assert "$" not in call["system"]
     assert "No more than 3 photos of the same mood" in msgs.calls[0]["system"]
+
+
+def test_multi_photo_requests_show_every_photo_in_order():
+    from instapostsforge.agents import SetPhoto
+
+    wf, msgs = workflow(
+        CaptionDraft(caption="Three frames, one morning.", alt_text="cover", more_alt_texts=["second"]),
+        ReviewResult(checks=[], verdict="approve"),
+        Plan(order=[PlannedPhoto(photo_id="a", extra_photo_ids=["b", "c"], reason="r", angle="g")]),
+    )
+    more = [SetPhoto(b"jpg2", {"main_subject": "deer"}), SetPhoto(b"jpg3", {"main_subject": "lake"})]
+    caption = wf.write_caption(b"jpg1", analysis={"main_subject": "tiger"}, angle="a", recent_captions=[], top_captions=[], more_photos=more)
+    assert caption.more_alt_texts == ["second", ""]  # a missing alt text is left empty, never made up
+    content = msgs.calls[0]["messages"][0]["content"]
+    assert [b["type"] for b in content].count("image") == 3
+    assert "multi-photo post of 3 photos" in content[-1]["text"] and "deer" in content[-1]["text"]
+    assert wf.review(b"jpg1", caption=caption, analysis={}, more_photos=more).approved
+    assert [b["type"] for b in msgs.calls[1]["messages"][0]["content"]].count("image") == 3
+    item = wf.plan([{"photo_id": "a"}], [], today=date(2026, 10, 25), horizon=1, photo_sets={"sets": []})[0]
+    assert item.extra_ids == ["b", "c"] and "photo_sets" in msgs.calls[2]["messages"][0]["content"][0]["text"]

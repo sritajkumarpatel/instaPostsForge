@@ -20,8 +20,9 @@ def _summary_lines(result) -> list[str]:
         status = f"Published (media ID {result.media_id})"
     else:
         status = f"Preview only, nothing was posted to Instagram. Draft saved to `{result.draft_dir}`; to publish, run with mode **post**."
+    title = result.photo.name if not result.more_photos else f"{len(result.photos)} photos, cover {result.photo.name}"
     lines = [
-        f"## {result.profile}: {result.photo.name}",
+        f"## {result.profile}: {title}",
         "",
         f"**Status:** {status}",
         f"**Why this photo:** {result.plan_reason}",
@@ -31,6 +32,8 @@ def _summary_lines(result) -> list[str]:
         "```",
         f"**Alt text:** {result.caption.alt_text}",
     ]
+    if result.more_photos:
+        lines += ["", "**Photos, in order:** " + ", ".join(p.name for p in result.photos)]
     lines += [f"- {note}" for note in result.notes]
     if result.usage:
         lines += ["", "**AI usage this run**", "", *format_table(result.usage)]
@@ -68,8 +71,10 @@ def cmd_plan(args) -> int:
     profile = load_profile(args.profile, args.config)
     components = pipeline.Components.from_profile(profile, publish=False, command="plan")
     plan = pipeline.plan_days(profile, components, args.days)
+    names = {p.id: p.name for p in components.source.list_photos()}
     for day, (photo, item) in enumerate(plan, start=1):
-        print(f"Day {day}: {photo.name}\n  Why: {item.reason}\n  Angle: {item.angle}\n")
+        extra = f" + {', '.join(names.get(i, i) for i in item.extra_ids)}" if item.extra_ids else ""
+        print(f"Day {day}: {photo.name}{extra}\n  Why: {item.reason}\n  Angle: {item.angle}\n")
     print("\n".join(format_table(components.usage.summary())))
     return 0
 

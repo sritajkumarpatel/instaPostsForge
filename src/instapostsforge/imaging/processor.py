@@ -2,7 +2,8 @@
 
 The photo keeps its own aspect ratio whenever Instagram allows it. Only a photo
 outside the feed range (4:5 portrait to 1.91:1 landscape) gets a border, and
-nothing is ever cropped.
+nothing is ever cropped. In a multi-photo post Instagram shows every photo in the
+first photo's shape, so the others are framed to that shape with a border instead.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from PIL import Image, ImageOps, ImageStat
+from PIL import Image, ImageFilter, ImageOps, ImageStat
 
 try:  # iPhone photos arrive as HEIC; support them when pillow-heif is installed.
     from pillow_heif import register_heif_opener
@@ -68,6 +69,26 @@ def fit_ratio(image: Image.Image, min_ratio: float, max_ratio: float, pad_color:
         canvas = Image.new("RGB", (w, round(w / max_ratio)), color)
     canvas.paste(image, ((canvas.width - w) // 2, (canvas.height - h) // 2))
     return canvas, True
+
+
+def frame_to_ratio(jpeg: bytes, ratio: float, *, width: int, border: str = "blur", quality: int = 90) -> bytes:
+    """Places the whole photo on a canvas of the given width:height ratio, never cropping it.
+
+    border "blur" fills the space with a soft, darkened, enlarged copy of the photo; any other
+    value is a colour as for pad_color ("auto" or a hex colour)."""
+    image = Image.open(io.BytesIO(jpeg)).convert("RGB")
+    canvas_size = (width, round(width / ratio))
+    if abs(image.width / image.height - ratio) < 0.01:
+        return _to_jpeg(image.resize(canvas_size, Image.LANCZOS), quality)
+    if border == "blur":
+        background = ImageOps.fit(image, canvas_size, Image.LANCZOS)
+        background = background.filter(ImageFilter.GaussianBlur(radius=max(8, width // 40)))
+        canvas = Image.eval(background, lambda v: int(v * 0.7))
+    else:
+        canvas = Image.new("RGB", canvas_size, _pad_color(image, border))
+    photo = ImageOps.contain(image, canvas_size, Image.LANCZOS)
+    canvas.paste(photo, ((canvas.width - photo.width) // 2, (canvas.height - photo.height) // 2))
+    return _to_jpeg(canvas, quality)
 
 
 def _to_jpeg(image: Image.Image, quality: int) -> bytes:

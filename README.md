@@ -76,12 +76,12 @@ Some rules are enforced in code, whatever the AI says:
 - No quote on food or animal posts, and no place named when a private home or address is visible.
 - If any item on the reviewer's 8-point checklist fails, the post is revised, even if the reviewer said approve.
 
-The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. For example, to run hashtags on a cheaper model:
+The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. Every step runs on Claude Sonnet 5.5 by default, with low effort (medium for the caption writer). For example, to give only the caption writer the strongest model:
 
 ```yaml
 ai:
   agents:
-    hashtags: { model: claude-sonnet-5-5, effort: medium }
+    caption_writer: { model: claude-opus-5-5, effort: medium }
 ```
 
 `CLAUDE.md` explains the architecture and the rules to keep for anyone (including Claude) working on the code.
@@ -203,4 +203,4 @@ Any `defaults` setting can be overridden per profile, for example `ai.account`, 
 
 ## Cost
 
-With Claude Opus 5.5, expect roughly $0.10 to $0.30 per daily post (about $3 to $9 a month), plus about $0.02 the first time each photo is analysed. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend less, move some agents to `claude-sonnet-5-5` or lower their effort. `forge usage` shows where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
+With the default Claude Sonnet 5.5 at low effort, expect roughly $0.03 to $0.08 per daily post (about $1 to $2.50 a month), plus about $0.01 the first time each photo is analysed. On Opus 5.5 at higher effort, the first runs cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend even less, move the analyst, hashtags or reviewer to `claude-haiku-5-5`. `forge usage` shows where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.

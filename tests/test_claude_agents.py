@@ -45,7 +45,7 @@ def test_caption_drops_unverified_quote_author():
     assert caption.quote == "Be still." and caption.quote_author is None
     system = msgs.calls[0]["system"]
     assert "English" in system and "$" not in system
-    assert msgs.calls[0]["model"] == "claude-opus-5-5"
+    assert msgs.calls[0]["model"] == "claude-sonnet-5-5"
 
 
 def test_planner_and_hashtags_and_review_round_trip():

@@ -66,4 +66,4 @@ forge preview -p main     # full workflow into drafts/, posts nothing
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.
 - **New accounts:** new accounts are new profiles in `config/profiles.yaml`, not code changes.
-- **Defaults:** use the current Claude models (`claude-opus-5-5` by default). Don't hard-code a model anywhere except as the config default.
+- **Defaults:** use the current Claude models (`claude-sonnet-5-5` by default, set in `config/profiles.yaml`). Don't hard-code a model anywhere except as the config default.

@@ -7,6 +7,7 @@ from instapostsforge import pipeline
 from instapostsforge.agents import Review
 from instapostsforge.config import Profile
 from instapostsforge.state import ProfileState
+from instapostsforge.state.store import photo_key
 
 
 def make_profile(**overrides):
@@ -113,7 +114,7 @@ def test_publish_records_post_and_cleans_up(tmp_path, ten_photos):
     c = components(tmp_path, ten_photos, FakeAI())
     result = pipeline.run(make_profile(), c, publish=True)
     assert c.host.deleted == list(c.host.uploaded)
-    saved = ProfileState("test", tmp_path / "state").posts[result.photo.id]
+    saved = ProfileState("test", tmp_path / "state").posts[photo_key(result.photo.id)]
     assert saved["hashtags"] == ["#streetphotography", "#rain", "#citylights"]
     assert saved["plan_reason"] == f"because {result.photo.id}"
 
@@ -136,3 +137,18 @@ def test_preview_posts_nothing(tmp_path, ten_photos):
 def test_plan_days_returns_distinct_photos(tmp_path, ten_photos):
     plan = pipeline.plan_days(make_profile(), components(tmp_path, ten_photos, FakeAI(), publish=False), 7)
     assert len({p.id for p, _ in plan}) == 7
+
+
+def test_state_never_stores_raw_photo_ids(tmp_path, ten_photos):
+    import json
+
+    old = tmp_path / "state" / "test"
+    old.mkdir(parents=True)
+    (old / "posts.json").write_text(json.dumps({"p0.jpg": {"posted_at": "2026-10-01T00:00:00+00:00", "media_id": "m"}}))
+    c = components(tmp_path, ten_photos, FakeAI())
+    assert c.state.is_posted("p0.jpg")  # older raw-ID state still counts
+    result = pipeline.run(make_profile(), c, publish=True)
+    assert result.photo.id != "p0.jpg"
+    for name in ("posts.json", "catalog.json"):  # keys only: in these fakes the file name equals the ID
+        assert all(key.startswith("h:") for key in json.loads((old / name).read_text()))
+    assert not any(pid.split(".")[0] in key for key in c.host.uploaded for pid in ten_photos)

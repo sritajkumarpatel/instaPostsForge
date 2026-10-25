@@ -201,6 +201,18 @@ Copy the `main` block in `config/profiles.yaml` under a new name. Point it at ne
 
 Any `defaults` setting can be overridden per profile, for example `ai.account`, `ai.quote`, `ai.playbooks_dir`, `ai.instructions_file` or `selection.strategy`, so a food account and a travel account can follow different rules from the same repo.
 
+## Security
+
+The repo is public, so it is built to hold nothing private:
+- Keys, tokens and the Drive folder link live only in `.env` (git-ignored) and in GitHub secrets.
+- `state/` keys photos by a one-way hash of their Drive file ID, because a raw ID is enough to download that photo from a link-shared folder. Staged images are named by the same hash.
+- In the workflows, secrets are passed only to the step that runs `forge`, never to `pip install` or third-party actions. Actions are pinned to commit SHAs, and Dependabot proposes updates weekly.
+- Network errors from the Instagram API never include the request URL, which carries the access token.
+- Staged JPEGs are re-encoded without EXIF, so no GPS location or camera data is published.
+- The `media` branch starts empty and holds one image for about a minute per post. Preview artifacts expire after 3 days.
+
+In the repo's Settings → Code security, turn on secret scanning, push protection and Dependabot alerts.
+
 ## Cost
 
 With the default Claude Sonnet 5.5 at low effort, expect roughly $0.03 to $0.08 per daily post (about $1 to $2.50 a month), plus about $0.01 the first time each photo is analysed. On Opus 5.5 at higher effort, the first runs cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend even less, move the analyst, hashtags or reviewer to `claude-haiku-5-5`. `forge usage` shows where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.

@@ -5,16 +5,33 @@ catalog.json   the photo analyst's notes per photo, so each photo is analysed on
 insights.json  reach, likes, saves and shares per post, used by the planner and hashtag strategist
 
 None of these files hold secrets; the workflow commits them back to the repo after each post.
+Photos are keyed by a hash of their source file ID, never the ID itself: the repo is public,
+and a Drive file ID is enough to download that photo from a link-shared folder.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_STATE_DIR = Path("state")
+
+
+KEY_PREFIX = "h:"
+
+
+def photo_key(photo_id: str) -> str:
+    """A public, one-way key for a photo. Drive IDs are long random strings, so this can't be reversed."""
+    if photo_id.startswith(KEY_PREFIX):
+        return photo_id
+    return KEY_PREFIX + hashlib.sha256(photo_id.encode("utf-8")).hexdigest()[:32]
+
+
+def _hash_keys(data: dict) -> dict:
+    return {photo_key(k): v for k, v in data.items()}
 
 
 def _now() -> str:
@@ -24,8 +41,9 @@ def _now() -> str:
 class ProfileState:
     def __init__(self, profile: str, state_dir: Path = DEFAULT_STATE_DIR):
         self.dir = state_dir / profile
-        self.posts: dict = self._load("posts.json")
-        self.catalog: dict = self._load("catalog.json")
+        # Older state files used raw IDs; they are re-keyed here and saved hashed on the next write.
+        self.posts: dict = _hash_keys(self._load("posts.json"))
+        self.catalog: dict = _hash_keys(self._load("catalog.json"))
         self.insights: dict = self._load("insights.json")
 
     def _load(self, name: str) -> dict:
@@ -45,14 +63,14 @@ class ProfileState:
         return set(self.posts)
 
     def is_posted(self, photo_id: str) -> bool:
-        return photo_id in self.posts
+        return photo_key(photo_id) in self.posts
 
     def history(self, limit: int = 30) -> list[dict]:
         """Recent posts, newest first, joined with their analysis and results."""
         entries = sorted(self.posts.items(), key=lambda kv: kv[1].get("posted_at", ""), reverse=True)[:limit]
         out = []
-        for photo_id, post in entries:
-            analysis = self.catalog.get(photo_id, {}).get("analysis", {})
+        for key, post in entries:
+            analysis = self.catalog.get(key, {}).get("analysis", {})
             out.append(
                 {
                     "posted_at": post.get("posted_at"),
@@ -97,7 +115,7 @@ class ProfileState:
         }
 
     def record_post(self, photo_id: str, *, photo_name: str, media_id: str, caption: str, hashtags: list[str], plan_reason: str) -> None:
-        self.posts[photo_id] = {
+        self.posts[photo_key(photo_id)] = {
             "name": photo_name,
             "media_id": media_id,
             "caption": caption,
@@ -118,25 +136,26 @@ class ProfileState:
     # --- catalog -----------------------------------------------------------
 
     def analysis_for(self, photo_id: str) -> dict | None:
-        return self.catalog.get(photo_id, {}).get("analysis")
+        return self.catalog.get(photo_key(photo_id), {}).get("analysis")
 
     def fingerprint_for(self, photo_id: str) -> str | None:
-        return self.catalog.get(photo_id, {}).get("fingerprint")
+        return self.catalog.get(photo_key(photo_id), {}).get("fingerprint")
 
     def save_analysis(self, photo_id: str, photo_name: str, analysis: dict, fingerprint: str | None = None) -> None:
         entry = {"name": photo_name, "analysis": analysis, "analysed_at": _now()}
         if fingerprint:
             entry["fingerprint"] = fingerprint
-        self.catalog[photo_id] = entry
+        self.catalog[photo_key(photo_id)] = entry
         self._save("catalog.json", self.catalog)
 
-    def posted_within(self, days: int) -> list[str]:
-        """IDs of photos posted in the last `days` days."""
+    def recent_fingerprints(self, days: int) -> list[str]:
+        """Fingerprints of photos posted in the last `days` days."""
         cutoff = datetime.now(timezone.utc).timestamp() - days * 86400
         return [
-            photo_id
-            for photo_id, post in self.posts.items()
+            fp
+            for key, post in self.posts.items()
             if post.get("posted_at") and datetime.fromisoformat(post["posted_at"]).timestamp() >= cutoff
+            if (fp := self.catalog.get(key, {}).get("fingerprint"))
         ]
 
     # --- insights ----------------------------------------------------------

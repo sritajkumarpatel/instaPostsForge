@@ -27,6 +27,10 @@ class FakeGitHub:
             return Resp(200 if self.branch_exists else 404)
         if method == "GET" and path.startswith("/git/ref/"):
             return Resp(data={"object": {"sha": "abc"}})
+        if method == "POST" and path == "/git/trees":
+            return Resp(201, {"sha": "tree-sha"})
+        if method == "POST" and path == "/git/commits":
+            return Resp(201, {"sha": "commit-sha"})
         if method == "PUT":
             return Resp(201, {"content": {"sha": "file-sha"}})
         return Resp(201)
@@ -52,10 +56,12 @@ def test_upload_returns_raw_link_and_delete_uses_sha():
     assert method == "DELETE" and body["sha"] == "file-sha" and body["branch"] == "media"
 
 
-def test_creates_media_branch_when_missing():
+def test_creates_empty_media_branch_when_missing():
     gh = FakeGitHub(branch_exists=False)
     host(gh).upload("x.jpg", b"j")
-    assert ("POST", "/git/refs", {"ref": "refs/heads/media", "sha": "abc"}) in gh.calls
+    commit = next(body for method, path, body in gh.calls if path == "/git/commits")
+    assert commit["parents"] == [] and commit["tree"] == "tree-sha"  # no history: never a copy of main
+    assert ("POST", "/git/refs", {"ref": "refs/heads/media", "sha": "commit-sha"}) in gh.calls
 
 
 def test_private_repo_is_refused():

@@ -20,6 +20,11 @@ class PublishError(Exception):
     pass
 
 
+def _network_error(what: str, err: requests.RequestException) -> PublishError:
+    # requests puts the full URL, access token included, in its messages; keep it out of logs.
+    return PublishError(f"{what} failed: could not reach Instagram ({type(err).__name__}).")
+
+
 class InstagramPublisher(Publisher):
     def __init__(self, settings: dict, session: requests.Session | None = None, sleep=time.sleep):
         self.token = env_value(settings.get("access_token_env"))
@@ -30,7 +35,10 @@ class InstagramPublisher(Publisher):
 
     def _call(self, method: str, path: str, **params) -> dict:
         params["access_token"] = self.token
-        response = self.http.request(method, f"{self.base}/{path}", params=params, timeout=60)
+        try:
+            response = self.http.request(method, f"{self.base}/{path}", params=params, timeout=60)
+        except requests.RequestException as err:
+            raise _network_error(f"Instagram API {method} {path}", err) from None
         data = response.json() if response.content else {}
         if response.status_code >= 400 or "error" in data:
             message = data.get("error", {}).get("message", response.text)
@@ -83,11 +91,14 @@ class InstagramPublisher(Publisher):
 def refresh_long_lived_token(token: str, session: requests.Session | None = None) -> dict:
     """Extends a long-lived token by 60 days. Works on tokens at least 24 hours old."""
     http = session or requests.Session()
-    response = http.get(
-        f"{GRAPH_HOST}/refresh_access_token",
-        params={"grant_type": "ig_refresh_token", "access_token": token},
-        timeout=30,
-    )
+    try:
+        response = http.get(
+            f"{GRAPH_HOST}/refresh_access_token",
+            params={"grant_type": "ig_refresh_token", "access_token": token},
+            timeout=30,
+        )
+    except requests.RequestException as err:
+        raise _network_error("Token refresh", err) from None
     data = response.json()
     if response.status_code >= 400 or "error" in data:
         raise PublishError(f"Token refresh failed: {data.get('error', {}).get('message', response.text)}")

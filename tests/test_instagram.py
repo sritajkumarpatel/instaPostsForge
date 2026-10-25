@@ -44,3 +44,16 @@ def test_container_error_raises():
     publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
     with pytest.raises(PublishError):
         publisher.publish_image("https://x/img.jpg", "hello")
+
+
+def test_network_errors_never_show_the_token():
+    import requests
+
+    class Broken:
+        def request(self, method, url, params=None, timeout=None):
+            raise requests.ConnectionError(f"Max retries exceeded with url: {url}?access_token={params['access_token']}")
+
+    publisher = InstagramPublisher(SETTINGS, session=Broken())
+    with pytest.raises(PublishError) as info:
+        publisher.account()
+    assert "tok" not in str(info.value) and info.value.__cause__ is None

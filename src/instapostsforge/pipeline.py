@@ -24,6 +24,7 @@ from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
 from .state import ProfileState
+from .state.store import photo_key
 from .usage import UsageLog
 
 log = logging.getLogger(__name__)
@@ -137,10 +138,7 @@ class Run:
     def eligible(self, photos: list[Photo]) -> list[Photo]:
         """Drops photos that must not be posted (now), and low-quality ones while better remain."""
         rules = self.profile.selection
-        recent_prints = [
-            fp for pid in self.c.state.posted_within(int(rules.get("near_duplicate_days", 30)))
-            if (fp := self.c.state.fingerprint_for(pid))
-        ]
+        recent_prints = self.c.state.recent_fingerprints(int(rules.get("near_duplicate_days", 30)))
         skipped: dict[str, int] = {}
         allowed = []
         for photo in photos:
@@ -330,7 +328,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
 
     if components.host is None or components.publisher is None:
         raise RuntimeError("Publishing needs both an image host and a publisher.")
-    key = f"{profile.name}-{_safe_name(photo.id)}.jpg"
+    key = f"{profile.name}-{photo_key(photo.id)[len('h:'):]}.jpg"  # never the Drive ID: the repo is public
     url = components.host.upload(key, prepared.jpeg)
     try:
         media_id = components.publisher.publish_image(url, caption.render(), caption.alt_text)

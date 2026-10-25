@@ -18,6 +18,7 @@ from ..config import ConfigError, env_value
 from .base import ImageHost
 
 API = "https://api.github.com"
+BRANCH_README = "Each day's photo is staged here for about a minute while Instagram downloads it, then deleted.\n"
 log = logging.getLogger(__name__)
 
 
@@ -55,9 +56,16 @@ class GitHubHost(ImageHost):
                 "or choose another hosting type."
             )
         if self._request("GET", f"/branches/{self.branch}").status_code == 404:
-            default = repo["default_branch"]
-            sha = self._request("GET", f"/git/ref/heads/{default}").json()["object"]["sha"]
-            self._request("POST", "/git/refs", json={"ref": f"refs/heads/{self.branch}", "sha": sha})
+            # An empty branch with no history, so it never carries a copy of the code or state.
+            tree = self._request(
+                "POST",
+                "/git/trees",
+                json={"tree": [{"path": "README.md", "mode": "100644", "type": "blob", "content": BRANCH_README}]},
+            ).json()["sha"]
+            commit = self._request(
+                "POST", "/git/commits", json={"message": "Start the media branch", "tree": tree, "parents": []}
+            ).json()["sha"]
+            self._request("POST", "/git/refs", json={"ref": f"refs/heads/{self.branch}", "sha": commit})
         self._ready = True
 
     def upload(self, key: str, jpeg: bytes) -> str:

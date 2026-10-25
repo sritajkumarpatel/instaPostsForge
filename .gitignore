@@ -1,0 +1,35 @@
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*service-account*.json
+credentials*.json
+
+# Local working files
+drafts/
+cache/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

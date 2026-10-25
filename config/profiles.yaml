@@ -1,0 +1,61 @@
+# Each profile is one Instagram account fed by one photo source.
+# To post to another account or pull from another Drive folder, copy a profile,
+# give it a new name, and point it at different environment variables.
+# Secrets never go in this file: it only names the variables in .env that hold them.
+
+defaults:
+  captions:
+    provider: claude
+    model: claude-opus-5-5
+    language: English
+    hashtags:
+      min: 3
+      max: 5            # Instagram allows at most 5 hashtags per post
+    quote: when_fitting # always | when_fitting | never
+    max_caption_chars: 2200
+  image:
+    keep_aspect_ratio: true
+    min_ratio: 0.8      # 4:5 portrait, the tallest Instagram feed shape
+    max_ratio: 1.91     # 1.91:1 landscape, the widest
+    max_width: 1440
+    jpeg_quality: 90
+    pad_color: auto     # auto (picks from the photo) or a hex colour like "#ffffff"
+  selection:
+    strategy: ordered   # ordered (oldest first) | random
+  hosting:
+    type: s3
+    endpoint_url_env: S3_ENDPOINT_URL
+    bucket_env: S3_BUCKET
+    access_key_id_env: S3_ACCESS_KEY_ID
+    secret_access_key_env: S3_SECRET_ACCESS_KEY
+    region_env: S3_REGION
+    url_expiry_seconds: 3600
+  instagram:
+    api_version: v23.0
+
+profiles:
+  main:
+    instagram:
+      access_token_env: IG_MAIN_ACCESS_TOKEN
+      user_id_env: IG_MAIN_USER_ID
+    source:
+      type: google_drive
+      folder_url: https://drive.google.com/drive/folders/REPLACE_WITH_FOLDER_ID
+      auth: api_key                 # api_key | service_account
+      api_key_env: GOOGLE_DRIVE_API_KEY
+      service_account_file_env: GOOGLE_SERVICE_ACCOUNT_FILE
+    captions:
+      # Optional hints for the caption writer. Leave empty to let each photo decide.
+      account_theme: ""
+      extra_instructions: ""
+
+  # Example of a second account fed from a local folder. Remove the leading "#"s to use it.
+  # travel:
+  #   instagram:
+  #     access_token_env: IG_TRAVEL_ACCESS_TOKEN
+  #     user_id_env: IG_TRAVEL_USER_ID
+  #   source:
+  #     type: local_folder
+  #     path: ~/Pictures/travel-posts
+  #   captions:
+  #     account_theme: "travel photography"

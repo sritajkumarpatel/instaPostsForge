@@ -1,4 +1,5 @@
 name: Daily post
+run-name: "Daily post: ${{ inputs.mode || 'post' }}${{ inputs.profile && format(' ({0})', inputs.profile) || '' }}"
 
 on:
   schedule:
@@ -23,6 +24,7 @@ concurrency:
 
 jobs:
   post:
+    name: ${{ inputs.mode || 'post' }} (${{ matrix.profile }})
     # Scheduled runs wait until you set the repository variable AUTO_POST to true, after a
     # manual run in post mode has worked. Manual runs always go ahead.
     if: github.event_name != 'schedule' || vars.AUTO_POST == 'true'

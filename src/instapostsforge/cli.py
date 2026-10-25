@@ -16,7 +16,10 @@ from .usage import format_table, load_month, summarize
 
 
 def _summary_lines(result) -> list[str]:
-    status = f"Published (media ID {result.media_id})" if result.published else f"Draft saved to `{result.draft_dir}`"
+    if result.published:
+        status = f"Published (media ID {result.media_id})"
+    else:
+        status = f"Preview only, nothing was posted to Instagram. Draft saved to `{result.draft_dir}`; to publish, run with mode **post**."
     lines = [
         f"## {result.profile}: {result.photo.name}",
         "",

@@ -22,6 +22,21 @@ defaults:
       reviewer:       { effort: medium }
     # Standing instructions every AI step follows (voice, topics to avoid, and so on).
     instructions_file: config/ai-instructions.md
+    # Per-category and per-mood rules. Each step gets only the sections for the photo's
+    # category and mood. A profile can point to its own folder.
+    playbooks_dir: config/playbooks
+    # What the account is about. Every AI step reads this, so fill it in per profile:
+    # without it captions stay generic. Leave a field empty to skip it.
+    account:
+      niche: ""               # e.g. "street and travel photography in India"
+      audience: ""            # e.g. "people who love slow travel and everyday street life"
+      location: ""            # e.g. "Bengaluru, India" (helps with seasons and festivals)
+      voice: ""               # e.g. "warm, observant, a little dry humour"
+      avoid: ""               # e.g. "food puns, the word 'wanderlust'"
+      ending_style: ""        # e.g. "a question about the reader's own city"
+    planning:
+      no_repeat_category: true        # never the same category two days running
+      max_same_mood_per_7_days: 2
     # USD per million tokens, used only to estimate cost in the usage log.
     pricing:
       claude-opus-5-5:   { input: 4.00,  output: 20.00 }
@@ -38,12 +53,16 @@ defaults:
     max_revisions: 1          # how many times the reviewer may send a post back
     on_review_reject: skip    # skip (no post that day) | post (post the last draft anyway)
     max_new_analyses_per_run: 20
-    account_theme: ""         # optional, e.g. "street and travel photography in India"
     extra_instructions: ""    # optional, anything the AI should always keep in mind
   selection:
     strategy: ai_planner      # ai_planner | random | ordered
     when_exhausted: stop      # stop (fail and ask for more photos) | recycle (start over)
     max_candidates: 60
+    # Content rules, enforced in code whatever the AI says.
+    min_quality: 4            # photos scoring lower are used only when nothing better is left
+    skip_screenshots: true    # never post screenshots, memes or photos of documents
+    allow_children: false     # photos where a child is visible are skipped unless true
+    near_duplicate_days: 30   # keep a near-identical photo at least this many days from the first
   image:
     keep_aspect_ratio: true
     min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape
@@ -83,4 +102,6 @@ profiles:
   #     folder_url_env: DRIVE_FOLDER_TRAVEL
   #     api_key_env: GOOGLE_DRIVE_API_KEY
   #   ai:
-  #     account_theme: "travel photography"
+  #     account:
+  #       niche: "travel photography"
+  #     instructions_file: config/ai-instructions-travel.md   # optional, its own standing rules

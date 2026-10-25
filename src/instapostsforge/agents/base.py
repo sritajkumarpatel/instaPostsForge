@@ -57,5 +57,5 @@ class AIWorkflow(ABC):
         """Hashtag strategist: a small, varied, specific set of tags."""
 
     @abstractmethod
-    def review(self, image_jpeg: bytes, *, caption: Caption) -> Review:
+    def review(self, image_jpeg: bytes, *, caption: Caption, analysis: dict | None = None) -> Review:
         """Reviewer: approves the post or sends it back once with feedback."""

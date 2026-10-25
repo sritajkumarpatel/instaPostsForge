@@ -6,7 +6,7 @@ Guidance for Claude (Claude Code or any Claude session) working in this reposito
 
 instaPostsForge posts one photo a day to an Instagram account from a Google Drive folder. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
 
-In agentic terms it is a workflow (prompt chaining with gates, plus an evaluator-optimizer review loop), not an autonomous agent. Don't give the model tools or let it choose steps without a strong reason. See `docs/ARCHITECTURE.md`.
+In agentic terms it is a workflow (prompt chaining with gates, light routing by photo category, and an evaluator-optimizer review loop), not an autonomous agent. Don't give the model tools or let it choose steps without a strong reason. See `docs/ARCHITECTURE.md`.
 
 ## The workflow
 
@@ -28,8 +28,13 @@ In agentic terms it is a workflow (prompt chaining with gates, plus an evaluator
 | Model, effort and max tokens, per agent | `ai.model` / `ai.effort` / `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
 | What each agent is asked to do | `src/instapostsforge/prompts/<agent>.md` (`$placeholders` are filled by `agents/claude.py`) |
 | Account-wide voice and rules for every agent | `config/ai-instructions.md` (path set by `ai.instructions_file`) |
+| What the account is about (niche, audience, location, voice) | `ai.account` in `config/profiles.yaml`, rendered into every prompt as `$account_notes` |
+| Rules per photo category and mood | `config/playbooks/categories.md` and `moods.md`, one `## key` section each; only the photo's sections reach the caption writer, hashtag strategist and reviewer as `$playbook` |
+| Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (category and mood variety), applied in `Run.eligible` and `Run.keep_variety` |
 | Structured output schemas | Pydantic models in `src/instapostsforge/agents/claude.py` |
 | Interface the pipeline depends on | `AIWorkflow` in `src/instapostsforge/agents/base.py` |
+
+The categories and moods are fixed lists in `agents/playbooks.py` and must match the `Category` and `Mood` types in `agents/claude.py` and the headings in the playbooks; a test checks this. To add a category, change all three.
 
 The agent names are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. Use these names for config keys, usage-log rows and prompt files.
 
@@ -46,6 +51,7 @@ Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether 
 - **No repeats:** a photo must never be posted twice. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
 - **Instagram limits:** at most 5 hashtags, at most 2,200 characters, JPEG only, and an aspect ratio between 4:5 and 1.91:1. These are enforced in `captions/validator.py` and `imaging/processor.py`. Don't loosen them.
 - **Quote authors:** never publish an attributed quote unless the model was certain of the author (`quote_is_attributed`).
+- **Content rules:** screenshots, photos with children (unless `allow_children`), and near-duplicates of recent posts are never posted. These are enforced in `pipeline.py`, not just asked for in a prompt. Keep it that way.
 - **AI fallbacks:** an AI failure must never produce a broken post. Fall back (random photo) or skip the day (`ReviewRejected`). Don't post unvalidated text.
 
 ## Working on the code

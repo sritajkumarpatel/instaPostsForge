@@ -24,8 +24,8 @@ def make_profile(**overrides):
 
 
 @pytest.fixture
-def ten_photos(jpeg_factory):
-    return {f"p{i}.jpg": jpeg_factory(800, 800) for i in range(10)}
+def ten_photos(distinct_jpeg):
+    return {f"p{i}.jpg": distinct_jpeg(i) for i in range(10)}
 
 
 def components(tmp_path, files, ai, publish=True, insights=None):

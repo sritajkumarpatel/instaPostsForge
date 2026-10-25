@@ -1,0 +1,56 @@
+name: Refresh Instagram token
+
+# Instagram tokens expire after about 60 days. This refreshes each profile's token once a
+# month and saves it back to its repository secret, so posting never stops.
+# It needs the secret GH_SECRETS_TOKEN: a fine-grained GitHub token for this repository
+# with "Secrets: Read and write" permission. Without it the job only warns.
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"  # 03:00 UTC on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(vars.PROFILES || '["main"]') }}
+    env:
+      PROFILE: ${{ matrix.profile }}
+      GH_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+      # The same per-profile token secrets as the daily post workflow.
+      IG_MAIN_ACCESS_TOKEN: ${{ secrets.IG_MAIN_ACCESS_TOKEN }}
+      # IG_TRAVEL_ACCESS_TOKEN: ${{ secrets.IG_TRAVEL_ACCESS_TOKEN }}
+    steps:
+      - name: Check the GitHub token is set
+        id: ready
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_SECRETS_TOKEN is not set, so the Instagram token can't be saved. Add it, or run 'forge refresh-token' yourself every 50 days."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.ready.outputs.ok == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Refresh and save the token
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          pip install .
+          VAR=$(python -c "from instapostsforge.config import load_profile; print(load_profile('$PROFILE').instagram['access_token_env'])")
+          forge refresh-token --profile "$PROFILE" --token-file "$RUNNER_TEMP/token"
+          echo "::add-mask::$(cat "$RUNNER_TEMP/token")"
+          gh secret set "$VAR" --repo "$GITHUB_REPOSITORY" < "$RUNNER_TEMP/token"
+          rm -f "$RUNNER_TEMP/token"
+          echo "Saved the refreshed token to $VAR."

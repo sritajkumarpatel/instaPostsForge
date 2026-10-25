@@ -25,19 +25,22 @@ class FakeSource(PhotoSource):
 class FakeAI(AIWorkflow):
     """Scripted answers; records what each agent was asked."""
 
-    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=()):
+    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=(), analyses=None, quotes=None):
         self.plan_order = plan_order
         self.captions = list(captions or [])
         self.tag_sets = list(tag_sets or [])
         self.reviews = list(reviews or [])
         self.fail = set(fail)
+        self.analyses = analyses or {}
+        self.quotes = list(quotes or [])
         self.calls: dict[str, list] = {"analyze": [], "plan": [], "caption": [], "tags": [], "review": []}
 
     def analyze(self, image_jpeg, *, photo_name):
         self.calls["analyze"].append(photo_name)
         if "analyze" in self.fail:
             raise RuntimeError("analyst down")
-        return {"subject": f"subject of {photo_name}", "mood": "calm", "quality_score": 7}
+        base = {"subject": f"subject of {photo_name}", "category": "street", "mood": "calm", "quality_score": 7}
+        return {**base, **self.analyses.get(photo_name, {})}
 
     def plan(self, candidates, history, *, today, horizon):
         self.calls["plan"].append({"candidates": candidates, "history": history, "horizon": horizon})
@@ -49,13 +52,14 @@ class FakeAI(AIWorkflow):
     def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback=""):
         self.calls["caption"].append({"angle": angle, "feedback": feedback, "analysis": analysis})
         text = self.captions.pop(0) if self.captions else "Quiet streets after rain."
-        return Caption(text=text, hashtags=[], alt_text="A wet street at night.")
+        quote = self.quotes.pop(0) if self.quotes else None
+        return Caption(text=text, hashtags=[], alt_text="A wet street at night.", quote=quote)
 
     def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback=""):
         self.calls["tags"].append({"recent": recent_tag_sets, "stats": tag_stats, "feedback": feedback})
         return self.tag_sets.pop(0) if self.tag_sets else ["#streetphotography", "#rain", "#citylights"]
 
-    def review(self, image_jpeg, *, caption):
+    def review(self, image_jpeg, *, caption, analysis=None):
         self.calls["review"].append(caption.render())
         return self.reviews.pop(0) if self.reviews else Review(approved=True)
 

@@ -1,19 +1,18 @@
 name: Daily post
 
 on:
+  schedule:
+    - cron: "30 13 * * *"  # 13:30 UTC = 7:00 pm IST. Change to your audience's best time; GitHub may start it a few minutes late.
   workflow_dispatch:
     inputs:
       profile:
-        description: Profile from config/profiles.yaml
-        default: main
+        description: Profile from config/profiles.yaml (empty = every profile in the PROFILES variable)
+        default: ""
       mode:
-        description: preview (no posting), plan (next 7 days) or post
+        description: check (keys and folder), plan (next 7 days), preview (no posting) or post
         type: choice
-        options: [preview, plan, post]
+        options: [check, plan, preview, post]
         default: preview
-  # Turn on once a manual run has posted successfully. Times are UTC.
-  # schedule:
-  #   - cron: "30 13 * * *"
 
 permissions:
   contents: write  # stage the photo on the media branch and commit state/ after each post
@@ -24,17 +23,31 @@ concurrency:
 
 jobs:
   post:
+    # Scheduled runs wait until you set the repository variable AUTO_POST to true, after a
+    # manual run in post mode has worked. Manual runs always go ahead.
+    if: github.event_name != 'schedule' || vars.AUTO_POST == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 1  # one profile at a time, so state commits never race
+      matrix:
+        # Scheduled runs post to every profile listed in the repository variable PROFILES,
+        # a JSON list such as ["main","travel"] (Settings > Secrets and variables > Actions > Variables).
+        profile: ${{ fromJSON(inputs.profile && format('["{0}"]', inputs.profile) || vars.PROFILES || '["main"]') }}
     env:
-      PROFILE: ${{ inputs.profile || 'main' }}
+      PROFILE: ${{ matrix.profile }}
       MODE: ${{ inputs.mode || 'post' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # One set of three secrets per profile. Add lines here when you add a profile.
       IG_MAIN_ACCESS_TOKEN: ${{ secrets.IG_MAIN_ACCESS_TOKEN }}
       IG_MAIN_USER_ID: ${{ secrets.IG_MAIN_USER_ID }}
       DRIVE_FOLDER_MAIN: ${{ secrets.DRIVE_FOLDER_MAIN }}
-      GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # IG_TRAVEL_ACCESS_TOKEN: ${{ secrets.IG_TRAVEL_ACCESS_TOKEN }}
+      # IG_TRAVEL_USER_ID: ${{ secrets.IG_TRAVEL_USER_ID }}
+      # DRIVE_FOLDER_TRAVEL: ${{ secrets.DRIVE_FOLDER_TRAVEL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -45,7 +58,7 @@ jobs:
       - run: forge "$MODE" --profile "$PROFILE"
       - name: Save what the workflow learned
         # Commits posts, photo analyses, insights and the token usage log, even when the run stops early.
-        if: always()
+        if: always() && env.MODE != 'check'
         run: |
           git config user.name "instaPostsForge bot"
           git config user.email "actions@users.noreply.github.com"

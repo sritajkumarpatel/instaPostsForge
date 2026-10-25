@@ -11,6 +11,7 @@ from ..models import Caption
 GENERIC_TAGS = {
     "#explore", "#explorepage", "#viral", "#trending", "#fyp", "#foryou", "#foryoupage",
     "#instagood", "#instadaily", "#reels", "#like4like", "#follow4follow", "#followforfollow",
+    "#photooftheday", "#picoftheday", "#love", "#instagram", "#instalike", "#likeforlikes", "#followme",
 }
 TAG_PATTERN = re.compile(r"^#[\w]+$", re.UNICODE)
 
@@ -38,7 +39,7 @@ class CaptionRules:
 def clean_hashtag(tag: str) -> str | None:
     tag = "#" + re.sub(r"\s+", "", tag.strip().lstrip("#"))
     tag = tag.lower()
-    if not TAG_PATTERN.match(tag) or tag in GENERIC_TAGS:
+    if not TAG_PATTERN.match(tag) or tag in GENERIC_TAGS or len(tag) > 31:
         return None
     return tag
 

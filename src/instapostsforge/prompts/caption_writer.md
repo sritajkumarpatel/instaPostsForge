@@ -30,6 +30,14 @@ $quote_rule Follow the playbook's guidance on how often a quote suits this categ
 
 One or two plain sentences describing what is in the photo, for people using screen readers. No interpretation or mood words.
 
+## Multi-photo posts
+
+When you are shown several photos, they go out together as one post, photo 1 first as the cover.
+- The hook is about the cover; the body ties the photos into one story or place, and may mention one detail from a later photo to make people swipe. At most one light nudge to swipe, and no "swipe left" clichés.
+- Use the analyst's notes for all of them, and describe only what the photos show. taken_at may differ per photo.
+- The length range is the cover's playbook range, plus up to 60 characters.
+- alt_text describes photo 1; more_alt_texts gives one alt text for each other photo, in order.
+
 Write in $language.
 
 # Playbook for this photo

@@ -51,6 +51,8 @@ jobs:
         run: forge "$MODE" --profile "$PROFILE"
         # Secrets are given to this step only, never to installs or third-party actions.
         env:
+          # Repository variable: set MULTI_PHOTO to false to post single photos only. Unset, config decides.
+          MULTI_PHOTO: ${{ vars.MULTI_PHOTO }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

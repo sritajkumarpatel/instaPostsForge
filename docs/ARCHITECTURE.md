@@ -34,11 +34,12 @@ flowchart TD
     List --> Empty{Any unposted photos?}
     Empty -- no --> Stop([Stop: add more photos])
     Empty -- yes --> Analyst[["AI: Photo analyst<br/>new photos only"]]
-    Analyst --> Planner[["AI: Planner<br/>picks today's photo and angle"]]
+    Analyst --> Sets[Group photos into sets<br/>same outing or place, if multi-photo is on]
+    Sets --> Planner[["AI: Planner<br/>picks today's photo, or 2 to 5 from one set, and the angle"]]
     Planner --> ValidPick{Valid photo ID?}
     ValidPick -- no --> Random[Fall back to a random unposted photo]
     ValidPick -- yes --> Prepare
-    Random --> Prepare[Prepare JPEG, keep aspect ratio]
+    Random --> Prepare[Prepare JPEGs, keep aspect ratio<br/>set photos framed to the cover's shape]
     Prepare --> Writer[["AI: Caption writer"]]
     Writer --> Tags[["AI: Hashtag strategist"]]
     Tags --> Rules{"Passes Instagram rules?<br/>3 to 5 tags, 2,200 chars"}
@@ -85,7 +86,7 @@ It combines these building blocks and patterns:
 | Pattern | Where it appears |
 | --- | --- |
 | **Augmented LLM** (the building block) | Each Claude call gets structured outputs (Pydantic schemas) and memory: the photo catalog, post history and insights in `state/`. No tools are exposed to the model. |
-| **Prompt chaining** | Analyst → planner → caption writer → hashtag strategist → reviewer. Each step's output is the next step's input, with programmatic **gates** in between: the planner's photo ID must exist, and captions and tags must pass `captions/validator.py`. |
+| **Prompt chaining** | Analyst → planner → caption writer → hashtag strategist → reviewer. Each step's output is the next step's input, with programmatic **gates** in between: the planner's photo IDs must exist (and a set's extra photos must come from the cover's set), and captions and tags must pass `captions/validator.py`. |
 | **Evaluator-optimizer** | The reviewer (evaluator) approves a post or returns feedback. The caption writer and hashtag strategist (optimizers) then revise. The loop is bounded by `ai.max_revisions` (2), only the part that failed is redone, and a rule failure also feeds back as feedback. The capture date from EXIF or the file name is passed in as `taken_at`, so the evaluator can verify dates the writer uses. |
 | **Routing** (light) | The analyst classifies each photo into one of 12 categories and 8 moods. Code then routes only that category's and mood's playbook (`config/playbooks/`) to the caption writer, hashtag strategist and reviewer. The path stays the same; the instructions change per photo. |
 | **Guardrails and fallbacks** | Code, not the model, enforces Instagram's limits and the content rules: it skips screenshots, photos with children (unless allowed) and near-duplicates of recent posts, keeps categories and moods varied, drops quotes on food and animal posts, hides private locations, refuses unverified quote authors, falls back to a random photo when the planner fails, and skips the day rather than post an unapproved caption. A failed reviewer checklist item always means revise. |

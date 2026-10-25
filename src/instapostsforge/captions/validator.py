@@ -67,6 +67,7 @@ def normalize_caption(caption: Caption, rules: CaptionRules) -> Caption:
         alt_text=caption.alt_text.strip()[:1000],
         quote=(caption.quote or "").strip() or None,
         quote_author=(caption.quote_author or "").strip() or None,
+        more_alt_texts=[a.strip()[:1000] for a in caption.more_alt_texts],
     )
     if len(cleaned.render()) > rules.max_chars:
         raise CaptionError(f"Caption is {len(cleaned.render())} characters; the limit is {rules.max_chars}.")

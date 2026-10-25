@@ -15,6 +15,8 @@ Choose between $min_tags and $max_tags hashtags for this post, as this mix:
 - Rotate: don't repeat the exact set of any of the last 10 posts, and avoid any tag used in more than half of them unless its results are clearly the best.
 - When tag results are given, favour tags with higher average reach. Treat tags used fewer than 3 times as unproven rather than bad.
 
+For a multi-photo post the brief also lists the other photos. Tag what the post as a whole is about; the specific tags may come from any of its photos.
+
 Give each tag a role and a short reason.
 
 # Playbook for this photo

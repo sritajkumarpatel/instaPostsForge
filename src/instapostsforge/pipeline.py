@@ -3,23 +3,28 @@
 Code steps fetch, prepare, post and keep score; AI steps (see agents/) decide what to post
 and what to say. Every AI step has a safe fallback, so a bad AI answer never produces a
 broken post: at worst the planner falls back to a random photo, or nothing is posted.
+
+A day's post is one photo, or, when multi-photo posts are on, possibly 2 to 5 photos from
+one outing or place (see grouping.py). Code proposes the sets; the planner decides.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import random
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
-from .agents import AIWorkflow, PlanItem, build_workflow
+from .agents import AIWorkflow, PlanItem, SetPhoto, build_workflow
 from .agents.playbooks import NO_QUOTE_CATEGORIES
 from .captions import CaptionError, CaptionRules, normalize_caption
 from .config import Profile
 from .hosting import ImageHost, build_host
-from .imaging import PreparedImage, fingerprint, fingerprint_distance, name_time, prepare_image
+from .grouping import PhotoSet, propose_sets
+from .imaging import PreparedImage, fingerprint, fingerprint_distance, frame_to_ratio, name_time, prepare_image
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
@@ -31,9 +36,23 @@ log = logging.getLogger(__name__)
 
 DRAFTS_DIR = Path("drafts")
 ANALYSIS_FIELDS = (
-    "category", "mood", "subject", "main_subject", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
+    "category", "mood", "subject", "main_subject", "orientation", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
 )
 NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
+TAKEN_AT_FORMAT = "%A %d %B %Y, %H:%M"
+OFF_WORDS = {"false", "0", "no", "off"}
+
+
+def multi_photo_settings(profile: Profile) -> dict:
+    """selection.multi_photo, with the MULTI_PHOTO environment variable (a GitHub variable in
+    Actions) overriding its enabled switch, so multi-photo posts can be turned off without a commit."""
+    settings = dict(profile.selection.get("multi_photo") or {})
+    switch = os.environ.get("MULTI_PHOTO", "").strip().lower()
+    if switch:
+        settings["enabled"] = switch not in OFF_WORDS
+    settings.setdefault("enabled", False)
+    settings["max_photos"] = max(2, min(10, int(settings.get("max_photos", 5))))
+    return settings
 
 
 def subject_word(subject: str | None) -> str:
@@ -116,7 +135,19 @@ class Run:
     def taken_at(self, photo: Photo) -> str | None:
         """When the photo was taken, from EXIF or the file name, as the AI steps see it."""
         when = photo.taken_at or self.image(photo).taken_at or name_time(photo.name)
-        return when.strftime("%A %d %B %Y, %H:%M") if when else None
+        return when.strftime(TAKEN_AT_FORMAT) if when else None
+
+    def known_time(self, photo: Photo) -> datetime | None:
+        """The capture time without downloading the photo: source metadata, the analyst's notes or the file name."""
+        if photo.taken_at:
+            return photo.taken_at
+        noted = (self.c.state.analysis_for(photo.id) or {}).get("taken_at")
+        if noted:
+            try:
+                return datetime.strptime(noted, TAKEN_AT_FORMAT)
+            except ValueError:
+                pass
+        return name_time(photo.name)
 
     # --- AI steps ----------------------------------------------------------
 
@@ -134,6 +165,9 @@ class Run:
                 analysis = self.c.ai.analyze(preview, photo_name=photo.name)
                 if taken := self.taken_at(photo):
                     analysis["taken_at"] = taken  # from metadata, not the model, so later steps can trust it
+                image = self.image(photo)
+                ratio = image.width / image.height
+                analysis["orientation"] = "portrait" if ratio < 0.95 else "landscape" if ratio > 1.05 else "square"
                 self.c.state.save_analysis(photo.id, photo.name, analysis, fingerprint(preview))
             except Exception as err:
                 log.warning("Could not analyse %s: %s", photo.name, err)
@@ -173,39 +207,101 @@ class Run:
         self.notes.append(f"Every remaining photo scored below {floor} for quality, so a low-scoring one was posted.")
         return allowed
 
+    def members(self, entry: tuple[Photo, PlanItem]) -> list[str]:
+        return [entry[0].id, *entry[1].extra_ids]
+
     def keep_variety(self, order: list[tuple[Photo, PlanItem]], horizon: int) -> list[tuple[Photo, PlanItem]]:
         """Reorders so no category repeats on consecutive days, no main subject repeats within a few
-        days, and no mood exceeds its weekly limit. If nothing fits, the planner's next pick goes ahead."""
+        days, and no mood exceeds its weekly limit. If nothing fits, the planner's next pick goes ahead.
+        A multi-photo post counts with its cover's category and mood and every photo's subject."""
         planning = self.profile.ai.get("planning") or {}
         no_repeat = planning.get("no_repeat_category", True)
         subject_days = int(planning.get("no_repeat_subject_days", 3))
         max_mood = int(planning.get("max_same_mood_per_7_days", 2))
+        max_multi = int(multi_photo_settings(self.profile).get("max_per_7_days", 3))
         history = self.c.state.history(limit=max(6, subject_days))
         last_category = history[0].get("category") if history else None
         recent_moods = [h.get("mood") for h in history]  # newest first; with today, a 7-day window
-        recent_subjects = [subject_word(h.get("main_subject")) for h in history]  # newest first
+        recent_subjects = [{subject_word(s) for s in h.get("all_subjects") or [h.get("main_subject")]} for h in history]
+        recent_multi = [h.get("photo_count", 1) > 1 for h in history]
         remaining = list(order)
-        chosen = []
+        chosen, used = [], set()
         while remaining and len(chosen) < horizon:
+            remaining = [e for e in remaining if not used & set(self.members(e))]  # a photo goes out once
+            if not remaining:
+                break
+
             def fits(entry):
                 analysis = self.c.state.analysis_for(entry[0].id) or {}
                 category, mood = analysis.get("category"), analysis.get("mood")
-                subject = subject_word(analysis.get("main_subject"))
                 if no_repeat and category and category == last_category:
                     return False
-                if subject and subject in recent_subjects[:subject_days]:
+                taken = set().union(*recent_subjects[:subject_days])
+                if any(subject_word((self.c.state.analysis_for(i) or {}).get("main_subject")) in taken - {""} for i in self.members(entry)):
                     return False
                 return not mood or recent_moods[:6].count(mood) < max_mood
+
             pick = next((e for e in remaining if fits(e)), remaining[0])
             if pick is not remaining[0]:
                 log.info("Moved %s up to keep the feed varied.", pick[0].name)
             remaining.remove(pick)
+            if pick[1].extra_ids and sum(recent_multi[:6]) >= max_multi:
+                log.info("Posting %s on its own: %d multi-photo posts already in the last 7.", pick[0].name, max_multi)
+                pick[1].extra_ids = []
             chosen.append(pick)
+            used.update(self.members(pick))
             analysis = self.c.state.analysis_for(pick[0].id) or {}
             last_category = analysis.get("category")
             recent_moods.insert(0, analysis.get("mood"))
-            recent_subjects.insert(0, subject_word(analysis.get("main_subject")))
+            recent_subjects.insert(0, {subject_word((self.c.state.analysis_for(i) or {}).get("main_subject")) for i in self.members(pick)})
+            recent_multi.insert(0, bool(pick[1].extra_ids))
         return chosen
+
+    def photo_sets(self, pool: list[Photo]) -> list[PhotoSet]:
+        """Sets of photos that could go out together, with near-identical frames inside a set removed."""
+        settings = multi_photo_settings(self.profile)
+        analyses = {p.id: self.c.state.analysis_for(p.id) or {} for p in pool}
+        times = {p.id: t for p in pool if (t := self.known_time(p))}
+        place_names = {
+            p.id: name.strip().lower()
+            for p in pool
+            if (name := analyses[p.id].get("place_name")) and not analyses[p.id].get("shows_private_home")
+        }
+        quality = {p.id: analyses[p.id].get("quality_score", 0) for p in pool}
+        sets = []
+        for found in propose_sets(
+            pool,
+            times=times,
+            place_names=place_names,
+            quality=quality,
+            hours=float(settings.get("group_hours", 3)),
+            km=float(settings.get("group_km", 2)),
+        ):
+            kept: list[Photo] = []
+            for photo in found.photos:  # best first, so the better of two near-identical frames stays
+                fp = self.c.state.fingerprint_for(photo.id)
+                if fp and any(
+                    (other := self.c.state.fingerprint_for(k.id)) and fingerprint_distance(fp, other) <= NEAR_DUPLICATE_DISTANCE for k in kept
+                ):
+                    continue
+                kept.append(photo)
+            if len(kept) >= 2:
+                sets.append(PhotoSet(found.set_id, found.kind, kept))
+        return sets
+
+    def check_extras(self, item: PlanItem, sets: list[PhotoSet], allowed: set[str]) -> list[str]:
+        """The planner's extra photos, kept only if they come from one set with the cover and may be posted."""
+        best: list[str] = []
+        for photo_set in sets:
+            if item.photo_id not in photo_set.ids:
+                continue
+            extras = [i for i in dict.fromkeys(item.extra_ids) if i in photo_set.ids and i != item.photo_id and i in allowed]
+            if len(extras) > len(best):
+                best = extras
+        limit = multi_photo_settings(self.profile)["max_photos"] - 1
+        if len(best) < len(item.extra_ids):
+            log.info("Dropped %d extra photo(s) the planner named outside the cover's set.", len(item.extra_ids) - len(best))
+        return best[:limit]
 
     def plan(self, photos: list[Photo], horizon: int = 1) -> list[tuple[Photo, PlanItem]]:
         photos = self.eligible(photos)
@@ -214,18 +310,34 @@ class Run:
         strategy = self.profile.selection.get("strategy", "ai_planner")
         if strategy == "ai_planner":
             limit = int(self.profile.selection.get("max_candidates", 60))
-            pool = sorted(photos, key=lambda p: -(self.c.state.analysis_for(p.id) or {}).get("quality_score", 0))[:limit]
+            pool = sorted(photos, key=lambda p: (-(self.c.state.analysis_for(p.id) or {}).get("quality_score", 0), p.id))[:limit]
+            rng.shuffle(pool)  # so the planner doesn't always read the same photos first
             candidates = []
             for p in pool:
                 analysis = self.c.state.analysis_for(p.id) or {}
                 candidates.append({"photo_id": p.id, "name": p.name, **{k: analysis.get(k) for k in ANALYSIS_FIELDS if k in analysis}})
+            multi = multi_photo_settings(self.profile)
+            sets = self.photo_sets(pool) if multi["enabled"] else []
+            rng.shuffle(sets)
+            brief_sets = None
+            if sets:
+                history = self.c.state.history(limit=7)
+                brief_sets = {
+                    "max_photos_per_post": multi["max_photos"],
+                    "multi_photo_posts_in_last_7": sum(1 for h in history if h.get("photo_count", 1) > 1),
+                    "sets": [{"set_id": x.set_id, "kind": x.kind, "photo_ids": x.ids} for x in sets],
+                }
             try:
-                items = self.c.ai.plan(candidates, self.c.state.history(), today=self.today, horizon=horizon)
+                items = self.c.ai.plan(
+                    candidates, self.c.state.history(), today=self.today, horizon=horizon, photo_sets=brief_sets
+                )
                 chosen, seen = [], set()
                 for item in items:
                     if item.photo_id in by_id and item.photo_id not in seen:
+                        item.extra_ids = self.check_extras(item, sets, set(by_id) - seen) if item.extra_ids else []
                         chosen.append((by_id[item.photo_id], item))
                         seen.add(item.photo_id)
+                        seen.update(item.extra_ids)
                 if chosen:
                     # Photos the planner left out stay available as backups for the variety rules.
                     backups = [p for p in sorted(photos, key=lambda p: p.id) if p.id not in seen]
@@ -243,14 +355,35 @@ class Run:
         rng.shuffle(order)
         return self.keep_variety([(p, PlanItem(p.id, f"{strategy} pick", "")) for p in order], horizon)
 
-    def compose(self, photo: Photo, plan_item: PlanItem) -> Caption:
-        ai, state, settings = self.c.ai, self.c.state, self.profile.ai
-        preview = self.image(photo).preview_jpeg
-        analysis = dict(state.analysis_for(photo.id) or {})
+    def post_images(self, photo: Photo, more: list[Photo]) -> list[bytes]:
+        """The JPEGs to post, cover first. Instagram shows every photo of a multi-photo post in the
+        cover's shape, so the others are framed to that shape with a border instead of being cropped."""
+        cover = self.image(photo)
+        if not more:
+            return [cover.jpeg]
+        border = str(self.profile.image.get("multi_photo_border", "blur"))
+        quality = int(self.profile.image.get("jpeg_quality", 90))
+        ratio = cover.width / cover.height
+        framed = [frame_to_ratio(self.image(p).jpeg, ratio, width=cover.width, border=border, quality=quality) for p in more]
+        reshaped = sum(1 for p in more if abs(self.image(p).width / self.image(p).height - ratio) >= 0.01)
+        if reshaped:
+            self.notes.append(f"{reshaped} photo(s) got a {border} border to match the cover's shape; nothing was cropped.")
+        return [cover.jpeg, *framed]
+
+    def notes_for(self, photo: Photo) -> dict:
+        """The analyst's notes as the writing steps see them."""
+        analysis = dict(self.c.state.analysis_for(photo.id) or {})
         if "taken_at" not in analysis and (taken := self.taken_at(photo)):
             analysis["taken_at"] = taken
         if analysis.get("shows_private_home"):
             analysis["place_name"] = None  # never name the location of a private home
+        return analysis
+
+    def compose(self, photo: Photo, plan_item: PlanItem, more: list[Photo] | None = None) -> Caption:
+        ai, state, settings = self.c.ai, self.c.state, self.profile.ai
+        preview = self.image(photo).preview_jpeg
+        analysis = self.notes_for(photo)
+        more_photos = [SetPhoto(self.image(p).preview_jpeg, self.notes_for(p)) for p in more or []] or None
         rules = CaptionRules.from_settings(settings)
         max_revisions = int(settings.get("max_revisions", 2))
         feedback = ""
@@ -269,6 +402,7 @@ class Run:
                     recent_captions=state.recent_captions(),
                     top_captions=state.top_captions(),
                     feedback=feedback,
+                    **({"more_photos": more_photos} if more_photos else {}),
                 )
                 if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
                     draft.quote = draft.quote_author = None
@@ -279,6 +413,7 @@ class Run:
                     recent_tag_sets=state.recent_tag_sets(),
                     tag_stats=state.tag_stats(),
                     feedback=feedback,
+                    **({"more_analyses": [p.analysis for p in more_photos]} if more_photos else {}),
                 )
             draft.hashtags = list(tags)
             try:
@@ -290,7 +425,7 @@ class Run:
                 continue
             if not settings.get("review", True):
                 return caption
-            review = ai.review(preview, caption=caption, analysis=analysis)
+            review = ai.review(preview, caption=caption, analysis=analysis, **({"more_photos": more_photos} if more_photos else {}))
             if review.approved:
                 return caption
             reviewed_draft = caption
@@ -317,38 +452,57 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
     log.info("%d of %d photos not posted yet", len(unposted), total)
     r.analyse_new(unposted)
     photo, plan_item = r.plan(unposted)[0]
-    log.info("Planner chose %s: %s", photo.name, plan_item.reason)
-    caption = r.compose(photo, plan_item)
-    prepared = r.image(photo)
+    by_id = {p.id: p for p in unposted}
+    more = [by_id[i] for i in plan_item.extra_ids]
+    if more:
+        log.info("Planner chose a multi-photo post of %d, cover %s: %s", 1 + len(more), photo.name, plan_item.reason)
+    else:
+        log.info("Planner chose %s: %s", photo.name, plan_item.reason)
+    caption = r.compose(photo, plan_item, more)
+    jpegs = r.post_images(photo, more)
 
-    result = PostResult(profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason)
+    result = PostResult(
+        profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason, more_photos=more
+    )
     result.notes.extend(r.notes)
     if components.usage is not None:
         result.usage = components.usage.summary()
-    if prepared.padded:
-        result.notes.append("Photo was outside Instagram's 4:5 to 1.91:1 range, so a border was added.")
+    if any(r.image(p).padded for p in [photo, *more]):
+        result.notes.append("A photo was outside Instagram's 4:5 to 1.91:1 range, so a border was added.")
 
     if not publish:
         out = drafts_dir / profile.name / f"{r.today.isoformat()}_{_safe_name(photo.name)}"
         out.mkdir(parents=True, exist_ok=True)
-        (out / "image.jpg").write_bytes(prepared.jpeg)
+        if more:
+            for n, jpeg in enumerate(jpegs, 1):
+                (out / f"{n}.jpg").write_bytes(jpeg)
+        else:
+            (out / "image.jpg").write_bytes(jpegs[0])
         (out / "caption.txt").write_text(caption.render() + "\n", encoding="utf-8")
-        (out / "alt_text.txt").write_text(caption.alt_text + "\n", encoding="utf-8")
+        (out / "alt_text.txt").write_text("\n".join([caption.alt_text, *caption.more_alt_texts]) + "\n", encoding="utf-8")
         (out / "plan.txt").write_text(f"{plan_item.reason}\nAngle: {plan_item.angle}\n", encoding="utf-8")
         result.draft_dir = str(out)
         return result
 
     if components.host is None or components.publisher is None:
         raise RuntimeError("Publishing needs both an image host and a publisher.")
-    key = f"{profile.name}-{photo_key(photo.id)[len('h:'):]}.jpg"  # never the Drive ID: the repo is public
-    url = components.host.upload(key, prepared.jpeg)
+    keys = [f"{profile.name}-{photo_key(p.id)[len('h:'):]}.jpg" for p in [photo, *more]]  # never the Drive ID: the repo is public
+    uploaded: list[str] = []
     try:
-        media_id = components.publisher.publish_image(url, caption.render(), caption.alt_text)
+        urls = []
+        for key, jpeg in zip(keys, jpegs):
+            urls.append(components.host.upload(key, jpeg))
+            uploaded.append(key)
+        if more:
+            media_id = components.publisher.publish_carousel(urls, caption.render(), [caption.alt_text, *caption.more_alt_texts])
+        else:
+            media_id = components.publisher.publish_image(urls[0], caption.render(), caption.alt_text)
     finally:
-        try:
-            components.host.delete(key)
-        except Exception:  # cleanup failure should not hide the real outcome
-            log.warning("Could not delete temporary image %s", key)
+        for key in uploaded:
+            try:
+                components.host.delete(key)
+            except Exception:  # cleanup failure should not hide the real outcome
+                log.warning("Could not delete temporary image %s", key)
     components.state.record_post(
         photo.id,
         photo_name=photo.name,
@@ -356,6 +510,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         caption=caption.render(),
         hashtags=caption.hashtags,
         plan_reason=plan_item.reason,
+        more_photo_ids=[p.id for p in more],
     )
     result.published = True
     result.media_id = media_id

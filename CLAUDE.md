@@ -4,7 +4,7 @@ Guidance for Claude (Claude Code or any Claude session) working in this reposito
 
 ## What this project is
 
-instaPostsForge posts one photo a day to an Instagram account from a Google Drive folder. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
+instaPostsForge posts once a day to an Instagram account from a Google Drive folder: one photo, or 2 to 5 photos from one outing or place as a multi-photo (carousel) post. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
 
 In agentic terms it is a workflow (prompt chaining with gates, light routing by photo category, and an evaluator-optimizer review loop), not an autonomous agent. Don't give the model tools or let it choose steps without a strong reason. See `docs/ARCHITECTURE.md`.
 
@@ -14,12 +14,12 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 
 1. **Fetch results** (code): reads Instagram insights for recent posts into `state/<profile>/insights.json`.
 2. **Photo analyst** (AI): describes each new photo once and caches the notes in `state/<profile>/catalog.json`.
-3. **Planner** (AI): picks today's photo from the unposted ones and chooses the caption angle. If it fails, or returns an ID that isn't in the list, the run falls back to a random photo.
+3. **Planner** (AI): picks today's photo from the unposted ones and chooses the caption angle. When `selection.multi_photo` is on (the `MULTI_PHOTO` env var overrides it), it may instead pick a cover plus `extra_ids` from one of the sets `grouping.py` proposes; `Run.check_extras` drops any extra outside the cover's set. If it fails, or returns an ID that isn't in the list, the run falls back to a random photo.
 4. **Prepare image** (code): converts to JPEG and keeps the aspect ratio. A border is added only outside 4:5 to 1.91:1; nothing is cropped.
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
 7. **Reviewer** (AI): approves the post, or sends it back with feedback. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
-8. **Publish** (code): stages the JPEG on the `media` branch, posts it through the Instagram API, then deletes the staged file.
-9. **Record** (code): writes `state/<profile>/posts.json`, keyed by Drive file ID.
+8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. Photos shaped unlike the cover are framed with `frame_to_ratio`, never cropped.
+9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the Drive file ID; a set's other photos are listed under `more_photos` and count as posted.
 
 ## Where the AI is configured
 
@@ -48,7 +48,8 @@ Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether 
 
 - **Instagram credentials:** never automate Instagram with a username and password, or with unofficial private APIs. Use only the official Instagram API with an access token.
 - **Secrets:** never commit secrets. They live in `.env` locally and in GitHub Actions secrets. The repo is public, so `config/profiles.yaml` only names environment variables. The Drive folder link is a secret too, `DRIVE_FOLDER_<PROFILE>`.
-- **No repeats:** a photo must never be posted twice. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
+- **GPS stays private:** `Photo.location` is only compared in memory (`grouping.py`). Never write coordinates to `state/`, logs or the summary.
+- **No repeats:** a photo must never be posted twice, including the other photos of a multi-photo post. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
 - **Instagram limits:** at most 5 hashtags, at most 2,200 characters, JPEG only, and an aspect ratio between 4:5 and 1.91:1. These are enforced in `captions/validator.py` and `imaging/processor.py`. Don't loosen them.
 - **Quote authors:** never publish an attributed quote unless the model was certain of the author (`quote_is_attributed`).
 - **Content rules:** screenshots, photos with children (unless `allow_children`), and near-duplicates of recent posts are never posted. These are enforced in `pipeline.py`, not just asked for in a prompt. Keep it that way.

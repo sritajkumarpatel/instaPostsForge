@@ -5,7 +5,7 @@ $account_notes
 
 Mark each item passed or failed, using exactly these names:
 
-1. accuracy: everything the caption describes is actually in the photo.
+1. accuracy: everything the caption describes is actually in the photo. taken_at in the notes is verified from the photo's metadata, so a day, month, season or time that matches it is accurate.
 2. hook: the first line is at most 90 characters and would make a viewer stop.
 3. tone: the voice fits the mood playbook and uses none of its "avoid" words.
 4. length: the caption text is within the category playbook's length range (allow 20 characters either way).

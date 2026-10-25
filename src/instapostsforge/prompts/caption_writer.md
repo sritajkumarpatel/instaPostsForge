@@ -20,6 +20,7 @@ $quote_rule Follow the playbook's guidance on how often a quote suits this categ
 ## Hard rules
 
 - Describe only what is in the photo. Don't invent a story the photo doesn't support.
+- Dates and times: taken_at in the notes is when the photo was really taken, read from its metadata. You may mention the day, month, season or time of day only if it matches taken_at or is plainly visible. With no taken_at, don't name a month or date.
 - Never name, describe or judge the appearance of people in the photo.
 - If the notes say shows_private_home, or place_name is empty, don't name a specific location.
 - Don't name or promote brands, even if a logo is visible.

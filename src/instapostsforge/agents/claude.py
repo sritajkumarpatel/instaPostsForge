@@ -278,4 +278,4 @@ class ClaudeWorkflow(AIWorkflow):
         if result.verdict == "approve" and not failed:
             return Review(approved=True)
         feedback = result.feedback or "; ".join(f"{c.item}: {c.note or 'failed'}" for c in failed)
-        return Review(approved=False, feedback=feedback or "The reviewer asked for a revision.")
+        return Review(approved=False, feedback=feedback or "The reviewer asked for a revision.", failed=[c.item for c in failed])

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from ..models import Caption
@@ -20,6 +20,7 @@ class PlanItem:
 class Review:
     approved: bool
     feedback: str = ""
+    failed: list[str] = field(default_factory=list)  # checklist items that failed, e.g. ["hashtags"]
 
 
 class AIWorkflow(ABC):
@@ -58,4 +59,4 @@ class AIWorkflow(ABC):
 
     @abstractmethod
     def review(self, image_jpeg: bytes, *, caption: Caption, analysis: dict | None = None) -> Review:
-        """Reviewer: approves the post or sends it back once with feedback."""
+        """Reviewer: approves the post, or sends it back with feedback and the checklist items that failed."""

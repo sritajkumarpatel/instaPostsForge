@@ -102,3 +102,56 @@ def test_fingerprints(distinct_jpeg, jpeg_factory):
     a, b = distinct_jpeg(1), distinct_jpeg(2)
     assert fingerprint_distance(fingerprint(a), fingerprint(a)) == 0
     assert fingerprint_distance(fingerprint(a), fingerprint(b)) > 6
+
+
+def test_capture_time_from_file_name_and_exif():
+    import io
+
+    from PIL import Image
+
+    from instapostsforge.imaging import name_time, prepare_image
+
+    assert name_time("IMG20261018104837.jpg").isoformat() == "2026-10-18T10:48:37"
+    assert name_time("PXL_20261018_104837123.jpg").isoformat() == "2026-10-18T10:48:37"
+    assert name_time("holiday.jpg") is None and name_time("IMG20261399999999.jpg") is None
+
+    image = Image.new("RGB", (40, 40))
+    exif = Image.Exif()
+    exif.get_ifd(0x8769)[36867] = "2026:10:20 18:25:18"
+    out = io.BytesIO()
+    image.save(out, format="JPEG", exif=exif)
+    assert prepare_image(out.getvalue(), {}).taken_at.isoformat() == "2026-10-20T18:25:18"
+
+
+def test_every_step_sees_when_the_photo_was_taken(tmp_path, distinct_jpeg):
+    files = {"IMG20261018104837.jpg": distinct_jpeg(1)}
+    ai = FakeAI()
+    preview(tmp_path, files, ai)
+    assert ai.calls["caption"][0]["analysis"]["taken_at"] == "Sunday 18 October 2026, 10:48"
+    assert ai.calls["plan"][0]["candidates"][0]["taken_at"] == "Sunday 18 October 2026, 10:48"
+
+
+def test_hashtag_feedback_keeps_the_caption(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    ai = FakeAI(
+        captions=["Wings like glass.", "Something else."],
+        tag_sets=[["#a1", "#b1", "#c1"], ["#a2", "#b2", "#c2"]],
+        reviews=[Review(False, "hashtags: too generic", failed=["hashtags"]), Review(True)],
+    )
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "Wings like glass." and result.caption.hashtags == ["#a2", "#b2", "#c2"]
+    assert len(ai.calls["caption"]) == 1 and len(ai.calls["tags"]) == 2
+
+
+def test_caption_feedback_keeps_the_hashtags(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    ai = FakeAI(
+        captions=["One October morning.", "One quiet morning."],
+        tag_sets=[["#a1", "#b1", "#c1"], ["#a2", "#b2", "#c2"]],
+        reviews=[Review(False, "accuracy: month not supported", failed=["accuracy"]), Review(True)],
+    )
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "One quiet morning." and result.caption.hashtags == ["#a1", "#b1", "#c1"]
+    assert len(ai.calls["tags"]) == 1

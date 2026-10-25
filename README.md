@@ -4,6 +4,27 @@ Posts one photo a day to Instagram from a Google Drive folder. An AI workflow de
 
 It never asks for your Instagram password. You grant it an access token that you can revoke at any time.
 
+```mermaid
+flowchart TB
+    Drive[("Google Drive folder<br/>your photos")]
+    Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
+    Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
+    Claude["Claude API<br/>analyst · planner · caption writer · hashtags · reviewer"]
+    State[("state/#lt;profile#gt;/ in the repo<br/>posts · catalog · insights · usage")]
+    Media[("media branch<br/>today's JPEG for about a minute")]
+    IG["Instagram API<br/>official, token based"]
+
+    Drive -->|"list and download photos"| Actions
+    Config -->|"read each run"| Actions
+    Actions <-->|"structured requests and answers"| Claude
+    Actions <-->|"read memory, commit updates"| State
+    Actions -->|"stage, then delete"| Media
+    Actions -->|"publish post, read insights"| IG
+    Media -->|"Instagram downloads the image"| IG
+```
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the full diagrams: the system above, the daily run step by step with its decision points, and how the code is laid out.
+
 ## The daily workflow
 
 | # | Step | Who | What happens |
@@ -19,6 +40,17 @@ It never asks for your Instagram password. You grant it an access token that you
 | 9 | Record | code | Saves the post by Drive file ID in `state/<profile>/posts.json`, so the photo is never picked again. |
 
 Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer rejects the post twice, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
+
+## Design pattern
+
+This is an **AI workflow**, not an autonomous agent, in the terms of Anthropic's [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents). Code runs fixed steps and calls Claude at five of them. It uses:
+
+- **Prompt chaining with gates**: each AI step feeds the next, and code checks the output in between (the photo must exist, captions and tags must pass Instagram's rules).
+- **Evaluator-optimizer**: the reviewer approves or sends feedback, and the writers revise, up to `ai.max_revisions` times.
+- **Augmented LLM**: every call returns a typed schema and gets memory from `state/` (catalog, history, insights).
+- **Guardrails and fallbacks**: code, not the model, enforces limits and decides what happens when an AI step fails.
+
+The architecture doc explains why, and which patterns (routing, parallelization, orchestrator-workers) could be added later.
 
 ## Steering the AI
 
@@ -64,6 +96,7 @@ Posted photos are tracked by their Drive file ID, so renaming a file doesn't mak
 config/profiles.yaml        accounts and AI settings (public: names secrets, never holds them)
 config/ai-instructions.md   standing instructions every AI step follows
 CLAUDE.md                   guidance for Claude working on this repo
+docs/ARCHITECTURE.md        diagrams and the agentic pattern
 .env                        your secrets, local only (copy from .env.example)
 state/<profile>/            posts.json, catalog.json, insights.json, usage/ (committed after each run)
 src/instapostsforge/

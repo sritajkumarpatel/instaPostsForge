@@ -6,6 +6,8 @@ Guidance for Claude (Claude Code or any Claude session) working in this reposito
 
 instaPostsForge posts one photo a day to an Instagram account from a Google Drive folder. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
 
+In agentic terms it is a workflow (prompt chaining with gates, plus an evaluator-optimizer review loop), not an autonomous agent. Don't give the model tools or let it choose steps without a strong reason. See `docs/ARCHITECTURE.md`.
+
 ## The workflow
 
 `src/instapostsforge/pipeline.py` runs these steps in order:

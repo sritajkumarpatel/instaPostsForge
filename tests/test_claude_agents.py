@@ -45,7 +45,7 @@ def test_caption_drops_unverified_quote_author():
     assert caption.quote == "Be still." and caption.quote_author is None
     system = msgs.calls[0]["system"]
     assert "English" in system and "$" not in system
-    assert msgs.calls[0]["model"] == "claude-opus-5-5"
+    assert msgs.calls[0]["model"] == "claude-sonnet-5-5"
 
 
 def test_planner_and_hashtags_and_review_round_trip():
@@ -93,7 +93,7 @@ def test_every_call_is_written_to_the_usage_log(tmp_path):
     from instapostsforge.usage import UsageLog, load_month
 
     log = UsageLog("p", pricing={"claude-opus-5-5": {"input": 4, "output": 20}}, command="post", state_dir=tmp_path)
-    wf, _ = workflow(ReviewResult(checks=[], verdict="approve"), RuntimeError("overloaded"), usage_log=log)
+    wf, _ = workflow(ReviewResult(checks=[], verdict="approve"), RuntimeError("overloaded"), usage_log=log, model="claude-opus-5-5")
     wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
     try:
         wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))

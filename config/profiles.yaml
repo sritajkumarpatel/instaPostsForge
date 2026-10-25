@@ -11,15 +11,17 @@ defaults:
     # Default model, effort and output limit for every AI step. Each step can override
     # them under "agents" below. Effort: low | medium | high | xhigh | max (more effort
     # means more thinking, better judgement and more tokens).
-    model: claude-opus-5-5
-    effort: medium
-    max_tokens: 16000
+    # Sonnet keeps quality high at half Opus's price; lower effort means less thinking and
+    # fewer output tokens. For the best captions, set caption_writer to claude-opus-5-5.
+    model: claude-sonnet-5-5
+    effort: low
+    max_tokens: 8000
     agents:
       analyst:        { effort: low }      # runs once per new photo
-      planner:        { effort: medium }
-      caption_writer: { effort: high }     # the step readers see most
-      hashtags:       { effort: medium }
-      reviewer:       { effort: medium }
+      planner:        { effort: low }
+      caption_writer: { effort: medium }   # the step readers see most
+      hashtags:       { effort: low }
+      reviewer:       { effort: low }
     # Standing instructions every AI step follows (voice, topics to avoid, and so on).
     instructions_file: config/ai-instructions.md
     # Per-category and per-mood rules. Each step gets only the sections for the photo's

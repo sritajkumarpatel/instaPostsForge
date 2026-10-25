@@ -56,10 +56,25 @@ The architecture doc explains why, and which patterns (routing, parallelization,
 
 | To change | Edit |
 | --- | --- |
+| What the account is about: niche, audience, location, voice, words to avoid | `ai.account` in `config/profiles.yaml` (fill this in first) |
 | The voice and rules for every AI step | `config/ai-instructions.md` |
+| How each kind of photo is written about: hook, length, what to name, quotes, ending, example tags | `config/playbooks/categories.md` |
+| The voice for each mood | `config/playbooks/moods.md` |
 | What one agent is asked to do | `src/instapostsforge/prompts/<agent>.md` |
+| Content rules: quality floor, screenshots, children, near-duplicates, variety | `selection.*` and `ai.planning` in `config/profiles.yaml` |
 | Which model each agent uses, its effort and token limit | `ai.model`, `ai.effort`, `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
 | Quote policy, hashtag count, review and revisions | `ai.quote`, `ai.hashtags`, `ai.review`, `ai.max_revisions` |
+
+The analyst puts every photo in one of 12 categories (landscape, sky, city, street, people, food, animals, macro, night, travel, event, abstract) and one of 8 moods (calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe). The later steps get only the playbook sections for that category and mood, so a plate of food and a mountain sunset are written about differently.
+
+Some rules are enforced in code, whatever the AI says:
+- Screenshots, memes and photos of documents are never posted.
+- Photos where a child is visible are skipped unless `selection.allow_children: true`.
+- A near-identical copy of a photo posted in the last 30 days is held back.
+- Photos scoring below 4 for quality are used only when nothing better is left.
+- No category two days running, and at most 2 posts with the same mood in 7 days.
+- No quote on food or animal posts, and no place named when a private home or address is visible.
+- If any item on the reviewer's 8-point checklist fails, the post is revised, even if the reviewer said approve.
 
 The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. For example, to run hashtags on a cheaper model:
 
@@ -95,6 +110,7 @@ Posted photos are tracked by their Drive file ID, so renaming a file doesn't mak
 ```
 config/profiles.yaml        accounts and AI settings (public: names secrets, never holds them)
 config/ai-instructions.md   standing instructions every AI step follows
+config/playbooks/           rules per photo category and per mood
 CLAUDE.md                   guidance for Claude working on this repo
 docs/ARCHITECTURE.md        diagrams and the agentic pattern
 .env                        your secrets, local only (copy from .env.example)
@@ -117,18 +133,27 @@ tests/                      run without any accounts or keys
 
 ## What you need
 
+Add these under the repo's **Settings → Secrets and variables → Actions → Repository secrets**. Nobody can read a secret back after it is saved, and GitHub hides secrets in logs.
+
 | Secret | Where it comes from |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys (add a few dollars of credit) |
-| `IG_MAIN_ACCESS_TOKEN` | Your Meta app → Instagram → API setup with Instagram login → generate a token with `instagram_business_content_publish` and `instagram_business_manage_insights` |
-| `DRIVE_FOLDER_MAIN` | The share link of your photo folder, shared as "Anyone with the link can view" |
-| `GOOGLE_DRIVE_API_KEY` | Google Cloud console → enable the Drive API → Credentials → API key (restrict it to the Drive API) |
+| `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys → Create key. Add about $5 of credit under Billing. |
+| `IG_MAIN_ACCESS_TOKEN` | [developers.facebook.com](https://developers.facebook.com/) → your app → Instagram → API setup with Instagram login → Generate token next to your account, with `instagram_business_content_publish` and `instagram_business_manage_insights`. Valid for about 60 days. |
+| `IG_MAIN_USER_ID` | The numeric ID shown next to your account on the same API setup page |
+| `DRIVE_FOLDER_MAIN` | Google Drive → right-click the folder → Share → General access: "Anyone with the link", Viewer → Copy link |
+| `GOOGLE_DRIVE_API_KEY` | [Google Cloud console](https://console.cloud.google.com/) → new project → APIs and services → enable Google Drive API → Credentials → Create credentials → API key → restrict it to the Drive API |
+| `GH_SECRETS_TOKEN` (optional) | GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Only this repository, permission **Secrets: Read and write**. It lets the monthly job save the refreshed Instagram token. |
+
+GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under **Variables** (next to Secrets) you can also set:
+
+| Variable | Meaning |
+| --- | --- |
+| `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. |
+| `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
 
 Before the first post, do two things:
 1. Switch your Instagram account to **Creator** or **Business** in Settings → Account type and tools.
 2. Create an app at [developers.facebook.com](https://developers.facebook.com/), add the **Instagram** product, and add your account as a tester. Because the app only posts to your own account, it can stay in development mode with no app review.
-
-Add each secret under the repo's Settings → Secrets and variables → Actions. GitHub provides `GITHUB_TOKEN` itself.
 
 ## Running it locally
 
@@ -152,22 +177,29 @@ forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
 ```
 
-Instagram tokens last about 60 days. Run `forge refresh-token` about once a month, then update `.env` and the GitHub secret.
+Instagram tokens last about 60 days. On GitHub, the Refresh Instagram token workflow renews them on the 1st of every month if `GH_SECRETS_TOKEN` is set. Otherwise run `forge refresh-token` at least every 50 days and update `.env` and the GitHub secret.
 
 ## Posting automatically every day
 
-`.github/workflows/daily-post.yml` runs the workflow on GitHub Actions:
+Everything runs on GitHub Actions, so your laptop isn't needed. `.github/workflows/daily-post.yml` is scheduled for 13:30 UTC (7:00 pm IST) every day.
 
-1. Add the secrets above.
-2. Go to Actions → Daily post → Run workflow, and choose **plan**, then **preview**. Download the preview from the run's artifacts. The run page also shows the caption and the planner's reasoning.
-3. Run it once in **post** mode.
-4. Uncomment the `schedule` block to post daily. Cron times are in UTC.
+1. Under Settings → Actions → General, allow actions and set Workflow permissions to **Read and write**, so runs can commit `state/` and use the `media` branch.
+2. Add the secrets above.
+3. Go to Actions → Daily post → Run workflow and run these modes in order:
+    1. **check**: verifies the Instagram token, the posting quota and the Drive folder, without calling Claude.
+    2. **plan**: shows the next 7 days of photos and why each was picked.
+    3. **preview**: download the `preview-main` artifact to see the exact image and caption.
+    4. **post**: posts once. Check your feed.
+4. Set the repository variable `AUTO_POST` to `true`. From then on the schedule posts every day.
+5. To change the time, edit the `cron` line. It is in UTC, and GitHub may start a few minutes late when busy.
 
-After each run, the workflow commits `state/` so the next run knows what was posted, what each photo looks like, and how past posts performed.
+After each run, the workflow commits `state/` so the next run knows what was posted, what each photo looks like, and how past posts performed. That commit also keeps the schedule alive: GitHub turns off schedules in a public repo after 60 days without activity. When a scheduled run fails, GitHub emails you, and the run page says why.
 
 ## Adding another account or Drive folder
 
-Copy the `main` block in `config/profiles.yaml` under a new name. Point it at new variable names, for example `IG_TRAVEL_ACCESS_TOKEN` and `DRIVE_FOLDER_TRAVEL`, and add those to `.env` and to the workflow's `env` list. Run it with `forge post -p travel`. Any `defaults` setting can be overridden per profile, for example `ai.account_theme`, `ai.quote` or `selection.strategy`.
+Copy the `main` block in `config/profiles.yaml` under a new name. Point it at new variable names, for example `IG_TRAVEL_ACCESS_TOKEN`, `IG_TRAVEL_USER_ID` and `DRIVE_FOLDER_TRAVEL`. Add them to `.env`, to the repository secrets, and to the commented lines in both workflow files. Add the profile to the `PROFILES` variable, for example `["main","travel"]`. Run it locally with `forge post -p travel`.
+
+Any `defaults` setting can be overridden per profile, for example `ai.account`, `ai.quote`, `ai.playbooks_dir`, `ai.instructions_file` or `selection.strategy`, so a food account and a travel account can follow different rules from the same repo.
 
 ## Cost
 

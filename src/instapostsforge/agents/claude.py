@@ -18,11 +18,25 @@ from pydantic import BaseModel, Field
 from ..models import Caption
 from ..usage import UsageLog
 from .base import AIWorkflow, PlanItem, Review
+from .playbooks import Playbooks
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 AGENTS = ("analyst", "planner", "caption_writer", "hashtags", "reviewer")
+
+Category = Literal["landscape", "sky", "city", "street", "people", "food", "animals", "macro", "night", "travel", "event", "abstract"]
+Mood = Literal["calm", "joyful", "energetic", "nostalgic", "dramatic", "romantic", "playful", "awe"]
+CheckName = Literal["accuracy", "hook", "tone", "length", "quote", "hashtags", "alt_text", "safety"]
+
+ACCOUNT_FIELDS = (
+    ("niche", "What the account is about"),
+    ("audience", "Who follows it"),
+    ("location", "Where the photographer is based"),
+    ("voice", "How the account sounds"),
+    ("avoid", "Never write about or in this way"),
+    ("ending_style", "Preferred way to end a caption"),
+)
 
 QUOTE_RULES = {
     "always": "Always include one quote that fits the mood of the photo.",
@@ -32,15 +46,22 @@ QUOTE_RULES = {
 
 
 class PhotoAnalysis(BaseModel):
+    category: Category
+    mood: Mood
     subject: str = Field(description="The main subject in a few words.")
     description: str = Field(description="Two or three sentences on what is in the frame.")
-    setting: str = Field(description="Where it was taken, or the kind of place if not recognisable.")
-    mood: str
+    setting: str = Field(description="The kind of place, e.g. hill road, old market, beach at dusk.")
+    place_name: str | None = Field(default=None, description="Only when clearly recognisable; never a guess.")
     colors: list[str]
-    style: str = Field(description="Photographic style, e.g. street, landscape, macro, portrait.")
     time_of_day: str | None = None
     season: str | None = None
     quality_score: int = Field(ge=1, le=10)
+    has_people: bool
+    has_children: bool
+    has_identifiable_strangers: bool
+    has_text_or_logo: bool
+    is_screenshot_or_meme: bool
+    shows_private_home: bool
     themes: list[str] = Field(description="Themes and audiences, specific to broad.")
 
 
@@ -72,9 +93,16 @@ class HashtagSet(BaseModel):
     hashtags: list[ChosenTag]
 
 
+class ReviewCheck(BaseModel):
+    item: CheckName
+    passed: bool
+    note: str = ""
+
+
 class ReviewResult(BaseModel):
+    checks: list[ReviewCheck]
     verdict: Literal["approve", "revise"]
-    feedback: str = Field(default="", description="Specific changes to make when the verdict is revise.")
+    feedback: str = Field(default="", description="Names each failed item and what to change.")
 
 
 def load_prompt(name: str) -> str:
@@ -94,13 +122,24 @@ class ClaudeWorkflow(AIWorkflow):
         self.model = settings.get("model", "claude-opus-5-5")
         self.client = client or anthropic.Anthropic()
         self.usage_log = usage_log
-        notes = []
-        if settings.get("account_theme"):
-            notes.append(f"The account's overall theme: {settings['account_theme']}")
-        if settings.get("extra_instructions"):
-            notes.append(f"Additional instructions from the account owner: {settings['extra_instructions']}")
-        self.account_notes = ("\n" + "\n".join(notes)) if notes else ""
+        self.account_notes = self._account_notes(settings)
         self.standing_instructions = self._load_instructions(settings.get("instructions_file"))
+        self.playbooks = Playbooks.load(settings.get("playbooks_dir"))
+
+    @staticmethod
+    def _account_notes(settings: dict) -> str:
+        account = dict(settings.get("account") or {})
+        if settings.get("account_theme") and not account.get("niche"):  # older configs
+            account["niche"] = settings["account_theme"]
+        lines = [f"- {label}: {account[key]}" for key, label in ACCOUNT_FIELDS if account.get(key)]
+        if settings.get("extra_instructions"):
+            lines.append(f"- Also keep in mind: {settings['extra_instructions']}")
+        if not lines:
+            return ""
+        return "\n## About this account\n\n" + "\n".join(lines) + "\n"
+
+    def _prompt(self, name: str, **values) -> str:
+        return Template(load_prompt(name)).safe_substitute(account_notes=self.account_notes, **values)
 
     @staticmethod
     def _load_instructions(path: str | None) -> str:
@@ -159,7 +198,7 @@ class ClaudeWorkflow(AIWorkflow):
     def analyze(self, image_jpeg: bytes, *, photo_name: str) -> dict:
         result = self._ask(
             "analyst",
-            load_prompt("analyst"),
+            self._prompt("analyst"),
             [image_block(image_jpeg), {"type": "text", "text": f"File name: {photo_name}\n\nAnalyse this photo."}],
             PhotoAnalysis,
         )
@@ -175,17 +214,18 @@ class ClaudeWorkflow(AIWorkflow):
         }
         result = self._ask(
             "planner",
-            load_prompt("planner"),
+            self._prompt("planner", max_same_mood=(self.settings.get("planning") or {}).get("max_same_mood_per_7_days", 2)),
             [{"type": "text", "text": json.dumps(brief, ensure_ascii=False, indent=1)}],
             Plan,
         )
         return [PlanItem(p.photo_id, p.reason, p.angle) for p in result.order]
 
     def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback=""):
-        system = Template(load_prompt("caption_writer")).safe_substitute(
+        system = self._prompt(
+            "caption_writer",
             quote_rule=QUOTE_RULES.get(self.settings.get("quote", "when_fitting"), QUOTE_RULES["when_fitting"]),
             language=self.settings.get("language", "English"),
-            account_notes=self.account_notes,
+            playbook=self.playbooks.for_photo(analysis),
         )
         text = (
             f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}\n\n"
@@ -206,8 +246,8 @@ class ClaudeWorkflow(AIWorkflow):
 
     def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback=""):
         tags = self.settings.get("hashtags") or {}
-        system = Template(load_prompt("hashtags")).safe_substitute(
-            min_tags=tags.get("min", 3), max_tags=tags.get("max", 5), account_notes=self.account_notes
+        system = self._prompt(
+            "hashtags", min_tags=tags.get("min", 3), max_tags=tags.get("max", 5), playbook=self.playbooks.for_photo(analysis)
         )
         brief = {
             "photo": analysis,
@@ -223,11 +263,19 @@ class ClaudeWorkflow(AIWorkflow):
             log.info("Hashtag %s (%s): %s", t.tag, t.role, t.reason)
         return [t.tag for t in result.hashtags]
 
-    def review(self, image_jpeg, *, caption):
+    def review(self, image_jpeg, *, caption, analysis=None):
+        analysis = analysis or {}
         text = (
+            f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}\n\n"
             f"Caption:\n{caption.text}\n\nQuote: {caption.quote or '(none)'}"
             f"{' by ' + caption.quote_author if caption.quote_author else ''}\n\n"
             f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {caption.alt_text}"
         )
-        result = self._ask("reviewer", load_prompt("reviewer"), [image_block(image_jpeg), {"type": "text", "text": text}], ReviewResult)
-        return Review(approved=result.verdict == "approve", feedback=result.feedback)
+        system = self._prompt("reviewer", playbook=self.playbooks.for_photo(analysis))
+        result = self._ask("reviewer", system, [image_block(image_jpeg), {"type": "text", "text": text}], ReviewResult)
+        failed = [c for c in result.checks if not c.passed]
+        # A failed checklist item means revise, even if the model's verdict said approve.
+        if result.verdict == "approve" and not failed:
+            return Review(approved=True)
+        feedback = result.feedback or "; ".join(f"{c.item}: {c.note or 'failed'}" for c in failed)
+        return Review(approved=False, feedback=feedback or "The reviewer asked for a revision.")

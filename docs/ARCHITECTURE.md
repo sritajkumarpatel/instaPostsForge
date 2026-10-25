@@ -87,14 +87,14 @@ It combines these building blocks and patterns:
 | **Augmented LLM** (the building block) | Each Claude call gets structured outputs (Pydantic schemas) and memory: the photo catalog, post history and insights in `state/`. No tools are exposed to the model. |
 | **Prompt chaining** | Analyst → planner → caption writer → hashtag strategist → reviewer. Each step's output is the next step's input, with programmatic **gates** in between: the planner's photo ID must exist, and captions and tags must pass `captions/validator.py`. |
 | **Evaluator-optimizer** | The reviewer (evaluator) approves a post or returns feedback. The caption writer and hashtag strategist (optimizers) then revise. The loop is bounded by `ai.max_revisions`, and a rule failure also feeds back as feedback. |
-| **Guardrails and fallbacks** | Code, not the model, enforces Instagram's limits, refuses unverified quote authors, falls back to a random photo when the planner fails, and skips the day rather than post an unapproved caption. |
-| **Human in the loop** (optional) | `forge plan` and `forge preview` show the AI's choices without posting; the schedule stays off until you enable it. |
+| **Routing** (light) | The analyst classifies each photo into one of 12 categories and 8 moods. Code then routes only that category's and mood's playbook (`config/playbooks/`) to the caption writer, hashtag strategist and reviewer. The path stays the same; the instructions change per photo. |
+| **Guardrails and fallbacks** | Code, not the model, enforces Instagram's limits and the content rules: it skips screenshots, photos with children (unless allowed) and near-duplicates of recent posts, keeps categories and moods varied, drops quotes on food and animal posts, hides private locations, refuses unverified quote authors, falls back to a random photo when the planner fails, and skips the day rather than post an unapproved caption. A failed reviewer checklist item always means revise. |
+| **Human in the loop** (optional) | `forge plan` and `forge preview` (or those modes in the Actions workflow) show the AI's choices without posting. |
 
 Patterns it deliberately does **not** use (yet):
 
 | Pattern | Why not, or how it could be added |
 | --- | --- |
-| Routing | There is one path for every photo. A router could later send, say, portraits and landscapes to different caption prompts. |
 | Parallelization | Photo analyses run one after another. They could run in parallel (sectioning) or via the Message Batches API at half the price. Generating three captions and letting the reviewer pick one would be parallelization by voting. |
 | Orchestrator-workers | The planner orders photos but doesn't spawn sub-tasks; the steps are fixed in code. |
 | Autonomous agent | The model never chooses which step comes next or calls Instagram itself. This keeps a public account safe from an unexpected loop or post. |

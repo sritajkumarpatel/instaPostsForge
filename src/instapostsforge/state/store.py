@@ -56,9 +56,9 @@ class ProfileState:
             out.append(
                 {
                     "posted_at": post.get("posted_at"),
-                    "subject": analysis.get("subject"),
+                    "category": analysis.get("category"),
                     "mood": analysis.get("mood"),
-                    "style": analysis.get("style"),
+                    "subject": analysis.get("subject"),
                     "hashtags": post.get("hashtags", []),
                     "results": self.insights.get(post.get("media_id", ""), {}).get("metrics"),
                 }
@@ -120,9 +120,24 @@ class ProfileState:
     def analysis_for(self, photo_id: str) -> dict | None:
         return self.catalog.get(photo_id, {}).get("analysis")
 
-    def save_analysis(self, photo_id: str, photo_name: str, analysis: dict) -> None:
-        self.catalog[photo_id] = {"name": photo_name, "analysis": analysis, "analysed_at": _now()}
+    def fingerprint_for(self, photo_id: str) -> str | None:
+        return self.catalog.get(photo_id, {}).get("fingerprint")
+
+    def save_analysis(self, photo_id: str, photo_name: str, analysis: dict, fingerprint: str | None = None) -> None:
+        entry = {"name": photo_name, "analysis": analysis, "analysed_at": _now()}
+        if fingerprint:
+            entry["fingerprint"] = fingerprint
+        self.catalog[photo_id] = entry
         self._save("catalog.json", self.catalog)
+
+    def posted_within(self, days: int) -> list[str]:
+        """IDs of photos posted in the last `days` days."""
+        cutoff = datetime.now(timezone.utc).timestamp() - days * 86400
+        return [
+            photo_id
+            for photo_id, post in self.posts.items()
+            if post.get("posted_at") and datetime.fromisoformat(post["posted_at"]).timestamp() >= cutoff
+        ]
 
     # --- insights ----------------------------------------------------------
 

@@ -100,3 +100,18 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
         padded=padded,
         preview_jpeg=_to_jpeg(preview, 85),
     )
+
+
+def fingerprint(jpeg: bytes) -> str:
+    """A 64-bit difference hash: near-identical photos (resized, re-saved, lightly edited) get close values."""
+    image = Image.open(io.BytesIO(jpeg)).convert("L").resize((9, 8), Image.LANCZOS)
+    pixels = image.tobytes()
+    bits = 0
+    for row in range(8):
+        for col in range(8):
+            bits = (bits << 1) | (pixels[row * 9 + col] > pixels[row * 9 + col + 1])
+    return f"{bits:016x}"
+
+
+def fingerprint_distance(a: str, b: str) -> int:
+    return bin(int(a, 16) ^ int(b, 16)).count("1")

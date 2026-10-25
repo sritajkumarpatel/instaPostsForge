@@ -52,7 +52,7 @@ def test_planner_and_hashtags_and_review_round_trip():
     wf, msgs = workflow(
         Plan(order=[PlannedPhoto(photo_id="a", reason="r", angle="g")]),
         HashtagSet(hashtags=[ChosenTag(tag="#rain", role="specific", reason="r")]),
-        ReviewResult(verdict="revise", feedback="Shorter hook"),
+        ReviewResult(checks=[], verdict="revise", feedback="Shorter hook"),
         account_theme="street",
     )
     assert wf.plan([{"photo_id": "a"}], [], today=date(2026, 10, 25), horizon=1)[0].photo_id == "a"
@@ -71,7 +71,7 @@ def test_per_agent_model_effort_and_tokens():
     }
     wf, msgs = workflow(
         HashtagSet(hashtags=[ChosenTag(tag="#rain", role="specific", reason="r")]),
-        ReviewResult(verdict="approve"),
+        ReviewResult(checks=[], verdict="approve"),
         **settings,
     )
     wf.choose_hashtags(analysis={}, caption_text="c", recent_tag_sets=[], tag_stats={})
@@ -84,7 +84,7 @@ def test_per_agent_model_effort_and_tokens():
 def test_standing_instructions_reach_every_agent(tmp_path):
     rules = tmp_path / "ai.md"
     rules.write_text("Never mention the weather.")
-    wf, msgs = workflow(ReviewResult(verdict="approve"), instructions_file=str(rules))
+    wf, msgs = workflow(ReviewResult(checks=[], verdict="approve"), instructions_file=str(rules))
     wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
     assert "Never mention the weather." in msgs.calls[0]["system"]
 
@@ -93,7 +93,7 @@ def test_every_call_is_written_to_the_usage_log(tmp_path):
     from instapostsforge.usage import UsageLog, load_month
 
     log = UsageLog("p", pricing={"claude-opus-5-5": {"input": 4, "output": 20}}, command="post", state_dir=tmp_path)
-    wf, _ = workflow(ReviewResult(verdict="approve"), RuntimeError("overloaded"), usage_log=log)
+    wf, _ = workflow(ReviewResult(checks=[], verdict="approve"), RuntimeError("overloaded"), usage_log=log)
     wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
     try:
         wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
@@ -106,3 +106,45 @@ def test_every_call_is_written_to_the_usage_log(tmp_path):
     month = ok["at"][:7]
     assert len(load_month("p", month, state_dir=tmp_path)) == 2
     assert log.summary()["total"]["calls"] == 2
+
+
+def test_categories_and_moods_match_the_schema_and_playbooks():
+    from pathlib import Path
+    from typing import get_args
+
+    from instapostsforge.agents.claude import Category, Mood
+    from instapostsforge.agents.playbooks import CATEGORIES, MOODS, Playbooks
+
+    assert get_args(Category) == CATEGORIES and get_args(Mood) == MOODS
+    books = Playbooks.load(Path(__file__).parent.parent / "config" / "playbooks")
+    assert set(books.categories) == set(CATEGORIES) and set(books.moods) == set(MOODS)
+
+
+def test_only_the_photos_playbook_reaches_the_writer(tmp_path):
+    (tmp_path / "categories.md").write_text("## food\n\nTaste first.\n\n## sky\n\nColour first.\n")
+    (tmp_path / "moods.md").write_text("## playful\n\nA wink of humour.\n")
+    wf, msgs = workflow(CaptionDraft(caption="Hi", alt_text="x"), playbooks_dir=str(tmp_path))
+    wf.write_caption(b"jpg", analysis={"category": "food", "mood": "playful"}, angle="", recent_captions=[], top_captions=[])
+    system = msgs.calls[0]["system"]
+    assert "Taste first." in system and "A wink of humour." in system and "Colour first." not in system
+
+
+def test_failed_check_means_revise_even_if_verdict_approves():
+    from instapostsforge.agents.claude import ReviewCheck
+
+    wf, _ = workflow(ReviewResult(checks=[ReviewCheck(item="hook", passed=False, note="112 characters")], verdict="approve"))
+    review = wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
+    assert not review.approved and review.feedback == "hook: 112 characters"
+
+
+def test_account_profile_and_rules_fill_every_prompt():
+    account = {"niche": "street photography in Pune", "avoid": "the word wanderlust"}
+    wf, msgs = workflow(
+        Plan(order=[]), ReviewResult(checks=[], verdict="approve"), account=account, planning={"max_same_mood_per_7_days": 3}
+    )
+    wf.plan([], [], today=date(2026, 10, 25), horizon=1)
+    wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"), analysis={"category": "street"})
+    for call in msgs.calls:
+        assert "street photography in Pune" in call["system"] and "wanderlust" in call["system"]
+        assert "$" not in call["system"]
+    assert "No more than 3 photos of the same mood" in msgs.calls[0]["system"]

@@ -53,3 +53,15 @@ def test_shipped_config_loads():
     assert profile.hosting["type"] == "github"
     assert set(profile.ai["agents"]) == {"analyst", "planner", "caption_writer", "hashtags", "reviewer"}
     assert profile.ai["model"] in profile.ai["pricing"]
+
+
+def test_refresh_token_can_write_to_a_file(tmp_path, monkeypatch, capsys):
+    from instapostsforge import cli
+    from instapostsforge.publishers import instagram
+
+    monkeypatch.setenv("IG_MAIN_ACCESS_TOKEN", "old")
+    monkeypatch.setattr(instagram, "refresh_long_lived_token", lambda token: {"access_token": "secret-new", "expires_in": 5184000})
+    out = tmp_path / "token"
+    assert cli.main(["refresh-token", "-p", "main", "--token-file", str(out)]) == 0
+    assert out.read_text() == "secret-new"
+    assert "secret-new" not in capsys.readouterr().out

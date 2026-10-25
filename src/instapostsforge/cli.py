@@ -111,6 +111,10 @@ def cmd_refresh_token(args) -> int:
     var = profile.instagram.get("access_token_env")
     data = refresh_long_lived_token(env_value(var))
     days = int(data.get("expires_in", 0)) // 86400
+    if args.token_file:  # used by the refresh-token workflow, so the token never appears in logs
+        Path(args.token_file).write_text(data["access_token"], encoding="utf-8")
+        print(f"New token for {var} (valid about {days} days) written to {args.token_file}.")
+        return 0
     print(f"New token (valid about {days} days). Replace {var} in .env and in your GitHub secrets:")
     print(data["access_token"])
     return 0
@@ -135,6 +139,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--profile", "-p", default="main")
         if name == "plan":
             p.add_argument("--days", type=int, default=7)
+        if name == "refresh-token":
+            p.add_argument("--token-file", help="Write the new token to this file instead of printing it")
         if name == "usage":
             p.add_argument("--month", help="YYYY-MM, default this month")
         p.set_defaults(func=func)

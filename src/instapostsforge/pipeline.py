@@ -15,10 +15,11 @@ from datetime import date
 from pathlib import Path
 
 from .agents import AIWorkflow, PlanItem, build_workflow
+from .agents.playbooks import NO_QUOTE_CATEGORIES
 from .captions import CaptionError, CaptionRules, normalize_caption
 from .config import Profile
 from .hosting import ImageHost, build_host
-from .imaging import PreparedImage, prepare_image
+from .imaging import PreparedImage, fingerprint, fingerprint_distance, prepare_image
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
@@ -28,7 +29,10 @@ from .usage import UsageLog
 log = logging.getLogger(__name__)
 
 DRAFTS_DIR = Path("drafts")
-ANALYSIS_FIELDS = ("subject", "setting", "mood", "style", "colors", "season", "time_of_day", "quality_score", "themes")
+ANALYSIS_FIELDS = (
+    "category", "mood", "subject", "setting", "place_name", "colors", "season", "time_of_day", "quality_score", "themes",
+)
+NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
 
 
 class NothingToPost(Exception):
@@ -108,19 +112,88 @@ class Run:
     def analyse_new(self, photos: list[Photo]) -> None:
         budget = int(self.profile.ai.get("max_new_analyses_per_run", 20))
         for photo in photos:
-            if self.c.state.analysis_for(photo.id) is not None:
-                continue
+            existing = self.c.state.analysis_for(photo.id)
+            if existing is not None and "category" in existing:
+                continue  # analyses from before categories existed are redone once
             if budget <= 0:
                 break
             budget -= 1
             try:
-                analysis = self.c.ai.analyze(self.image(photo).preview_jpeg, photo_name=photo.name)
-                self.c.state.save_analysis(photo.id, photo.name, analysis)
+                preview = self.image(photo).preview_jpeg
+                analysis = self.c.ai.analyze(preview, photo_name=photo.name)
+                self.c.state.save_analysis(photo.id, photo.name, analysis, fingerprint(preview))
             except Exception as err:
                 log.warning("Could not analyse %s: %s", photo.name, err)
 
+    # --- content rules (code, so they hold whatever the AI says) ---------------
+
+    def eligible(self, photos: list[Photo]) -> list[Photo]:
+        """Drops photos that must not be posted (now), and low-quality ones while better remain."""
+        rules = self.profile.selection
+        recent_prints = [
+            fp for pid in self.c.state.posted_within(int(rules.get("near_duplicate_days", 30)))
+            if (fp := self.c.state.fingerprint_for(pid))
+        ]
+        skipped: dict[str, int] = {}
+        allowed = []
+        for photo in photos:
+            analysis = self.c.state.analysis_for(photo.id) or {}
+            reason = None
+            if analysis.get("is_screenshot_or_meme") and rules.get("skip_screenshots", True):
+                reason = "screenshots or memes"
+            elif analysis.get("has_children") and not rules.get("allow_children", False):
+                reason = "children in the photo (set selection.allow_children to post these)"
+            elif (fp := self.c.state.fingerprint_for(photo.id)) and any(
+                fingerprint_distance(fp, other) <= NEAR_DUPLICATE_DISTANCE for other in recent_prints
+            ):
+                reason = "near-duplicates of a recent post"
+            if reason:
+                skipped[reason] = skipped.get(reason, 0) + 1
+            else:
+                allowed.append(photo)
+        for reason, count in skipped.items():
+            log.info("Skipping %d photo(s): %s", count, reason)
+        if not allowed:
+            detail = "; ".join(f"{n} {r}" for r, n in skipped.items())
+            raise NothingToPost(f"{len(photos)} unposted photos, but none can be posted: {detail}. Add more photos to the folder.")
+        floor = int(rules.get("min_quality", 4))
+        good = [p for p in allowed if (self.c.state.analysis_for(p.id) or {}).get("quality_score", floor) >= floor]
+        if good:
+            return good
+        self.notes.append(f"Every remaining photo scored below {floor} for quality, so a low-scoring one was posted.")
+        return allowed
+
+    def keep_variety(self, order: list[tuple[Photo, PlanItem]], horizon: int) -> list[tuple[Photo, PlanItem]]:
+        """Reorders so no category repeats on consecutive days and no mood exceeds its weekly limit."""
+        planning = self.profile.ai.get("planning") or {}
+        no_repeat = planning.get("no_repeat_category", True)
+        max_mood = int(planning.get("max_same_mood_per_7_days", 2))
+        history = self.c.state.history(limit=6)
+        last_category = history[0].get("category") if history else None
+        recent_moods = [h.get("mood") for h in history]  # newest first; with today, a 7-day window
+        remaining = list(order)
+        chosen = []
+        while remaining and len(chosen) < horizon:
+            def fits(entry):
+                analysis = self.c.state.analysis_for(entry[0].id) or {}
+                category, mood = analysis.get("category"), analysis.get("mood")
+                if no_repeat and category and category == last_category:
+                    return False
+                return not mood or recent_moods[:6].count(mood) < max_mood
+            pick = next((e for e in remaining if fits(e)), remaining[0])
+            if pick is not remaining[0]:
+                log.info("Moved %s up to keep the feed varied.", pick[0].name)
+            remaining.remove(pick)
+            chosen.append(pick)
+            analysis = self.c.state.analysis_for(pick[0].id) or {}
+            last_category = analysis.get("category")
+            recent_moods.insert(0, analysis.get("mood"))
+        return chosen
+
     def plan(self, photos: list[Photo], horizon: int = 1) -> list[tuple[Photo, PlanItem]]:
+        photos = self.eligible(photos)
         by_id = {p.id: p for p in photos}
+        rng = random.Random(self.today.isoformat())
         strategy = self.profile.selection.get("strategy", "ai_planner")
         if strategy == "ai_planner":
             limit = int(self.profile.selection.get("max_candidates", 60))
@@ -137,23 +210,28 @@ class Run:
                         chosen.append((by_id[item.photo_id], item))
                         seen.add(item.photo_id)
                 if chosen:
-                    return chosen[:horizon]
+                    # Photos the planner left out stay available as backups for the variety rules.
+                    backups = [p for p in sorted(photos, key=lambda p: p.id) if p.id not in seen]
+                    rng.shuffle(backups)
+                    chosen += [(p, PlanItem(p.id, "Picked to keep the feed varied.", "")) for p in backups]
+                    return self.keep_variety(chosen, horizon)
                 log.warning("The planner returned no usable photo IDs; falling back to random.")
             except Exception as err:
                 log.warning("Planner failed (%s); falling back to random.", err)
             self.notes.append("The AI planner was unavailable, so today's photo was picked at random.")
-        rng = random.Random(self.today.isoformat())
         if strategy == "ordered":
             order = sorted(photos, key=lambda p: (p.created_at is None, p.created_at or 0, p.name))
-        else:
-            order = sorted(photos, key=lambda p: p.id)
-            rng.shuffle(order)
-        return [(p, PlanItem(p.id, f"{strategy} pick", "")) for p in order[:horizon]]
+            return [(p, PlanItem(p.id, "ordered pick", "")) for p in order[:horizon]]
+        order = sorted(photos, key=lambda p: p.id)
+        rng.shuffle(order)
+        return self.keep_variety([(p, PlanItem(p.id, f"{strategy} pick", "")) for p in order], horizon)
 
     def compose(self, photo: Photo, plan_item: PlanItem) -> Caption:
         ai, state, settings = self.c.ai, self.c.state, self.profile.ai
         preview = self.image(photo).preview_jpeg
-        analysis = state.analysis_for(photo.id) or {}
+        analysis = dict(state.analysis_for(photo.id) or {})
+        if analysis.get("shows_private_home"):
+            analysis["place_name"] = None  # never name the location of a private home
         rules = CaptionRules.from_settings(settings)
         max_revisions = int(settings.get("max_revisions", 1))
         feedback = ""
@@ -168,6 +246,8 @@ class Run:
                 top_captions=state.top_captions(),
                 feedback=feedback,
             )
+            if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
+                draft.quote = draft.quote_author = None
             draft.hashtags = ai.choose_hashtags(
                 analysis=analysis,
                 caption_text=draft.text,
@@ -183,7 +263,7 @@ class Run:
                 continue
             if not settings.get("review", True):
                 return caption
-            review = ai.review(preview, caption=caption)
+            review = ai.review(preview, caption=caption, analysis=analysis)
             if review.approved:
                 return caption
             reviewed_draft = caption

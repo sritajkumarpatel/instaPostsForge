@@ -1,96 +1,109 @@
 # instaPostsForge
 
-Posts one photo a day to Instagram. Each day it picks the next unposted photo from your folder, keeps the photo's own shape, has Claude write an English caption to suit it (adding a quote when one fits) with 3 to 5 hashtags, and publishes it through Instagram's official API.
+Posts one photo a day to Instagram from a Google Drive folder. An AI workflow decides which photo goes out and what it says. Code does the fetching, posting and record-keeping.
 
 It never asks for your Instagram password. You grant it an access token that you can revoke at any time.
 
-## How a run works
+## The daily workflow
 
-1. **Source**: lists the photos in the profile's Google Drive folder (or a local folder).
-2. **Selection**: picks the oldest photo that has not been posted yet. `state/<profile>.json` records what has gone out, so nothing repeats.
-3. **Image**: converts the photo to JPEG and keeps its aspect ratio. Only a photo outside Instagram's range (4:5 portrait to 1.91:1 landscape) gets a border. Photos are never cropped.
-4. **Caption**: Claude looks at the photo and writes the caption, an optional quote, hashtags and alt text. Rules are checked before posting: 3 to 5 hashtags, no generic tags, at most 2,200 characters.
-5. **Publish**: uploads the JPEG to temporary storage, gives Instagram a short-lived link, publishes it, then deletes the temporary copy.
+| # | Step | Who | What happens |
+| --- | --- | --- | --- |
+| 1 | Fetch results | code | Reads reach, likes, comments, saves and shares for posts from the last 30 days. |
+| 2 | Photo analyst | AI | Looks at each new photo in the Drive folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
+| 3 | Planner | AI | Picks today's photo from the unposted ones. It balances strong photos with variety, and leans toward what has performed well. It also chooses the angle for the caption. |
+| 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A border is added only if the photo is outside 4:5 to 1.91:1; nothing is cropped. |
+| 5 | Caption writer | AI | Writes a hook, a caption in the photo's tone, a quote when one fits, and alt text, in English. A quote's author is kept only when the model is certain of it. |
+| 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
+| 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back once with feedback. |
+| 8 | Publish | code | Stages the JPEG on this repo's `media` branch, posts through the official Instagram API, then deletes the staged file. |
+| 9 | Record | code | Saves the post by Drive file ID in `state/<profile>/posts.json`, so the photo is never picked again. |
 
-`forge preview` stops after step 4 and saves the result in `drafts/` so you can review it without posting anything.
+Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer rejects the post twice, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
+
+The prompts for each agent are plain text in `src/instapostsforge/prompts/`. Edit them to change how an agent behaves.
+
+### Why the photo is staged on GitHub
+
+Instagram only accepts a public image link. It rejects Google Drive links, even "direct download" ones. So the run commits the day's JPEG to the `media` branch of this public repo, hands Instagram the `raw.githubusercontent.com` link, and deletes the file right after posting. No storage account is needed.
+
+### Never posting a photo twice
+
+Posted photos are tracked by their Drive file ID, so renaming a file doesn't make it eligible again. A photo is recorded only after Instagram confirms the post. When every photo has been posted, the run stops with "add more photos". You can set `selection.when_exhausted: recycle` to start over instead.
 
 ## Project layout
 
 ```
-config/profiles.yaml        one entry per Instagram account (no secrets)
+config/profiles.yaml        one entry per Instagram account (public: names secrets, never holds them)
 .env                        your secrets, local only (copy from .env.example)
-state/                      post log per profile
+state/<profile>/            posts.json, catalog.json, insights.json (committed after each run)
 src/instapostsforge/
-  cli.py                    the `forge` command
-  pipeline.py               runs one day's post
-  config.py                 loads profiles and merges defaults
+  pipeline.py               the daily workflow
+  agents/                   AI agents: analyst, planner, caption writer, hashtag strategist, reviewer
+  prompts/                  one prompt file per agent
+  captions/                 Instagram's caption and hashtag rules
   sources/                  where photos come from (google_drive, local_folder)
   imaging/                  JPEG conversion and aspect-ratio handling
-  captions/                 caption writer (Claude) and rule checks
-  hosting/                  temporary public URL for Instagram (S3 / Cloudflare R2)
-  publishers/               Instagram API client
-  selection.py              which photo goes next
-tests/                      runs without any accounts or keys
+  hosting/                  temporary public link for Instagram (GitHub media branch)
+  publishers/               Instagram API: publish, insights, token refresh
+  state/                    what the workflow remembers per profile
+  cli.py                    the `forge` command
+tests/                      run without any accounts or keys
 .github/workflows/          daily posting job and tests
 ```
 
-Every stage sits behind a small interface (`PhotoSource`, `CaptionWriter`, `ImageHost`, `Publisher`), so you can add a new photo source or storage provider without touching the rest.
+## What you need
 
-## Setup
+| Secret | Where it comes from |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys (add a few dollars of credit) |
+| `IG_MAIN_ACCESS_TOKEN` | Your Meta app → Instagram → API setup with Instagram login → generate a token with `instagram_business_content_publish` and `instagram_business_manage_insights` |
+| `DRIVE_FOLDER_MAIN` | The share link of your photo folder, shared as "Anyone with the link can view" |
+| `GOOGLE_DRIVE_API_KEY` | Google Cloud console → enable the Drive API → Credentials → API key (restrict it to the Drive API) |
+
+Before the first post, do two things:
+1. Switch your Instagram account to **Creator** or **Business** in Settings → Account type and tools.
+2. Create an app at [developers.facebook.com](https://developers.facebook.com/), add the **Instagram** product, and add your account as a tester. Because the app only posts to your own account, it can stay in development mode with no app review.
+
+Add each secret under the repo's Settings → Secrets and variables → Actions. GitHub provides `GITHUB_TOKEN` itself.
+
+## Running it locally
 
 You need Python 3.10 or newer.
 
 ```bash
 python -m venv .venv
-# Windows:      .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                       # should pass without any keys
-cp .env.example .env         # Windows: copy .env.example .env
+pytest                           # passes without any keys
+cp .env.example .env             # then fill it in
 ```
-
-Then fill in `.env`:
-
-| Variable | Where it comes from |
-| --- | --- |
-| `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys |
-| `IG_MAIN_ACCESS_TOKEN` | Your Meta app → Instagram → API setup with Instagram login → generate a token for your account |
-| `GOOGLE_DRIVE_API_KEY` | Google Cloud console → enable the Drive API → Credentials → API key. Your Drive folder must be shared as "Anyone with the link can view". |
-| `GOOGLE_SERVICE_ACCOUNT_FILE` | Use this instead of an API key to keep the folder private: share the folder with the service account's email address and set `auth: service_account` in the profile |
-| `S3_*` | A Cloudflare R2 bucket (free tier) or any S3-compatible bucket, with an access key |
-
-Put your Drive folder link in `config/profiles.yaml` under `profiles.main.source.folder_url`.
-
-Before the first post:
-
-1. Switch your Instagram account to **Creator** or **Business** (Settings → Account type and tools).
-2. Create an app at [developers.facebook.com](https://developers.facebook.com/), add the **Instagram** product, and add your Instagram account as a tester. Because the app only posts to your own account, it can stay in development mode with no app review.
-
-## Commands
 
 ```bash
-forge profiles                 # list profiles
-forge preview -p main          # pick + caption, save to drafts/, post nothing
-forge check -p main            # verify the token, quota and photo folder
-forge post -p main             # post today's photo
-forge refresh-token -p main    # extend the Instagram token by 60 days
+forge profiles                   # list profiles
+forge plan -p main --days 7      # what the planner would post this week, with reasons
+forge preview -p main            # full workflow, saved to drafts/, nothing posted
+forge check -p main              # verify the token, quota and Drive folder
+forge post -p main               # post today's photo (needs GITHUB_TOKEN in .env)
+forge refresh-token -p main      # extend the Instagram token by 60 days
 ```
 
-Instagram tokens last about 60 days. Run `forge refresh-token` about once a month and update `.env` and the GitHub secret.
+Instagram tokens last about 60 days. Run `forge refresh-token` about once a month, then update `.env` and the GitHub secret.
 
 ## Posting automatically every day
 
-`.github/workflows/daily-post.yml` runs the pipeline on GitHub Actions:
+`.github/workflows/daily-post.yml` runs the workflow on GitHub Actions:
 
-1. Add each `.env` value as a repository secret (Settings → Secrets and variables → Actions).
-2. Run the workflow by hand in **preview** mode and download the draft from the run's artifacts.
+1. Add the secrets above.
+2. Go to Actions → Daily post → Run workflow, and choose **plan**, then **preview**. Download the preview from the run's artifacts. The run page also shows the caption and the planner's reasoning.
 3. Run it once in **post** mode.
 4. Uncomment the `schedule` block to post daily. Cron times are in UTC.
 
-After each post, the workflow commits `state/<profile>.json` so the next run knows what was posted.
+After each run, the workflow commits `state/` so the next run knows what was posted, what each photo looks like, and how past posts performed.
 
-## Adding another account or photo folder
+## Adding another account or Drive folder
 
-Copy the `main` block in `config/profiles.yaml` under a new name, point it at new variable names (for example `IG_TRAVEL_ACCESS_TOKEN`) and a different `folder_url`, and add those variables to `.env`. Run it with `forge post -p travel`. To schedule it on GitHub, add its secrets to the workflow's `env` list.
+Copy the `main` block in `config/profiles.yaml` under a new name. Point it at new variable names, for example `IG_TRAVEL_ACCESS_TOKEN` and `DRIVE_FOLDER_TRAVEL`, and add those to `.env` and to the workflow's `env` list. Run it with `forge post -p travel`. Any `defaults` setting can be overridden per profile, for example `ai.account_theme`, `ai.quote` or `selection.strategy`.
 
-Anything in `defaults` can be overridden per profile, for example `captions.account_theme`, `captions.quote`, `image.pad_color` or `selection.strategy`.
+## Cost
+
+With Claude Opus 5.5, expect roughly $0.10 to $0.30 per daily post (about $3 to $9 a month), plus about $0.02 the first time each photo is analysed. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend less, set `ai.model` to `claude-sonnet-5-5`. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.

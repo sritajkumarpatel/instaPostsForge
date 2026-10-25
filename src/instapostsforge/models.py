@@ -49,4 +49,5 @@ class PostResult:
     published: bool
     media_id: str | None = None
     draft_dir: str | None = None
+    plan_reason: str = ""
     notes: list[str] = field(default_factory=list)

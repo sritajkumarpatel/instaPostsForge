@@ -48,7 +48,7 @@ class Profile:
     name: str
     instagram: dict[str, Any]
     source: dict[str, Any]
-    captions: dict[str, Any]
+    ai: dict[str, Any]
     image: dict[str, Any]
     selection: dict[str, Any]
     hosting: dict[str, Any]
@@ -81,7 +81,7 @@ def load_profile(name: str, path: Path = DEFAULT_CONFIG_PATH) -> Profile:
         name=name,
         instagram=merged.get("instagram", {}),
         source=merged.get("source", {}),
-        captions=merged.get("captions", {}),
+        ai=merged.get("ai", {}),
         image=merged.get("image", {}),
         selection=merged.get("selection", {}),
         hosting=merged.get("hosting", {}),

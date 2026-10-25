@@ -1,19 +1,5 @@
-"""Caption writers. Add a new provider by subclassing CaptionWriter and registering it here."""
+"""Instagram's caption rules, applied to whatever the AI writes before it is posted."""
 
-from __future__ import annotations
+from .validator import CaptionError, CaptionRules, normalize_caption
 
-from ..config import ConfigError
-from .base import CaptionWriter
-from .validator import CaptionRules, normalize_caption
-
-
-def build_caption_writer(settings: dict) -> CaptionWriter:
-    provider = settings.get("provider", "claude")
-    if provider == "claude":
-        from .claude import ClaudeCaptionWriter
-
-        return ClaudeCaptionWriter(settings)
-    raise ConfigError(f"Unknown caption provider '{provider}'.")
-
-
-__all__ = ["CaptionRules", "CaptionWriter", "build_caption_writer", "normalize_caption"]
+__all__ = ["CaptionError", "CaptionRules", "normalize_caption"]

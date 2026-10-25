@@ -93,7 +93,7 @@ def test_every_call_is_written_to_the_usage_log(tmp_path):
     from instapostsforge.usage import UsageLog, load_month
 
     log = UsageLog("p", pricing={"claude-opus-5-5": {"input": 4, "output": 20}}, command="post", state_dir=tmp_path)
-    wf, _ = workflow(ReviewResult(checks=[], verdict="approve"), RuntimeError("overloaded"), usage_log=log)
+    wf, _ = workflow(ReviewResult(checks=[], verdict="approve"), RuntimeError("overloaded"), usage_log=log, model="claude-opus-5-5")
     wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
     try:
         wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))

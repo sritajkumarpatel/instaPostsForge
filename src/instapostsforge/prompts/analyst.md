@@ -41,6 +41,10 @@ Score it as a scrolling viewer would: sharpness, exposure, composition, and how 
 - is_screenshot_or_meme: a screenshot, meme, document, receipt or mostly text.
 - shows_private_home: the outside of a private home, a house number, a street address or a car number plate is readable.
 
+## Main subject
+
+Name the one thing the photo is of in one or two lowercase words: moon, dog, sunset, dosa, temple, dragonfly. Use the plainest common word and the same word every time, so a later moon photo is also "moon", not "lunar glow" or "night sky". The planner uses this to avoid posting the same subject on nearby days.
+
 ## Place
 
 Set place_name only if the place is clearly recognisable (a famous landmark, a readable sign, or the file name says it). Otherwise leave it empty and describe the kind of place in setting. Never guess.

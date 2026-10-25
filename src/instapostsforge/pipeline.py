@@ -31,9 +31,14 @@ log = logging.getLogger(__name__)
 
 DRAFTS_DIR = Path("drafts")
 ANALYSIS_FIELDS = (
-    "category", "mood", "subject", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
+    "category", "mood", "subject", "main_subject", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
 )
 NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
+
+
+def subject_word(subject: str | None) -> str:
+    """The analyst's main subject in one comparable form: "Full Moon " and "full moon" match."""
+    return " ".join((subject or "").lower().split())
 
 
 class NothingToPost(Exception):
@@ -110,7 +115,7 @@ class Run:
 
     def taken_at(self, photo: Photo) -> str | None:
         """When the photo was taken, from EXIF or the file name, as the AI steps see it."""
-        when = self.image(photo).taken_at or name_time(photo.name)
+        when = photo.taken_at or self.image(photo).taken_at or name_time(photo.name)
         return when.strftime("%A %d %B %Y, %H:%M") if when else None
 
     # --- AI steps ----------------------------------------------------------
@@ -119,8 +124,8 @@ class Run:
         budget = int(self.profile.ai.get("max_new_analyses_per_run", 20))
         for photo in photos:
             existing = self.c.state.analysis_for(photo.id)
-            if existing is not None and "category" in existing:
-                continue  # analyses from before categories existed are redone once
+            if existing is not None and "category" in existing and "main_subject" in existing:
+                continue  # older analyses, from before categories or main subjects existed, are redone once
             if budget <= 0:
                 break
             budget -= 1
@@ -169,20 +174,26 @@ class Run:
         return allowed
 
     def keep_variety(self, order: list[tuple[Photo, PlanItem]], horizon: int) -> list[tuple[Photo, PlanItem]]:
-        """Reorders so no category repeats on consecutive days and no mood exceeds its weekly limit."""
+        """Reorders so no category repeats on consecutive days, no main subject repeats within a few
+        days, and no mood exceeds its weekly limit. If nothing fits, the planner's next pick goes ahead."""
         planning = self.profile.ai.get("planning") or {}
         no_repeat = planning.get("no_repeat_category", True)
+        subject_days = int(planning.get("no_repeat_subject_days", 3))
         max_mood = int(planning.get("max_same_mood_per_7_days", 2))
-        history = self.c.state.history(limit=6)
+        history = self.c.state.history(limit=max(6, subject_days))
         last_category = history[0].get("category") if history else None
         recent_moods = [h.get("mood") for h in history]  # newest first; with today, a 7-day window
+        recent_subjects = [subject_word(h.get("main_subject")) for h in history]  # newest first
         remaining = list(order)
         chosen = []
         while remaining and len(chosen) < horizon:
             def fits(entry):
                 analysis = self.c.state.analysis_for(entry[0].id) or {}
                 category, mood = analysis.get("category"), analysis.get("mood")
+                subject = subject_word(analysis.get("main_subject"))
                 if no_repeat and category and category == last_category:
+                    return False
+                if subject and subject in recent_subjects[:subject_days]:
                     return False
                 return not mood or recent_moods[:6].count(mood) < max_mood
             pick = next((e for e in remaining if fits(e)), remaining[0])
@@ -193,6 +204,7 @@ class Run:
             analysis = self.c.state.analysis_for(pick[0].id) or {}
             last_category = analysis.get("category")
             recent_moods.insert(0, analysis.get("mood"))
+            recent_subjects.insert(0, subject_word(analysis.get("main_subject")))
         return chosen
 
     def plan(self, photos: list[Photo], horizon: int = 1) -> list[tuple[Photo, PlanItem]]:

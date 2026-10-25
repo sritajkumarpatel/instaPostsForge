@@ -72,7 +72,7 @@ Some rules are enforced in code, whatever the AI says:
 - Photos where a child is visible are skipped unless `selection.allow_children: true`.
 - A near-identical copy of a photo posted in the last 30 days is held back.
 - Photos scoring below 4 for quality are used only when nothing better is left.
-- No category two days running, and at most 2 posts with the same mood in 7 days.
+- No category two days running, no main subject (moon, dog, sunset...) within 3 days even under another category, and at most 2 posts with the same mood in 7 days. If nothing else is left, the repeat goes ahead.
 - No quote on food or animal posts, and no place named when a private home or address is visible.
 - If any item on the reviewer's 8-point checklist fails, the post is revised, even if the reviewer said approve.
 

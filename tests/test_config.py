@@ -65,3 +65,27 @@ def test_refresh_token_can_write_to_a_file(tmp_path, monkeypatch, capsys):
     assert cli.main(["refresh-token", "-p", "main", "--token-file", str(out)]) == 0
     assert out.read_text() == "secret-new"
     assert "secret-new" not in capsys.readouterr().out
+
+
+def test_drive_photo_metadata_is_parsed():
+    from instapostsforge.sources.google_drive import parse_exif_time, parse_location
+
+    assert parse_exif_time("2026:10:18 10:48:37").isoformat() == "2026-10-18T10:48:37"
+    assert parse_exif_time("not a time") is None and parse_exif_time(None) is None
+    assert parse_location({"latitude": 12.97, "longitude": 77.59, "altitude": 900}) == (12.97, 77.59)
+    assert parse_location({"latitude": 0, "longitude": 0}) is None
+    assert parse_location({}) is None and parse_location(None) is None
+
+
+def test_check_reports_metadata_counts_without_locations():
+    from instapostsforge.cli import metadata_report
+    from instapostsforge.models import Photo
+
+    photos = [
+        Photo(id="1", name="IMG20261018104837.jpg"),
+        Photo(id="2", name="x.jpg", location=(12.97, 77.59)),
+        Photo(id="3", name="y.jpg"),
+    ]
+    report = metadata_report(photos)
+    assert "1 of 3 have a capture time" in report and "1 of 3 have a GPS location" in report
+    assert "12.97" not in report

@@ -39,7 +39,7 @@ class FakeAI(AIWorkflow):
         self.calls["analyze"].append(photo_name)
         if "analyze" in self.fail:
             raise RuntimeError("analyst down")
-        base = {"subject": f"subject of {photo_name}", "category": "street", "mood": "calm", "quality_score": 7}
+        base = {"subject": f"subject of {photo_name}", "main_subject": f"thing {photo_name}", "category": "street", "mood": "calm", "quality_score": 7}
         return {**base, **self.analyses.get(photo_name, {})}
 
     def plan(self, candidates, history, *, today, horizon):

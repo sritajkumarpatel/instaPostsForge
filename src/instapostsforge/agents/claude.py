@@ -49,6 +49,9 @@ class PhotoAnalysis(BaseModel):
     category: Category
     mood: Mood
     subject: str = Field(description="The main subject in a few words.")
+    main_subject: str = Field(
+        description="The main subject as one or two lowercase words, the same wording every time, e.g. moon, dog, sunset, dosa, temple."
+    )
     description: str = Field(description="Two or three sentences on what is in the frame.")
     setting: str = Field(description="The kind of place, e.g. hill road, old market, beach at dusk.")
     place_name: str | None = Field(default=None, description="Only when clearly recognisable; never a guess.")
@@ -205,6 +208,7 @@ class ClaudeWorkflow(AIWorkflow):
         return result.model_dump()
 
     def plan(self, candidates: list[dict], history: list[dict], *, today: date, horizon: int) -> list[PlanItem]:
+        planning = self.settings.get("planning") or {}
         brief = {
             "today": today.isoformat(),
             "weekday": today.strftime("%A"),
@@ -214,7 +218,11 @@ class ClaudeWorkflow(AIWorkflow):
         }
         result = self._ask(
             "planner",
-            self._prompt("planner", max_same_mood=(self.settings.get("planning") or {}).get("max_same_mood_per_7_days", 2)),
+            self._prompt(
+                "planner",
+                max_same_mood=planning.get("max_same_mood_per_7_days", 2),
+                subject_days=planning.get("no_repeat_subject_days", 3),
+            ),
             [{"type": "text", "text": json.dumps(brief, ensure_ascii=False, indent=1)}],
             Plan,
         )

@@ -155,3 +155,42 @@ def test_caption_feedback_keeps_the_hashtags(tmp_path, photos):
     result, _ = preview(tmp_path, photos, ai)
     assert result.caption.text == "One quiet morning." and result.caption.hashtags == ["#a1", "#b1", "#c1"]
     assert len(ai.calls["tags"]) == 1
+
+
+def test_main_subject_never_repeats_within_three_days_even_across_categories(tmp_path, photos):
+    analyses = {
+        "a.jpg": {"category": "sky", "main_subject": "moon"},
+        "b.jpg": {"category": "night", "main_subject": "Moon "},
+        "c.jpg": {"category": "animals", "main_subject": "dog"},
+    }
+    pipeline.run(make_profile(), components(tmp_path, photos, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
+    ai = FakeAI(plan_order=["b.jpg", "c.jpg"], analyses=analyses)
+    result = pipeline.run(make_profile(), components(tmp_path, photos, ai), publish=True)
+    assert result.photo.id == "c.jpg"
+    assert {"main_subject": "moon"}.items() <= ai.calls["plan"][0]["history"][-1].items()
+
+
+def test_repeated_subject_goes_ahead_when_nothing_else_is_left(tmp_path, photos):
+    files = {"a.jpg": photos["a.jpg"], "b.jpg": photos["b.jpg"]}
+    analyses = {"a.jpg": {"category": "sky", "main_subject": "moon"}, "b.jpg": {"category": "night", "main_subject": "moon"}}
+    pipeline.run(make_profile(), components(tmp_path, files, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
+    result = pipeline.run(make_profile(), components(tmp_path, files, FakeAI(analyses=analyses)), publish=True)
+    assert result.photo.id == "b.jpg"
+
+
+def test_subject_spacing_across_planned_days(tmp_path, distinct_jpeg):
+    files = {f"p{i}.jpg": distinct_jpeg(i) for i in range(4)}
+    subjects = ["moon", "moon", "dog", "sunset"]
+    categories = ["sky", "night", "animals", "landscape"]
+    analyses = {f"p{i}.jpg": {"main_subject": subjects[i], "category": categories[i], "mood": ["calm", "awe", "playful", "joyful"][i]} for i in range(4)}
+    ai = FakeAI(plan_order=["p0.jpg", "p1.jpg", "p2.jpg", "p3.jpg"], analyses=analyses)
+    plan = pipeline.plan_days(make_profile(), components(tmp_path, files, ai, publish=False), 4)
+    order = [analyses[p.id]["main_subject"] for p, _ in plan]
+    assert order == ["moon", "dog", "sunset", "moon"]
+
+
+def test_old_analyses_without_a_main_subject_are_redone(tmp_path, photos):
+    c = components(tmp_path, photos, FakeAI(), publish=False)
+    c.state.save_analysis("a.jpg", "a.jpg", {"category": "sky", "mood": "calm", "quality_score": 7})
+    pipeline.Run(make_profile(), c).analyse_new([pipeline.Photo(id="a.jpg", name="a.jpg")])
+    assert c.state.analysis_for("a.jpg")["main_subject"] == "thing a.jpg"

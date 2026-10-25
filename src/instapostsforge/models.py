@@ -12,8 +12,12 @@ class Photo:
 
     id: str
     name: str
-    created_at: datetime | None = None
+    created_at: datetime | None = None  # when it was added to the source, not when it was taken
     mime_type: str | None = None
+    taken_at: datetime | None = None  # capture time from the source's photo metadata, when it has one
+    # GPS (latitude, longitude) from the source's photo metadata. Used only during a run and never
+    # written to state/, because the repo is public.
+    location: tuple[float, float] | None = None
 
 
 @dataclass

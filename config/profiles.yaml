@@ -90,6 +90,33 @@ profiles:
       auth: api_key                       # api_key | service_account
       api_key_env: GOOGLE_DRIVE_API_KEY
       service_account_file_env: GOOGLE_SERVICE_ACCOUNT_FILE
+    ai:
+      # Filled in from the current Instagram grid. Edit freely as the account evolves.
+      account:
+        niche: >-
+          Mobile photography from Bengaluru and around Karnataka: macro flowers and nature,
+          wildlife (Bannerghatta, Bandipura), pets, moon and night skies, heritage
+          architecture (Mysuru), temples and festivals, and cafés
+        audience: >-
+          Photography and mobile-photography enthusiasts, and people who love Bengaluru,
+          Mysuru and travel around Karnataka
+        location: Bengaluru, Karnataka, India
+        voice: >-
+          Observant and warm, like a friend who noticed a small detail on a walk.
+          Simple, specific words; calm by default, playful with pets
+        avoid: >-
+          "wanderlust", "vibes", "nature is healing", stacked superlatives, and
+          technical camera jargon in the caption itself
+        ending_style: >-
+          A short question about the reader's own spots, pets or memories in
+          Bengaluru or Karnataka
+      extra_instructions: >-
+        Every photo carries a small "OPPO Find X9 Ultra | Hasselblad" camera watermark,
+        sometimes with focal length, date or place. It is the photographer's own
+        signature: ignore it when judging the photo, don't count it as text or a logo,
+        and don't mention the phone or Hasselblad in captions or hashtags. When the
+        watermark or file name shows a place (for example Bengaluru or Bannerghatta),
+        that place may be used as place_name.
 
   # A second account, fed from its own Drive folder. Remove the leading "#"s to use it,
   # then add IG_TRAVEL_ACCESS_TOKEN and DRIVE_FOLDER_TRAVEL to .env and GitHub secrets.

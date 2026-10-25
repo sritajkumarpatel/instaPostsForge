@@ -8,7 +8,7 @@ from ..models import Photo
 
 
 class PhotoSource(ABC):
-    """Somewhere photos live: a Drive folder, a local folder, a bucket."""
+    """Somewhere photos live: a Google Drive folder or a local folder."""
 
     @abstractmethod
     def list_photos(self) -> list[Photo]:

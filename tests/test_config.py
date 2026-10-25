@@ -21,7 +21,7 @@ def test_profile_inherits_defaults_and_overrides(tmp_path):
         tmp_path,
         """
         defaults:
-          captions: {language: English, hashtags: {min: 3, max: 5}}
+          ai: {language: English, hashtags: {min: 3, max: 5}}
         profiles:
           main:
             instagram: {access_token_env: IG_A}
@@ -29,14 +29,14 @@ def test_profile_inherits_defaults_and_overrides(tmp_path):
           travel:
             instagram: {access_token_env: IG_B}
             source: {type: google_drive, folder_url: abcdefghijkl}
-            captions: {hashtags: {max: 4}}
+            ai: {hashtags: {max: 4}}
         """,
     )
     assert list_profiles(path) == ["main", "travel"]
     travel = load_profile("travel", path)
-    assert travel.captions == {"language": "English", "hashtags": {"min": 3, "max": 4}}
+    assert travel.ai == {"language": "English", "hashtags": {"min": 3, "max": 4}}
     assert travel.instagram["access_token_env"] == "IG_B"
-    assert load_profile("main", path).captions["hashtags"]["max"] == 5
+    assert load_profile("main", path).ai["hashtags"]["max"] == 5
 
 
 def test_unknown_profile_is_a_clear_error(tmp_path):
@@ -48,4 +48,8 @@ def test_unknown_profile_is_a_clear_error(tmp_path):
 def test_shipped_config_loads():
     profile = load_profile("main")
     assert profile.source["type"] == "google_drive"
-    assert profile.captions["hashtags"]["max"] == 5
+    assert "folder_url" not in profile.source  # the link lives in a secret, not the public repo
+    assert profile.ai["hashtags"]["max"] == 5
+    assert profile.hosting["type"] == "github"
+    assert set(profile.ai["agents"]) == {"analyst", "planner", "caption_writer", "hashtags", "reviewer"}
+    assert profile.ai["model"] in profile.ai["pricing"]

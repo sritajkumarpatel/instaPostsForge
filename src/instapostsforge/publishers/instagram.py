@@ -50,6 +50,17 @@ class InstagramPublisher(Publisher):
         data = self._call("GET", f"{self.user_id}/content_publishing_limit", fields="quota_usage,config")
         return (data.get("data") or [{}])[0]
 
+    def fetch_insights(self, media_id: str, metrics: str = "reach,likes,comments,saved,shares") -> dict:
+        """Returns {metric: value} for one post. Needs the instagram_business_manage_insights permission."""
+        data = self._call("GET", f"{media_id}/insights", metric=metrics)
+        out = {}
+        for item in data.get("data", []):
+            values = item.get("values") or [{}]
+            value = item.get("total_value", {}).get("value", values[0].get("value"))
+            if value is not None:
+                out[item["name"]] = value
+        return out
+
     def publish_image(self, image_url: str, caption: str, alt_text: str | None = None) -> str:
         params = {"image_url": image_url, "caption": caption}
         if alt_text:

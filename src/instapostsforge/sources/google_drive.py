@@ -32,7 +32,10 @@ class GoogleDriveSource(PhotoSource):
     def __init__(self, settings: dict):
         from googleapiclient.discovery import build
 
-        self.folder_id = parse_folder_id(settings.get("folder_url") or settings.get("folder_id") or "")
+        folder = settings.get("folder_url") or env_value(settings.get("folder_url_env"), required=False) or ""
+        if not folder:
+            raise ConfigError("No Drive folder set. Put the folder link in the variable named by folder_url_env.")
+        self.folder_id = parse_folder_id(folder)
         auth = settings.get("auth", "api_key")
         if auth == "api_key":
             self.service = build(

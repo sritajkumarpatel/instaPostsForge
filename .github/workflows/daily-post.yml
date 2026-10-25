@@ -7,16 +7,16 @@ on:
         description: Profile from config/profiles.yaml
         default: main
       mode:
-        description: preview (no posting) or post
+        description: preview (no posting), plan (next 7 days) or post
         type: choice
-        options: [preview, post]
+        options: [preview, plan, post]
         default: preview
   # Turn on once a manual run has posted successfully. Times are UTC.
   # schedule:
   #   - cron: "30 13 * * *"
 
 permissions:
-  contents: write  # to commit state/<profile>.json after each post
+  contents: write  # stage the photo on the media branch and commit state/ after each post
 
 concurrency:
   group: daily-post
@@ -25,19 +25,16 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       PROFILE: ${{ inputs.profile || 'main' }}
       MODE: ${{ inputs.mode || 'post' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       IG_MAIN_ACCESS_TOKEN: ${{ secrets.IG_MAIN_ACCESS_TOKEN }}
       IG_MAIN_USER_ID: ${{ secrets.IG_MAIN_USER_ID }}
+      DRIVE_FOLDER_MAIN: ${{ secrets.DRIVE_FOLDER_MAIN }}
       GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
-      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
-      S3_BUCKET: ${{ secrets.S3_BUCKET }}
-      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-      S3_REGION: auto
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,13 +43,16 @@ jobs:
           cache: pip
       - run: pip install .
       - run: forge "$MODE" --profile "$PROFILE"
-      - name: Save the post log
-        if: env.MODE == 'post'
+      - name: Save what the workflow learned
+        # Commits posts, photo analyses, insights and the token usage log, even when the run stops early.
+        if: always()
         run: |
           git config user.name "instaPostsForge bot"
           git config user.email "actions@users.noreply.github.com"
           git add state/
-          git diff --cached --quiet || git commit -m "Record post for $PROFILE"
+          git diff --cached --quiet && exit 0
+          git commit -m "Update state for $PROFILE ($MODE)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
       - name: Keep the preview
         if: env.MODE == 'preview'

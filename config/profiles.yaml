@@ -1,37 +1,64 @@
-# Each profile is one Instagram account fed by one photo source.
-# To post to another account or pull from another Drive folder, copy a profile,
-# give it a new name, and point it at different environment variables.
-# Secrets never go in this file: it only names the variables in .env that hold them.
+# Each profile is one Instagram account fed by one Google Drive folder.
+# To post to another account or from another folder, copy the "main" block under a new
+# name and point it at different environment variables.
+#
+# This repo is public, so this file must never hold secrets or the Drive folder link.
+# It only names the variables in .env (and GitHub secrets) that hold them.
 
 defaults:
-  captions:
+  ai:
     provider: claude
+    # Default model, effort and output limit for every AI step. Each step can override
+    # them under "agents" below. Effort: low | medium | high | xhigh | max (more effort
+    # means more thinking, better judgement and more tokens).
     model: claude-opus-5-5
+    effort: medium
+    max_tokens: 16000
+    agents:
+      analyst:        { effort: low }      # runs once per new photo
+      planner:        { effort: medium }
+      caption_writer: { effort: high }     # the step readers see most
+      hashtags:       { effort: medium }
+      reviewer:       { effort: medium }
+    # Standing instructions every AI step follows (voice, topics to avoid, and so on).
+    instructions_file: config/ai-instructions.md
+    # USD per million tokens, used only to estimate cost in the usage log.
+    pricing:
+      claude-opus-5-5:   { input: 4.00,  output: 20.00 }
+      claude-sonnet-5-5: { input: 2.00,  output: 10.00 }
+      claude-haiku-5-5:  { input: 0.10,  output: 0.50 }
+      claude-fable-5-1:  { input: 10.00, output: 50.00 }
     language: English
+    quote: when_fitting       # always | when_fitting | never
     hashtags:
       min: 3
-      max: 5            # Instagram allows at most 5 hashtags per post
-    quote: when_fitting # always | when_fitting | never
+      max: 5                  # Instagram allows at most 5 hashtags per post
     max_caption_chars: 2200
+    review: true              # the reviewer checks every post before it goes out
+    max_revisions: 1          # how many times the reviewer may send a post back
+    on_review_reject: skip    # skip (no post that day) | post (post the last draft anyway)
+    max_new_analyses_per_run: 20
+    account_theme: ""         # optional, e.g. "street and travel photography in India"
+    extra_instructions: ""    # optional, anything the AI should always keep in mind
+  selection:
+    strategy: ai_planner      # ai_planner | random | ordered
+    when_exhausted: stop      # stop (fail and ask for more photos) | recycle (start over)
+    max_candidates: 60
   image:
     keep_aspect_ratio: true
-    min_ratio: 0.8      # 4:5 portrait, the tallest Instagram feed shape
-    max_ratio: 1.91     # 1.91:1 landscape, the widest
+    min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape
+    max_ratio: 1.91           # 1.91:1 landscape, the widest
     max_width: 1440
     jpeg_quality: 90
-    pad_color: auto     # auto (picks from the photo) or a hex colour like "#ffffff"
-  selection:
-    strategy: ordered   # ordered (oldest first) | random
+    pad_color: auto           # auto (picks from the photo) or a hex colour like "#ffffff"
   hosting:
-    type: s3
-    endpoint_url_env: S3_ENDPOINT_URL
-    bucket_env: S3_BUCKET
-    access_key_id_env: S3_ACCESS_KEY_ID
-    secret_access_key_env: S3_SECRET_ACCESS_KEY
-    region_env: S3_REGION
-    url_expiry_seconds: 3600
+    type: github              # Instagram can't read Drive links; the photo is staged here briefly
+    branch: media
+    token_env: GITHUB_TOKEN
+    repository_env: GITHUB_REPOSITORY
   instagram:
     api_version: v23.0
+    insight_metrics: reach,likes,comments,saved,shares
 
 profiles:
   main:
@@ -40,22 +67,20 @@ profiles:
       user_id_env: IG_MAIN_USER_ID
     source:
       type: google_drive
-      folder_url: https://drive.google.com/drive/folders/REPLACE_WITH_FOLDER_ID
-      auth: api_key                 # api_key | service_account
+      folder_url_env: DRIVE_FOLDER_MAIN   # the folder's share link lives in this secret
+      auth: api_key                       # api_key | service_account
       api_key_env: GOOGLE_DRIVE_API_KEY
       service_account_file_env: GOOGLE_SERVICE_ACCOUNT_FILE
-    captions:
-      # Optional hints for the caption writer. Leave empty to let each photo decide.
-      account_theme: ""
-      extra_instructions: ""
 
-  # Example of a second account fed from a local folder. Remove the leading "#"s to use it.
+  # A second account, fed from its own Drive folder. Remove the leading "#"s to use it,
+  # then add IG_TRAVEL_ACCESS_TOKEN and DRIVE_FOLDER_TRAVEL to .env and GitHub secrets.
   # travel:
   #   instagram:
   #     access_token_env: IG_TRAVEL_ACCESS_TOKEN
   #     user_id_env: IG_TRAVEL_USER_ID
   #   source:
-  #     type: local_folder
-  #     path: ~/Pictures/travel-posts
-  #   captions:
+  #     type: google_drive
+  #     folder_url_env: DRIVE_FOLDER_TRAVEL
+  #     api_key_env: GOOGLE_DRIVE_API_KEY
+  #   ai:
   #     account_theme: "travel photography"

@@ -1,3 +1,3 @@
-from .store import PostLog
+from .store import ProfileState
 
-__all__ = ["PostLog"]
+__all__ = ["ProfileState"]

@@ -77,6 +77,7 @@ class ProfileState:
                     "category": analysis.get("category"),
                     "mood": analysis.get("mood"),
                     "subject": analysis.get("subject"),
+                    "main_subject": analysis.get("main_subject"),
                     "hashtags": post.get("hashtags", []),
                     "results": self.insights.get(post.get("media_id", ""), {}).get("metrics"),
                 }

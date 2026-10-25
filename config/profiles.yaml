@@ -38,6 +38,7 @@ defaults:
       ending_style: ""        # e.g. "a question about the reader's own city"
     planning:
       no_repeat_category: true        # never the same category two days running
+      no_repeat_subject_days: 3       # a main subject (moon, dog...) waits this many days before it comes back
       max_same_mood_per_7_days: 2
     # USD per million tokens, used only to estimate cost in the usage log.
     pricing:

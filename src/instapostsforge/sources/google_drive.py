@@ -28,6 +28,24 @@ def parse_folder_id(folder_url: str) -> str:
     raise ConfigError(f"Could not find a Drive folder ID in: {folder_url}")
 
 
+def parse_exif_time(value: str | None) -> datetime | None:
+    """Drive reports the capture time as EXIF writes it: "2026:10:18 10:48:37"."""
+    try:
+        return datetime.strptime(value.strip(), "%Y:%m:%d %H:%M:%S") if value else None
+    except ValueError:
+        return None
+
+
+def parse_location(value: dict | None) -> tuple[float, float] | None:
+    try:
+        lat, lon = float(value["latitude"]), float(value["longitude"])
+    except (TypeError, KeyError, ValueError):
+        return None
+    if (lat, lon) == (0.0, 0.0) or not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return None  # some apps write 0,0 when there was no fix
+    return lat, lon
+
+
 class GoogleDriveSource(PhotoSource):
     def __init__(self, settings: dict):
         from googleapiclient.discovery import build
@@ -59,7 +77,7 @@ class GoogleDriveSource(PhotoSource):
                 self.service.files()
                 .list(
                     q=query,
-                    fields="nextPageToken, files(id, name, mimeType, createdTime)",
+                    fields="nextPageToken, files(id, name, mimeType, createdTime, imageMediaMetadata(time, location))",
                     pageSize=1000,
                     pageToken=page_token,
                     supportsAllDrives=True,
@@ -69,12 +87,15 @@ class GoogleDriveSource(PhotoSource):
             )
             for item in response.get("files", []):
                 created = item.get("createdTime")
+                meta = item.get("imageMediaMetadata") or {}
                 photos.append(
                     Photo(
                         id=item["id"],
                         name=item["name"],
                         created_at=datetime.fromisoformat(created.replace("Z", "+00:00")) if created else None,
                         mime_type=item.get("mimeType"),
+                        taken_at=parse_exif_time(meta.get("time")),
+                        location=parse_location(meta.get("location")),
                     )
                 )
             page_token = response.get("nextPageToken")

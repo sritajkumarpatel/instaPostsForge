@@ -104,7 +104,23 @@ def cmd_check(args) -> int:
     photos = build_source(profile.source).list_photos()
     state = ProfileState(profile.name)
     print(f"Photos in source: {len(photos)}, not yet posted: {len([p for p in photos if not state.is_posted(p.id)])}")
+    print(metadata_report(photos))
     return 0
+
+
+def metadata_report(photos) -> str:
+    """How many photos carry a capture time and GPS, which decides how well photos can be grouped."""
+    from .imaging import name_time
+
+    total = len(photos)
+    if not total:
+        return "Photo metadata: no photos to check."
+    timed = sum(1 for p in photos if p.taken_at or name_time(p.name))
+    located = sum(1 for p in photos if p.location)
+    return (
+        f"Photo metadata: {timed} of {total} have a capture time, {located} of {total} have a GPS location "
+        "(locations are only counted here, never saved)."
+    )
 
 
 def cmd_refresh_token(args) -> int:

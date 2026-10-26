@@ -18,7 +18,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 4. **Prepare image** (code): converts to JPEG and keeps the aspect ratio. A photo just outside 4:5 to 1.91:1 (a 3:4 phone portrait) loses a thin centred strip, up to `image.max_crop`; only one further outside gets a border.
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
 7. **Reviewer** (AI): approves the post, or sends it back with feedback. Caption length is code's job: `trim_caption_text` holds the text to `ai.max_caption_text_chars` (150) before review by dropping body sentences, and a reviewer complaint about length alone doesn't block a post. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
-8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. A set only holds photos of one shape (`same_shape`, from the `shape` code adds to each analysis), so nothing is framed or cropped.
+8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. A set only holds photos of one shape (`same_shape`, from the `shape` code adds to each analysis), so step 4 treats them all alike and none gets a border. Meta errors are explained by `_ERROR_HINTS` in `publishers/instagram.py`.
 9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the Drive file ID; a set's other photos are listed under `more_photos` and count as posted.
 
 ## Where the AI is configured
@@ -64,6 +64,7 @@ forge plan -p main        # needs keys in .env; posts nothing
 forge preview -p main     # full workflow into drafts/, posts nothing
 ```
 
+- **Deleted posts:** to make a deleted post's photos eligible again, remove its entry from `state/<profile>/posts.json`; its `more_photos` are freed with it.
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.
 - **New accounts:** new accounts are new profiles in `config/profiles.yaml`, not code changes.

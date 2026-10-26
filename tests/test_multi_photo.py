@@ -196,3 +196,11 @@ def test_mixed_shapes_are_never_posted_together(tmp_path, files, distinct_jpeg):
     run = pipeline.Run(make_profile(selection=MULTI), components(tmp_path, files, FakeAI(), publish=False))
     with pytest.raises(RuntimeError, match="one shape"):
         run.post_images(pipeline.Photo(id=OUTING[0], name=OUTING[0]), [pipeline.Photo(id=OUTING[1], name=OUTING[1])])
+
+
+@pytest.mark.parametrize("value", ["False", " false ", "'false'", '"FALSE"', "0", "No", "off"])
+def test_any_spelling_of_false_turns_multi_photo_off(monkeypatch, value):
+    profile = make_profile(selection={"strategy": "ai_planner", "multi_photo": {"enabled": True}})
+    monkeypatch.setenv("MULTI_PHOTO", value)
+    settings = pipeline.multi_photo_settings(profile)
+    assert settings["enabled"] is False and settings["switched_by"].startswith("MULTI_PHOTO=")

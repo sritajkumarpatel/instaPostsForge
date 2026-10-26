@@ -61,9 +61,11 @@ def multi_photo_settings(profile: Profile) -> dict:
     """selection.multi_photo, with the MULTI_PHOTO environment variable (a GitHub variable in
     Actions) overriding its enabled switch, so multi-photo posts can be turned off without a commit."""
     settings = dict(profile.selection.get("multi_photo") or {})
-    switch = os.environ.get("MULTI_PHOTO", "").strip().lower()
+    settings["switched_by"] = "selection.multi_photo.enabled in the config"
+    switch = os.environ.get("MULTI_PHOTO", "").strip().strip("\"'").strip().lower()  # False, " false", "'false'"
     if switch:
         settings["enabled"] = switch not in OFF_WORDS
+        settings["switched_by"] = f"MULTI_PHOTO={switch}"
     settings.setdefault("enabled", False)
     settings["max_photos"] = max(2, min(10, int(settings.get("max_photos", 5))))
     return settings
@@ -353,6 +355,7 @@ class Run:
                 analysis = self.c.state.analysis_for(p.id) or {}
                 candidates.append({"photo_id": p.id, "name": p.name, **{k: analysis.get(k) for k in ANALYSIS_FIELDS if k in analysis}})
             multi = multi_photo_settings(self.profile)
+            log.info("Multi-photo posts are %s (%s).", "on" if multi["enabled"] else "off", multi["switched_by"])
             sets = self.photo_sets(pool) if multi["enabled"] else []
             rng.shuffle(sets)
             brief_sets = None

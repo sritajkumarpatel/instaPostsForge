@@ -52,7 +52,8 @@ jobs:
         # Secrets are given to this step only, never to installs or third-party actions.
         env:
           # Repository variable: set MULTI_PHOTO to false to post single photos only. Unset, config decides.
-          MULTI_PHOTO: ${{ vars.MULTI_PHOTO }}
+          # Saved as a repository secret by mistake, it still works.
+          MULTI_PHOTO: ${{ vars.MULTI_PHOTO || secrets.MULTI_PHOTO }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

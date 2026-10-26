@@ -33,9 +33,9 @@ flowchart TB
 | 2 | Photo analyst | AI | Looks at each new photo in the Drive folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
 | 3 | Planner | AI | Picks today's photo from the unposted ones, or a set of 2 to 5 when they are stronger together (see [Multi-photo posts](#multi-photo-posts)). It balances strong photos with variety, and leans toward what has performed well. It also chooses the angle for the caption. |
 | 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A photo just outside 4:5 to 1.91:1, like a 3:4 phone portrait, loses a thin centred strip to fit (`image.max_crop`, 10%); only one further outside gets a border. |
-| 5 | Caption writer | AI | Writes a short, crisp caption (at most 150 characters of text): a hook, a line in the photo's tone and a closing question, plus a quote when one fits and alt text, in English. A quote's author is kept only when the model is certain of it. Code trims a longer draft by dropping body sentences. |
+| 5 | Caption writer | AI | Writes a short, crisp caption (at most 150 characters of text): a hook, a line in the photo's tone and a closing question, plus a quote when one fits and alt text, in English. A quote's author is kept only when the model is certain of it. A longer draft goes back to the writer once to shorten; code trims whatever is still too long. |
 | 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
-| 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. Length isn't its call: code has already counted it, so a length complaint alone never stops a post. |
+| 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback, but after the first round only its first concerns and serious problems count, so it can't keep moving the goalposts. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. Length isn't its call: code has already counted it, so a length complaint alone never stops a post. |
 | 8 | Publish | code | Stages the JPEG (or JPEGs) on this repo's `media` branch, posts through the official Instagram API, then deletes the staged files. |
 | 9 | Record | code | Saves the post under a hash of each photo's Drive file ID in `state/<profile>/posts.json`, so none of its photos is ever picked again. |
 
@@ -261,7 +261,7 @@ Any `defaults` setting can be overridden per profile, for example `ai.account`, 
 
 After a new token, run the workflow in **check** mode before posting.
 
-**"No post today: the caption did not pass review".** The reviewer still had a concern after two revisions, so nothing was posted. The run page shows each round's feedback. Run **post** again by hand, or set `ai.on_review_reject: post` to post the last draft instead.
+**"No post today: the caption did not pass review".** After two revisions the reviewer still found a serious problem: a claim that isn't true of the photos, a doubtful quote author, or a safety issue. Style notes (hook, tone, hashtags, alt text) never skip a day: after the first round they are only suggestions, and the best draft is posted. The run page shows each round's feedback. `ai.on_review_reject` changes this: `skip` skips on any concern, `post` always posts.
 
 **You deleted a post from Instagram and want its photos posted again.** Remove that post's entry from `state/<profile>/posts.json` and commit. Each entry is keyed by a hash and shows the photo's `name`; a multi-photo post lists its other photos under `more_photos`, and they are freed with it. The photos' analyses stay in `catalog.json`, so nothing is analysed again. Do this between runs, since every run commits `state/`.
 

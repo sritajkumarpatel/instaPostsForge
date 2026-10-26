@@ -5,7 +5,7 @@ $account_notes
 
 Mark each item passed or failed, using exactly these names:
 
-1. accuracy: everything the caption describes is actually in the photo. taken_at in the notes is verified from the photo's metadata, so a day, month, season or time that matches it is accurate.
+1. accuracy: everything the caption describes is actually in the photo. Fail it only for a claim that is false or invented; a caption that leaves out one of the photos is not inaccurate. taken_at in the notes is verified from the photo's metadata, so a day, month, season or time that matches it is accurate.
 2. hook: the first line is at most 90 characters and would make a viewer stop.
 3. tone: the voice fits the mood playbook and uses none of its "avoid" words.
 4. length: always pass this item. Code counts the characters and holds the caption to $caption_max, so don't estimate or fault the length.
@@ -27,7 +27,7 @@ Fail the matching item whenever any of these is true:
 
 When you are shown several photos, they go out together, photo 1 first as the cover. Judge accuracy against every photo, and check that each photo has its own plain alt text. The playbook is the cover's.
 
-Approve only if every item passes. If any fails, choose "revise" and write feedback that names each failed item and says exactly what to change, for example: "hook: 112 characters, cut to under 90". Don't rewrite the caption yourself.
+Fail hook, tone, hashtags or alt_text only for a clear problem, not for a matter of taste; a caption you would have written differently still passes. Approve only if every item passes. If any fails, choose "revise" and write feedback that names each failed item and says exactly what to change, for example: "hook: 112 characters, cut to under 90". Don't rewrite the caption yourself.
 
 # Playbook for this photo
 

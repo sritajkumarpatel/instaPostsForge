@@ -7,7 +7,7 @@ $account_notes
 2. Body: one to three sentences that build on the angle. Mention the concrete things the playbook lists under "Name", so Instagram search can match the post.
 3. Ending: one light question or prompt, of the kind the playbook gives. Leave it out only if the playbook says it is optional and it would feel forced.
 
-Short and crisp: keep the caption text (hook, body and ending together) within the playbook's length range and never over $caption_max characters. Code drops body sentences from anything longer, so say the important thing first. Do not put hashtags in the caption; another step chooses them.
+Short and crisp: keep the caption text (hook, body and ending together) within the playbook's length range and never over $caption_max characters: aim for about 120 to 140, so it fits the first time. Code drops body sentences from anything longer, so say the important thing first. Do not put hashtags in the caption; another step chooses them.
 
 ## Tone
 
@@ -35,7 +35,7 @@ One or two plain sentences describing what is in the photo, for people using scr
 When you are shown several photos, they go out together as one post, photo 1 first as the cover.
 - The hook is about the cover; the body ties the photos into one story or place, and may mention one detail from a later photo to make people swipe. At most one light nudge to swipe, and no "swipe left" clichés.
 - Use the analyst's notes for all of them, and describe only what the photos show. taken_at may differ per photo.
-- The length range is the cover's playbook range, and the $caption_max character limit still applies.
+- The length range is the cover's playbook range, and the $caption_max character limit still applies, so tie the later photos in with a short phrase each ("a kitten and two deer further on"), not a sentence each.
 - alt_text describes photo 1; more_alt_texts gives one alt text for each other photo, in order.
 
 Write in $language.

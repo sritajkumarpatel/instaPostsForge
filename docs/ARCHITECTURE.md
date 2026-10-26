@@ -39,7 +39,7 @@ flowchart TD
     Planner --> ValidPick{Valid photo ID?}
     ValidPick -- no --> Random[Fall back to a random unposted photo]
     ValidPick -- yes --> Prepare
-    Random --> Prepare[Prepare JPEGs, keep aspect ratio<br/>trim a 3:4 portrait to 4:5, never a border<br/>a set's photos all share one shape]
+    Random --> Prepare[Prepare JPEGs: 1080 wide, quality 95, colour profile kept<br/>trim a 3:4 portrait to 4:5, never a border<br/>a set's photos all share one shape]
     Prepare --> Writer[["AI: Caption writer"]]
     Writer --> Trim[Trim the caption to 150 characters<br/>by dropping body sentences]
     Trim --> Tags[["AI: Hashtag strategist"]]

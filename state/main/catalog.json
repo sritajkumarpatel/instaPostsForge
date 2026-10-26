@@ -83,7 +83,7 @@
     "name": "IMG20260928074828.jpg"
   },
   "h:11642df364dcb41bde847fdca892757d": {
-    "analysed_at": "2026-10-26T13:57:30+00:00",
+    "analysed_at": "2026-10-26T19:17:51+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -106,6 +106,7 @@
       "quality_score": 5,
       "season": "monsoon",
       "setting": "hill foothills on an overcast morning",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Forested hills under overcast sky",
       "taken_at": "Monday 28 September 2026, 08:28",
@@ -123,7 +124,7 @@
     "name": "IMG20260928082844.jpg"
   },
   "h:13b31a577eda4062f5390c3d97ab3926": {
-    "analysed_at": "2026-10-26T13:56:43+00:00",
+    "analysed_at": "2026-10-26T19:17:33+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -146,6 +147,7 @@
       "quality_score": 8,
       "season": "monsoon",
       "setting": "grassy forest edge with bamboo and scrub",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Indian peacock standing on grass",
       "taken_at": "Monday 28 September 2026, 07:45",
@@ -249,7 +251,7 @@
     "name": "IMG20260726193218.jpg"
   },
   "h:1843eea92bfaf8a2cede5d4442ebb520": {
-    "analysed_at": "2026-10-26T13:57:00+00:00",
+    "analysed_at": "2026-10-26T19:17:40+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -273,6 +275,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "festival pandal at night",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Ganesha idol in decorated pandal",
       "taken_at": "Saturday 26 September 2026, 21:32",
@@ -417,7 +420,7 @@
     "name": "IMG20260928121434.jpg"
   },
   "h:21beefd42c5b5e836189cb8329968146": {
-    "analysed_at": "2026-10-26T13:56:49+00:00",
+    "analysed_at": "2026-10-26T19:17:36+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -441,6 +444,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "Ganesh Chaturthi pandal interior",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Ganesha idol in pandal",
       "taken_at": "Saturday 26 September 2026, 21:05",
@@ -503,7 +507,7 @@
     "name": "IMG20261025190625.jpg"
   },
   "h:3161d045efb565d8822a026953983790": {
-    "analysed_at": "2026-10-26T18:50:13+00:00",
+    "analysed_at": "2026-10-26T19:18:10+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -526,6 +530,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "industrial-style café with glass walls and indoor plants",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "multi-level café interior",
       "taken_at": "Sunday 20 September 2026, 16:33",
@@ -589,7 +594,7 @@
     "name": "IMG20261020204639.jpg"
   },
   "h:3639c6d44282cab5b3ea759976e6e74b": {
-    "analysed_at": "2026-10-26T13:57:42+00:00",
+    "analysed_at": "2026-10-26T19:17:56+00:00",
     "analysis": {
       "category": "macro",
       "colors": [
@@ -611,6 +616,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "garden or roadside bougainvillea bush in late afternoon light",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Backlit bougainvillea blooms",
       "taken_at": "Sunday 27 September 2026, 17:34",
@@ -629,7 +635,7 @@
     "name": "IMG20260927173418.jpg"
   },
   "h:3b64bd7e194eb17f9c0b6d8df3276222": {
-    "analysed_at": "2026-10-26T13:57:53+00:00",
+    "analysed_at": "2026-10-26T19:18:02+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -652,6 +658,7 @@
       "quality_score": 6,
       "season": null,
       "setting": "large temple monument at dusk",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Giant black Shiva linga monument",
       "taken_at": "Saturday 26 September 2026, 17:24",
@@ -670,7 +677,7 @@
     "name": "IMG20260926172405.jpg"
   },
   "h:3d679c866dd22f5421f0fa45b1290968": {
-    "analysed_at": "2026-10-26T13:57:07+00:00",
+    "analysed_at": "2026-10-26T19:17:42+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -693,6 +700,7 @@
       "quality_score": 6,
       "season": null,
       "setting": "nature resort cottage among trees",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "Terracotta cottage with tiled roof",
       "taken_at": "Monday 28 September 2026, 08:31",
@@ -754,7 +762,7 @@
     "name": "IMG20261020204840.jpg"
   },
   "h:5608f48e2363ad1910018644972a29d6": {
-    "analysed_at": "2026-10-26T13:57:47+00:00",
+    "analysed_at": "2026-10-26T19:18:00+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -777,6 +785,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "swimming pool edge with a pink wall and garden greenery",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Orange and white cat stretching by a pool",
       "taken_at": "Sunday 27 September 2026, 17:40",
@@ -839,7 +848,7 @@
     "name": "IMG20260926171812.jpg"
   },
   "h:5ef9a865bfc04a1ca97fdfb1aaddb15c": {
-    "analysed_at": "2026-10-26T18:50:24+00:00",
+    "analysed_at": "2026-10-26T19:18:14+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -860,6 +869,7 @@
       "quality_score": 6,
       "season": null,
       "setting": "open sky on a clear afternoon",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Billowing white cumulus cloud",
       "taken_at": "Tuesday 20 October 2026, 17:04",
@@ -1086,7 +1096,7 @@
     "name": "IMG20261020195844.jpg"
   },
   "h:7f1ded222162ae5c1c2c1ade9a49f6d9": {
-    "analysed_at": "2026-10-26T13:58:10+00:00",
+    "analysed_at": "2026-10-26T19:18:07+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1109,6 +1119,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "brick-walled café with large windows",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "café interior with brick wall",
       "taken_at": "Sunday 20 September 2026, 16:38",
@@ -1545,7 +1556,7 @@
     "name": "IMG20260926194248.jpg"
   },
   "h:a07610e80c8fbc44ed0ace3c4d8b9a4b": {
-    "analysed_at": "2026-10-26T18:50:19+00:00",
+    "analysed_at": "2026-10-26T19:18:12+00:00",
     "analysis": {
       "category": "macro",
       "colors": [
@@ -1569,6 +1580,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "scrubby patch of ground outdoors in dappled daylight",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Small purple flower spike",
       "taken_at": "Sunday 11 October 2026, 12:57",
@@ -1630,7 +1642,7 @@
     "name": "IMG20260928083821.jpg"
   },
   "h:ae434c106f1ecf13abcbb90d2387407e": {
-    "analysed_at": "2026-10-26T13:56:55+00:00",
+    "analysed_at": "2026-10-26T19:17:38+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -1653,6 +1665,7 @@
       "quality_score": 8,
       "season": "monsoon",
       "setting": "misty forest clearing in a wildlife reserve",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Peacock on a fallen branch",
       "taken_at": "Monday 28 September 2026, 06:52",
@@ -1968,7 +1981,7 @@
     "name": "IMG20260927172351.jpg"
   },
   "h:c735cde78e07c300b6e1b320d3384bd5": {
-    "analysed_at": "2026-10-26T13:58:03+00:00",
+    "analysed_at": "2026-10-26T19:18:05+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -1990,6 +2003,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "open sky at late afternoon",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "sunlit cloud with rays",
       "taken_at": "Saturday 26 September 2026, 17:29",
@@ -2008,7 +2022,7 @@
     "name": "IMG20260926172946.jpg"
   },
   "h:cae0b308c6552a8ed36dfd9ce4486c96": {
-    "analysed_at": "2026-10-26T13:57:36+00:00",
+    "analysed_at": "2026-10-26T19:17:55+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -2030,6 +2044,7 @@
       "quality_score": 8,
       "season": "summer",
       "setting": "garden path with palm trees in a park",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Seated Buddha statue among palms",
       "taken_at": "Sunday 11 October 2026, 11:24",
@@ -2091,7 +2106,7 @@
     "name": "IMG20260718223801_BURST000_COVER.jpg"
   },
   "h:cda0cda96a7bd6a9ac676b69afe43df6": {
-    "analysed_at": "2026-10-26T13:57:18+00:00",
+    "analysed_at": "2026-10-26T19:17:47+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -2114,6 +2129,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "outdoor corner beside a red laterite wall with dry leaves and small weeds",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Ginger kitten on a pipe",
       "taken_at": "Sunday 27 September 2026, 17:23",
@@ -2133,7 +2149,7 @@
     "name": "IMG20260927172334.jpg"
   },
   "h:d73fc70c8452455d468908418e71360c": {
-    "analysed_at": "2026-10-26T18:50:30+00:00",
+    "analysed_at": "2026-10-26T19:18:17+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -2156,6 +2172,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "open temple courtyard with large statues at sunset",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "Nandi statue and shivalinga at sunset",
       "taken_at": "Saturday 26 September 2026, 17:32",
@@ -2303,7 +2320,7 @@
     "name": "IMG20260726193326.jpg"
   },
   "h:f10dd856e5bc2444fb959084561ca426": {
-    "analysed_at": "2026-10-26T13:57:14+00:00",
+    "analysed_at": "2026-10-26T19:17:46+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -2327,6 +2344,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "temple courtyard with whitewashed wall at dusk",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Rows of black Shiva lingas on painted bases",
       "taken_at": "Saturday 26 September 2026, 17:21",
@@ -2425,7 +2443,7 @@
     "name": "IMG20260928184256.jpg"
   },
   "h:f724a8b6f205c22d3d16f00c677c0095": {
-    "analysed_at": "2026-10-26T13:57:23+00:00",
+    "analysed_at": "2026-10-26T19:17:49+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -2448,6 +2466,7 @@
       "quality_score": 6,
       "season": "post-monsoon",
       "setting": "dry deciduous forest valley with farmland",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Two forested hills meeting in a V",
       "taken_at": "Monday 28 September 2026, 08:18",
@@ -2467,7 +2486,7 @@
     "name": "IMG20260928081814.jpg"
   },
   "h:fd3007e4a5645cb120f39bf34c7bfaf2": {
-    "analysed_at": "2026-10-26T13:57:58+00:00",
+    "analysed_at": "2026-10-26T19:18:03+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -2489,6 +2508,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "shaded forest clearing with grass and fallen leaves",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Resting spotted deer on grass",
       "taken_at": "Sunday 27 September 2026, 17:27",

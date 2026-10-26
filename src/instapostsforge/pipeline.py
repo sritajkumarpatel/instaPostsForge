@@ -15,12 +15,12 @@ import os
 import random
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .agents import AIWorkflow, PlanItem, SetPhoto, build_workflow
 from .agents.playbooks import NO_QUOTE_CATEGORIES
-from .captions import CaptionError, CaptionRules, normalize_caption
+from .captions import CaptionError, CaptionRules, normalize_caption, trim_caption_text
 from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
@@ -201,7 +201,9 @@ class Run:
         for photo in photos:
             analysis = self.c.state.analysis_for(photo.id) or {}
             reason = None
-            if analysis.get("is_screenshot_or_meme") and rules.get("skip_screenshots", True):
+            if analysis.get("is_explicit"):
+                reason = "explicit or nude content"
+            elif analysis.get("is_screenshot_or_meme") and rules.get("skip_screenshots", True):
                 reason = "screenshots or memes"
             elif analysis.get("has_children") and not rules.get("allow_children", False):
                 reason = "children in the photo (set selection.allow_children to post these)"
@@ -238,7 +240,10 @@ class Run:
         max_mood = int(planning.get("max_same_mood_per_7_days", 2))
         max_multi = int(multi_photo_settings(self.profile).get("max_per_7_days", 3))
         history = self.c.state.history(limit=max(6, subject_days))
-        last_category = history[0].get("category") if history else None
+        # Today's post must not share a category with the last post, nor with anything posted
+        # yesterday or earlier today (a second run in one day still counts against yesterday).
+        since = (self.today - timedelta(days=1)).isoformat()
+        last_categories = {h.get("category") for h in history[:1]} | {h.get("category") for h in history if (h.get("posted_at") or "") >= since}
         recent_moods = [h.get("mood") for h in history]  # newest first; with today, a 7-day window
         recent_subjects = [{subject_word(s) for s in h.get("all_subjects") or [h.get("main_subject")]} for h in history]
         recent_multi = [h.get("photo_count", 1) > 1 for h in history]
@@ -252,7 +257,7 @@ class Run:
             def fits(entry):
                 analysis = self.c.state.analysis_for(entry[0].id) or {}
                 category, mood = analysis.get("category"), analysis.get("mood")
-                if no_repeat and category and category == last_category:
+                if no_repeat and category and category in last_categories:
                     return False
                 taken = set().union(*recent_subjects[:subject_days])
                 if any(subject_word((self.c.state.analysis_for(i) or {}).get("main_subject")) in taken - {""} for i in self.members(entry)):
@@ -269,7 +274,7 @@ class Run:
             chosen.append(pick)
             used.update(self.members(pick))
             analysis = self.c.state.analysis_for(pick[0].id) or {}
-            last_category = analysis.get("category")
+            last_categories = {analysis.get("category")}
             recent_moods.insert(0, analysis.get("mood"))
             recent_subjects.insert(0, {subject_word((self.c.state.analysis_for(i) or {}).get("main_subject")) for i in self.members(pick)})
             recent_multi.insert(0, bool(pick[1].extra_ids))
@@ -426,6 +431,19 @@ class Run:
                 )
                 if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
                     draft.quote = draft.quote_author = None
+                # Code owns the length: an overlong caption loses body sentences here rather than a review round.
+                trimmed = trim_caption_text(draft.text, rules.max_text_chars)
+                if trimmed is None:
+                    feedback = last_problem = (
+                        f"length: the first sentence alone is over {rules.max_text_chars} characters. "
+                        f"Write a shorter hook and keep the whole caption under {rules.max_text_chars} characters."
+                    )
+                    log.info("Attempt %d: %s", attempt + 1, last_problem)
+                    redo_caption, redo_tags = True, False
+                    continue
+                if trimmed != draft.text.strip():
+                    log.info("Trimmed the caption from %d to %d characters.", len(draft.text.strip()), len(trimmed))
+                    draft.text = trimmed
             if redo_tags or not tags:
                 tags = ai.choose_hashtags(
                     analysis=analysis,
@@ -446,11 +464,12 @@ class Run:
             if not settings.get("review", True):
                 return caption
             review = ai.review(preview, caption=caption, analysis=analysis, **({"more_photos": more_photos} if more_photos else {}))
-            if review.approved:
+            # Code has already held the caption to its length limit, so a length complaint alone doesn't block it.
+            failed = set(review.failed) - {"length"}
+            if review.approved or (review.failed and not failed):
                 return caption
             reviewed_draft = caption
             feedback = last_problem = review.feedback or "The reviewer asked for a revision."
-            failed = set(review.failed)
             redo_tags = not failed or "hashtags" in failed
             redo_caption = not failed or bool(failed - {"hashtags"})
             log.info("Attempt %d sent back by the reviewer: %s", attempt + 1, feedback)

@@ -8,24 +8,24 @@ Mark each item passed or failed, using exactly these names:
 1. accuracy: everything the caption describes is actually in the photo. taken_at in the notes is verified from the photo's metadata, so a day, month, season or time that matches it is accurate.
 2. hook: the first line is at most 90 characters and would make a viewer stop.
 3. tone: the voice fits the mood playbook and uses none of its "avoid" words.
-4. length: the caption text is within the category playbook's length range (allow 20 characters either way).
+4. length: always pass this item. Code counts the characters and holds the caption to $caption_max, so don't estimate or fault the length.
 5. quote: there is no quote, or it fits the mood, is at most 140 characters, and any named author is certainly correct.
 6. hashtags: 3 to 5 tags, all specific to this photo, none generic, no brand or private place.
 7. alt_text: it plainly describes what is in the photo.
-8. safety: nothing embarrassing, offensive, or likely to break Instagram's guidelines.
+8. safety: nothing explicit, sexual, nude, hateful or otherwise against Instagram's guidelines. The account owner handpicked every photo: homes, balconies, rooms, cars and personal belongings are fine to show and to mention, so never fail safety for that.
 
 ## Hard fails
 
 Fail the matching item whenever any of these is true:
 - The caption names, describes or judges a person in the photo (safety).
-- The caption or tags name a location while the notes say shows_private_home (safety).
+- The caption or tags give a house number, street address or number plate (safety).
 - A brand is named or tagged (safety).
 - An attributed quote whose author you are not certain of (quote).
 - A hashtag in the caption text itself (hashtags).
 
 ## Multi-photo posts
 
-When you are shown several photos, they go out together, photo 1 first as the cover. Judge accuracy against every photo, check that each photo has its own plain alt text, and allow the caption up to 60 characters more than the playbook range. The playbook is the cover's.
+When you are shown several photos, they go out together, photo 1 first as the cover. Judge accuracy against every photo, and check that each photo has its own plain alt text. The playbook is the cover's.
 
 Approve only if every item passes. If any fails, choose "revise" and write feedback that names each failed item and says exactly what to change, for example: "hook: 112 characters, cut to under 90". Don't rewrite the caption yourself.
 

@@ -52,6 +52,7 @@ defaults:
       min: 3
       max: 5                  # Instagram allows at most 5 hashtags per post
     max_caption_chars: 2200
+    max_caption_text_chars: 150   # caption text alone (no quote or tags); code drops body sentences past this
     review: true              # the reviewer checks every post before it goes out
     max_revisions: 2          # how many times the reviewer may send a post back
     on_review_reject: skip    # skip (no post that day) | post (post the last draft anyway)

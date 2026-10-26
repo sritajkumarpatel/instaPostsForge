@@ -37,3 +37,26 @@ def test_render_includes_quote_and_tags():
 def test_over_length_caption_is_rejected():
     with pytest.raises(CaptionError):
         normalize_caption(caption(text="x" * 2300), CaptionRules())
+
+
+def test_short_caption_is_left_alone():
+    from instapostsforge.captions import trim_caption_text
+
+    assert trim_caption_text("  Rain on the glass. Who else loves this?  ", 150) == "Rain on the glass. Who else loves this?"
+
+
+def test_trim_drops_body_sentences_and_keeps_hook_and_question():
+    from instapostsforge.captions import trim_caption_text
+
+    text = "Rain on the glass. The marigold kept its colour all evening. Behind it, the balcony went grey. Who else watches the rain?"
+    trimmed = trim_caption_text(text, 90)
+    assert trimmed == "Rain on the glass. The marigold kept its colour all evening. Who else watches the rain?"
+    assert trim_caption_text(text, 60) == "Rain on the glass. Who else watches the rain?"
+
+
+def test_trim_keeps_line_breaks_and_drops_the_question_last():
+    from instapostsforge.captions import trim_caption_text
+
+    text = "Rain on the glass.\n\nThe marigold kept its colour all evening. Who else watches the rain?"
+    assert trim_caption_text(text, 30) == "Rain on the glass."
+    assert trim_caption_text("x" * 200, 150) is None

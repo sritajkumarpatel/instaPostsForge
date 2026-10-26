@@ -10,6 +10,10 @@ This file holds the rules that apply to every photo. Rules for one kind of photo
 - Prefer specific, sensory words (light, texture, weather, sound) over generic praise like "stunning" or "breathtaking".
 - No emoji in the first line. At most one emoji in the whole caption, and only when it adds something.
 
+## Length
+
+- Short and crisp: the caption text is at most 150 characters (`ai.max_caption_text_chars`). One strong line beats three average ones.
+
 ## Content
 
 - Every caption is written fresh for its photo. Never reuse a caption, and never open two captions in a row the same way.
@@ -28,5 +32,6 @@ This file holds the rules that apply to every photo. Rules for one kind of photo
 ## People and privacy
 
 - Never name, describe or judge the appearance of anyone in a photo.
-- Don't name the location of a private home, and never show a readable address or number plate in the text.
+- The photos are handpicked by the account owner, so homes, cars, rooms and personal belongings are fine to show and mention. Never write a house number, street address or number plate.
+- Only explicit, sexual, nude or graphic content is off limits.
 - Don't name or tag brands, even when a logo is visible.

@@ -7,7 +7,7 @@ $account_notes
 2. Body: one to three sentences that build on the angle. Mention the concrete things the playbook lists under "Name", so Instagram search can match the post.
 3. Ending: one light question or prompt, of the kind the playbook gives. Leave it out only if the playbook says it is optional and it would feel forced.
 
-Keep the caption text (hook, body and ending together) within the playbook's length range. Do not put hashtags in the caption; another step chooses them.
+Short and crisp: keep the caption text (hook, body and ending together) within the playbook's length range and never over $caption_max characters. Code drops body sentences from anything longer, so say the important thing first. Do not put hashtags in the caption; another step chooses them.
 
 ## Tone
 
@@ -22,7 +22,7 @@ $quote_rule Follow the playbook's guidance on how often a quote suits this categ
 - Describe only what is in the photo. Don't invent a story the photo doesn't support.
 - Dates and times: taken_at in the notes is when the photo was really taken, read from its metadata. You may mention the day, month, season or time of day only if it matches taken_at or is plainly visible. With no taken_at, don't name a month or date.
 - Never name, describe or judge the appearance of people in the photo.
-- If the notes say shows_private_home, or place_name is empty, don't name a specific location.
+- The photos are handpicked by the account owner. Homes, balconies, rooms, cars and personal belongings may be shown and talked about. Just never write a house number, street address or number plate, and don't name a specific location when place_name is empty.
 - Don't name or promote brands, even if a logo is visible.
 - Each caption must be fresh: don't reuse the openings or phrases from the recent captions you are shown. When top-performing captions are shown, learn from their style without copying them.
 
@@ -35,7 +35,7 @@ One or two plain sentences describing what is in the photo, for people using scr
 When you are shown several photos, they go out together as one post, photo 1 first as the cover.
 - The hook is about the cover; the body ties the photos into one story or place, and may mention one detail from a later photo to make people swipe. At most one light nudge to swipe, and no "swipe left" clichés.
 - Use the analyst's notes for all of them, and describe only what the photos show. taken_at may differ per photo.
-- The length range is the cover's playbook range, plus up to 60 characters.
+- The length range is the cover's playbook range, and the $caption_max character limit still applies.
 - alt_text describes photo 1; more_alt_texts gives one alt text for each other photo, in order.
 
 Write in $language.

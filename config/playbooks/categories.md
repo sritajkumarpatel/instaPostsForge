@@ -4,7 +4,7 @@ The photo analyst gives every photo one of the categories below. The caption wri
 
 Each section has the same fields:
 - **Hook:** what the first line does. Only about the first 125 characters show before "more".
-- **Length:** the caption text in characters, not counting the quote and hashtags.
+- **Length:** the caption text in characters, not counting the quote and hashtags. Never over `ai.max_caption_text_chars` (150), which code enforces.
 - **Name:** concrete things to mention so Instagram search can match the post.
 - **Quote:** how often a quote suits this kind of photo.
 - **Ending:** the kind of question or prompt to close on.
@@ -14,18 +14,18 @@ Each section has the same fields:
 ## landscape
 
 - Hook: a sensory moment or a single detail of the scene, not a verdict on it.
-- Length: 80 to 220.
+- Length: 80 to 150.
 - Name: the kind of place (valley, coast, forest), the light, the weather, the season.
 - Quote: often fits, if the mood is calm, nostalgic or awe.
 - Ending: ask where they would go to see a view like this, or what they would hear there.
 - Tags: #landscapephotography #mountainview #monsoonclouds #westernghats #naturelovers
-- Good: "The fog lifted for exactly four minutes. Long enough for the whole valley to show itself, green on green, before the clouds rolled back in. Where do you go when you need a view like this?"
+- Good: "The fog lifted for exactly four minutes: the whole valley, green on green, then gone. Where do you go when you need a view like this?"
 - Bad: "Stunning view! Nature is so beautiful. #nature"
 
 ## sky
 
 - Hook: the time or one colour detail ("6:42 pm, and the sky went orange for a minute.").
-- Length: 60 to 180.
+- Length: 50 to 120.
 - Name: sunrise or sunset, the colours, what is silhouetted.
 - Quote: often fits.
 - Ending: ask whether they are a sunrise or a sunset person, or what the sky looked like where they are.
@@ -36,18 +36,18 @@ Each section has the same fields:
 ## city
 
 - Hook: a detail most people walk past (a pattern, a line, a contrast of old and new).
-- Length: 100 to 250.
+- Length: 80 to 150.
 - Name: the building style, the city when known, the lines, shapes and materials.
 - Quote: rarely.
 - Ending: ask about a building or corner they love in their own city.
 - Tags: #architecturephotography #urbanexplorer #lookingup #mumbaiarchitecture #symmetry
-- Good: "Look up on this street and the balconies repeat like a sentence. Every one painted a slightly different blue. Which building in your city do you always look up at?"
+- Good: "Look up and the balconies repeat like a sentence, each a slightly different blue. Which building in your city do you always look up at?"
 - Bad: "City life. Amazing architecture!"
 
 ## street
 
 - Hook: a small story in the present tense, as if it is happening now.
-- Length: 80 to 220.
+- Length: 70 to 150.
 - Name: the action, the setting, the time of day. Never name or describe strangers.
 - Quote: rarely.
 - Ending: ask what they would have noticed first, or about a similar moment they saw.
@@ -58,7 +58,7 @@ Each section has the same fields:
 ## people
 
 - Hook: the feeling of the moment, never looks or body.
-- Length: 60 to 200.
+- Length: 50 to 130.
 - Name: the mood, the setting, the light. No names, ages or judgments about appearance.
 - Quote: sometimes.
 - Ending: a light, warm question.
@@ -69,7 +69,7 @@ Each section has the same fields:
 ## food
 
 - Hook: taste, smell or texture first, then what it is.
-- Length: 80 to 200.
+- Length: 70 to 140.
 - Name: the dish, key ingredients, where it is from if known.
 - Quote: never.
 - Ending: ask how they make it or where they get the best version.
@@ -80,18 +80,18 @@ Each section has the same fields:
 ## animals
 
 - Hook: a personality line, light and playful.
-- Length: 50 to 160.
+- Length: 50 to 120.
 - Name: the animal, what it is doing.
 - Quote: never.
 - Ending: ask about their pet or an animal they have met.
 - Tags: #catsofinstagram #straydogs #animalphotography #wildlifeindia #petportrait
-- Good: "He has been guarding this step for three years and has never once let anyone pass without a toll of chin scratches. Does your street have a guard like this?"
+- Good: "Three years guarding this step, and the toll is still chin scratches. Does your street have a guard like this?"
 - Bad: "Cute dog."
 
 ## macro
 
 - Hook: a "look closer" detail about texture or scale.
-- Length: 60 to 180.
+- Length: 50 to 130.
 - Name: the texture, the subject, how small it really is.
 - Quote: sometimes.
 - Ending: ask what they see first.
@@ -102,7 +102,7 @@ Each section has the same fields:
 ## night
 
 - Hook: stillness or scale.
-- Length: 60 to 180.
+- Length: 50 to 120.
 - Name: the night sky, stars, city lights, the hour.
 - Quote: often fits.
 - Ending: ask about the darkest or clearest sky they have seen.
@@ -113,18 +113,18 @@ Each section has the same fields:
 ## travel
 
 - Hook: one moment from the trip, not an itinerary.
-- Length: 100 to 250.
+- Length: 90 to 150.
 - Name: the place, what happened, one sensory detail.
 - Quote: sometimes.
 - Ending: ask for a recommendation nearby, or their own memory of the place.
 - Tags: #travelphotography #incredibleindia #roadtrip #travelstories #himachal
-- Good: "The bus stopped for chai at a bend with no name, and nobody was in a hurry to get back on. Two hours from Manali, and I still think about that stop. Any roadside chai stop you'd go back for?"
+- Good: "Chai at a bend with no name, two hours from Manali, and nobody rushed back to the bus. Any roadside chai stop you'd go back for?"
 - Bad: "Day 3 of my trip. Visited many places."
 
 ## event
 
 - Hook: energy and colour.
-- Length: 80 to 220.
+- Length: 70 to 140.
 - Name: the festival or event only when certain from the photo or file name; otherwise describe it.
 - Quote: rarely.
 - Ending: ask how they celebrate or what they remember from it.
@@ -135,7 +135,7 @@ Each section has the same fields:
 ## abstract
 
 - Hook: one striking word, shape or contrast.
-- Length: 40 to 140.
+- Length: 30 to 100.
 - Name: the shape, colour, contrast or pattern.
 - Quote: sometimes.
 - Ending: optional; it can end on the image.

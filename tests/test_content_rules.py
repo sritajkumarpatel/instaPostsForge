@@ -215,20 +215,30 @@ def test_explicit_photos_are_never_planned(tmp_path, photos):
     assert "a.jpg" not in {c["photo_id"] for c in ai.calls["plan"][0]["candidates"]}
 
 
+LONG = "Rain on the glass. " + "The marigold held its colour as the light went. " * 4 + "Who else watches the rain?"
+
+
+def test_writer_gets_one_chance_to_shorten_before_code_trims(tmp_path, photos):
+    ai = FakeAI(plan_order=["a.jpg"], captions=[LONG, "Rain on the glass, and a marigold that kept its colour. Who else watches the rain?"])
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text.startswith("Rain on the glass, and a marigold")
+    assert "the limit is 150" in ai.calls["caption"][1]["feedback"]
+    assert len(ai.calls["review"]) == 1
+
+
 def test_long_caption_is_trimmed_in_code_before_review(tmp_path, photos):
-    long = "Rain on the glass. " + "The marigold held its colour as the light went. " * 4 + "Who else watches the rain?"
-    ai = FakeAI(plan_order=["a.jpg"], captions=[long])
+    ai = FakeAI(plan_order=["a.jpg"], captions=[LONG, LONG])
     result, _ = preview(tmp_path, photos, ai)
     assert len(result.caption.text) <= 150
     assert result.caption.text.startswith("Rain on the glass.") and result.caption.text.endswith("Who else watches the rain?")
-    assert len(ai.calls["caption"]) == 1
+    assert len(ai.calls["caption"]) == 2 and len(ai.calls["review"]) == 1
 
 
 def test_hook_too_long_to_trim_goes_back_to_the_writer(tmp_path, photos):
-    ai = FakeAI(plan_order=["a.jpg"], captions=["x" * 200, "Rain on the glass."])
+    ai = FakeAI(plan_order=["a.jpg"], captions=["x" * 200, "y" * 200, "Rain on the glass."])
     result, _ = preview(tmp_path, photos, ai)
     assert result.caption.text == "Rain on the glass."
-    assert "150" in ai.calls["caption"][1]["feedback"]
+    assert "150" in ai.calls["caption"][2]["feedback"]
 
 
 def test_length_alone_never_costs_the_day(tmp_path, photos):
@@ -255,3 +265,42 @@ def test_category_of_yesterdays_posts_is_blocked_even_after_a_second_post(tmp_pa
     ai = FakeAI(plan_order=["c.jpg", "d.jpg"], analyses=analyses)
     result = pipeline.run(profile, components(tmp_path, files, ai), publish=True, today=today)
     assert result.photo.id == "d.jpg"
+
+
+def test_reviewer_cannot_move_the_goalposts(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    reviews = [Review(False, "hook: weak", failed=["hook"]), Review(False, "tone: add a joke", failed=["tone"])]
+    ai = FakeAI(plan_order=["a.jpg"], captions=["First.", "Second."], reviews=reviews)
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "Second."
+    assert len(ai.calls["review"]) == 2
+
+
+def test_new_hard_problem_is_still_raised_after_the_first_round(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    reviews = [Review(False, "hook: weak", failed=["hook"]), Review(False, "accuracy: no deer", failed=["accuracy"])]
+    ai = FakeAI(plan_order=["a.jpg"], captions=["First.", "Second."], reviews=reviews)
+    with pytest.raises(pipeline.ReviewRejected):
+        preview(tmp_path, photos, ai)
+
+
+def test_style_concerns_alone_never_cost_the_day(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    reviews = [Review(False, "hook: weak", failed=["hook"]), Review(False, "hook: still weak", failed=["hook"])]
+    ai = FakeAI(plan_order=["a.jpg"], captions=["First.", "Second."], reviews=reviews)
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "Second."
+    assert any("style concern" in n for n in result.notes)
+
+
+def test_strict_mode_skips_on_any_concern(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    reviews = [Review(False, "hook: weak", failed=["hook"]), Review(False, "hook: still weak", failed=["hook"])]
+    ai = FakeAI(plan_order=["a.jpg"], captions=["First.", "Second."], reviews=reviews)
+    profile = make_profile(ai={"hashtags": {"min": 3, "max": 5}, "review": True, "max_revisions": 1, "on_review_reject": "skip"})
+    with pytest.raises(pipeline.ReviewRejected):
+        preview(tmp_path, photos, ai, profile)

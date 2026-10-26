@@ -38,6 +38,9 @@ DRAFTS_DIR = Path("drafts")
 ANALYSIS_FIELDS = (
     "category", "mood", "subject", "main_subject", "orientation", "shape", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
 )
+# Reviewer checklist items serious enough to skip a day: a false claim about the photo, a wrongly
+# attributed quote, or a safety problem (explicit content, an address). Everything else is style.
+HARD_CHECKS = frozenset({"accuracy", "quote", "safety"})
 NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
 TAKEN_AT_FORMAT = "%A %d %B %Y, %H:%M"
 # Instagram shows every photo of a multi-photo post in the cover's shape, so a set only holds photos
@@ -417,21 +420,37 @@ class Run:
         draft: Caption | None = None
         tags: list[str] = []
         redo_caption = redo_tags = True
+        first_failed: set[str] | None = None  # what the first review faulted; later rounds may only re-raise these
+        hard_problem = False  # whether the last review raised a concern that must stop the post
+
+        def write(note: str) -> Caption:
+            text = ai.write_caption(
+                preview,
+                analysis=analysis,
+                angle=plan_item.angle,
+                recent_captions=state.recent_captions(),
+                top_captions=state.top_captions(),
+                feedback=note,
+                **({"more_photos": more_photos} if more_photos else {}),
+            )
+            if text.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
+                text.quote = text.quote_author = None
+            return text
+
         for attempt in range(max_revisions + 1):
             # Only the part the reviewer faulted is redone, so a fix to one part can't break another.
             if redo_caption or draft is None:
-                draft = ai.write_caption(
-                    preview,
-                    analysis=analysis,
-                    angle=plan_item.angle,
-                    recent_captions=state.recent_captions(),
-                    top_captions=state.top_captions(),
-                    feedback=feedback,
-                    **({"more_photos": more_photos} if more_photos else {}),
-                )
-                if draft.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
-                    draft.quote = draft.quote_author = None
-                # Code owns the length: an overlong caption loses body sentences here rather than a review round.
+                draft = write(feedback)
+                if len(draft.text.strip()) > rules.max_text_chars:
+                    # One quick shortening pass by the writer, which knows what each sentence covers; it
+                    # doesn't count as a review round. Code trims only what is still too long after it.
+                    over = len(draft.text.strip())
+                    log.info("The caption is %d characters; asking the writer to shorten it.", over)
+                    draft = write(
+                        (feedback + "\n\n" if feedback else "")
+                        + f"length: the caption text is {over} characters; the limit is {rules.max_text_chars}. "
+                        "Shorten it, keeping the hook, the closing question and a mention of every photo."
+                    )
                 trimmed = trim_caption_text(draft.text, rules.max_text_chars)
                 if trimmed is None:
                     feedback = last_problem = (
@@ -466,15 +485,25 @@ class Run:
             review = ai.review(preview, caption=caption, analysis=analysis, **({"more_photos": more_photos} if more_photos else {}))
             # Code has already held the caption to its length limit, so a length complaint alone doesn't block it.
             failed = set(review.failed) - {"length"}
+            if first_failed is None:
+                first_failed = set(failed)
+            else:
+                # No moving goalposts: after the first round only its own concerns and hard problems count.
+                ignored = failed - first_failed - HARD_CHECKS
+                if ignored:
+                    log.info("Attempt %d: treating new %s notes as suggestions only.", attempt + 1, ", ".join(sorted(ignored)))
+                failed -= ignored
             if review.approved or (review.failed and not failed):
                 return caption
             reviewed_draft = caption
+            hard_problem = not failed or bool(failed & HARD_CHECKS)
             feedback = last_problem = review.feedback or "The reviewer asked for a revision."
             redo_tags = not failed or "hashtags" in failed
             redo_caption = not failed or bool(failed - {"hashtags"})
             log.info("Attempt %d sent back by the reviewer: %s", attempt + 1, feedback)
-        if settings.get("on_review_reject", "skip") == "post" and reviewed_draft is not None:
-            self.notes.append(f"Posted although the reviewer still had a concern: {last_problem}")
+        mode = settings.get("on_review_reject", "skip_if_serious")
+        if reviewed_draft is not None and (mode == "post" or (mode == "skip_if_serious" and not hard_problem)):
+            self.notes.append(f"Posted although the reviewer still had a style concern: {last_problem}")
             return reviewed_draft
         raise ReviewRejected(f"No post today: the caption did not pass review. Last concern: {last_problem}")
 

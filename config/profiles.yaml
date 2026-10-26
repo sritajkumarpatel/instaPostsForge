@@ -55,7 +55,8 @@ defaults:
     max_caption_text_chars: 150   # caption text alone (no quote or tags); code drops body sentences past this
     review: true              # the reviewer checks every post before it goes out
     max_revisions: 2          # how many times the reviewer may send a post back
-    on_review_reject: skip    # skip (no post that day) | post (post the last draft anyway)
+    on_review_reject: skip_if_serious  # after the last revision: skip_if_serious (skip only for accuracy, quote or safety;
+                                       # post the best draft for style notes) | skip (any concern) | post (always post)
     max_new_analyses_per_run: 20
     extra_instructions: ""    # optional, anything the AI should always keep in mind
   selection:

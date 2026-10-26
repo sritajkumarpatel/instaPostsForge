@@ -20,6 +20,33 @@ class PublishError(Exception):
     pass
 
 
+# What to do about the errors Meta returns most often, by error code.
+# https://developers.facebook.com/docs/graph-api/guides/error-handling
+_ERROR_HINTS = {
+    190: "The access token has expired or was revoked. Generate a new token in the Meta app dashboard "
+    "(Instagram > API setup with Instagram login) and save it as the IG_..._ACCESS_TOKEN secret.",
+    200: "Meta refused API access for this app or account. Check the app's Dashboard and Alerts at "
+    "developers.facebook.com for a restriction or a required check, make sure your Instagram account is "
+    "still a tester of the app and is a Professional account, then generate a new token.",
+    10: "The token is missing a permission. Generate a new token with instagram_business_content_publish "
+    "and instagram_business_manage_insights.",
+    4: "Rate limited by Meta. Wait an hour and run again.",
+    17: "Rate limited by Meta. Wait an hour and run again.",
+    32: "Rate limited by Meta. Wait an hour and run again.",
+    613: "Rate limited by Meta. Wait an hour and run again.",
+}
+
+
+def _api_error(what: str, error: dict, fallback: str) -> PublishError:
+    message = error.get("message") or fallback
+    code = error.get("code")
+    hint = _ERROR_HINTS.get(code) if isinstance(code, int) else None
+    if not hint and "access blocked" in message.lower():
+        hint = _ERROR_HINTS[200]
+    detail = f" (code {code})" if code is not None else ""
+    return PublishError(f"{what} failed: {message}{detail}" + (f" {hint}" if hint else ""))
+
+
 def _network_error(what: str, err: requests.RequestException) -> PublishError:
     # requests puts the full URL, access token included, in its messages; keep it out of logs.
     return PublishError(f"{what} failed: could not reach Instagram ({type(err).__name__}).")
@@ -41,8 +68,7 @@ class InstagramPublisher(Publisher):
             raise _network_error(f"Instagram API {method} {path}", err) from None
         data = response.json() if response.content else {}
         if response.status_code >= 400 or "error" in data:
-            message = data.get("error", {}).get("message", response.text)
-            raise PublishError(f"Instagram API {method} {path} failed: {message}")
+            raise _api_error(f"Instagram API {method} {path}", data.get("error") or {}, response.text)
         return data
 
     @property
@@ -84,23 +110,24 @@ class InstagramPublisher(Publisher):
         if not 2 <= len(image_urls) <= 10:
             raise PublishError(f"A multi-photo post needs 2 to 10 photos, not {len(image_urls)}.")
         alt_texts = list(alt_texts or [])
+        user_id = self.user_id  # an account or token problem shows here, before any photo is sent
         children = []
         for i, url in enumerate(image_urls):
             params = {"image_url": url, "is_carousel_item": "true"}
             alt = alt_texts[i] if i < len(alt_texts) else None
             try:
-                child = self._call("POST", f"{self.user_id}/media", **params, **({"alt_text": alt} if alt else {}))
-            except PublishError:
-                if not alt:
+                child = self._call("POST", f"{user_id}/media", **params, **({"alt_text": alt} if alt else {}))
+            except PublishError as err:
+                if not alt or "alt" not in str(err).lower():
                     raise
-                child = self._call("POST", f"{self.user_id}/media", **params)  # in case alt text isn't accepted on carousel items
+                child = self._call("POST", f"{user_id}/media", **params)  # alt text not accepted on carousel items
             self._wait_until_ready(child["id"])
             children.append(child["id"])
         container_id = self._call(
-            "POST", f"{self.user_id}/media", media_type="CAROUSEL", children=",".join(children), caption=caption
+            "POST", f"{user_id}/media", media_type="CAROUSEL", children=",".join(children), caption=caption
         )["id"]
         self._wait_until_ready(container_id)
-        return self._call("POST", f"{self.user_id}/media_publish", creation_id=container_id)["id"]
+        return self._call("POST", f"{user_id}/media_publish", creation_id=container_id)["id"]
 
     def _wait_until_ready(self, container_id: str, attempts: int = 10, delay: float = 5.0) -> None:
         for _ in range(attempts):
@@ -126,5 +153,5 @@ def refresh_long_lived_token(token: str, session: requests.Session | None = None
         raise _network_error("Token refresh", err) from None
     data = response.json()
     if response.status_code >= 400 or "error" in data:
-        raise PublishError(f"Token refresh failed: {data.get('error', {}).get('message', response.text)}")
+        raise _api_error("Token refresh", data.get("error") or {}, response.text)
     return data

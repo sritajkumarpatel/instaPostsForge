@@ -90,15 +90,19 @@ def fit_ratio(image: Image.Image, min_ratio: float, max_ratio: float, pad_color:
     return canvas, True
 
 
-def _to_jpeg(image: Image.Image, quality: int) -> bytes:
+def _to_jpeg(image: Image.Image, quality: int, icc_profile: bytes | None = None, subsampling: int = 2) -> bytes:
     out = io.BytesIO()
-    image.save(out, format="JPEG", quality=quality, optimize=True, progressive=True)
+    extra = {"icc_profile": icc_profile} if icc_profile else {}
+    image.save(out, format="JPEG", quality=quality, optimize=True, progressive=True, subsampling=subsampling, **extra)
     return out.getvalue()
 
 
 def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     image = Image.open(io.BytesIO(original))
     taken_at = exif_time(image)
+    # The colour profile (sRGB or Display P3 on newer phones) has no personal data; without it a wide-gamut
+    # photo looks dull. EXIF, with its GPS, is still dropped.
+    icc_profile = image.info.get("icc_profile")
     image = ImageOps.exif_transpose(image).convert("RGB")
     shape = round(image.width / image.height, 3)
 
@@ -116,7 +120,8 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
             str(settings.get("pad_color", "auto")),
         )
 
-    max_width = int(settings.get("max_width", 1440))
+    # Instagram shows feed photos at most 1080 wide; a bigger upload is downscaled again on their side.
+    max_width = int(settings.get("max_width", 1080))
     if image.width > max_width:
         image = image.resize((max_width, round(image.height * max_width / image.width)), Image.LANCZOS)
 
@@ -124,7 +129,8 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     preview.thumbnail((1024, 1024), Image.LANCZOS)
 
     return PreparedImage(
-        jpeg=_to_jpeg(image, int(settings.get("jpeg_quality", 90))),
+        # 4:4:4 chroma (subsampling 0) keeps fine colour detail that 4:2:0 would blur before Instagram recompresses.
+        jpeg=_to_jpeg(image, int(settings.get("jpeg_quality", 95)), icc_profile, subsampling=0),
         width=image.width,
         height=image.height,
         padded=padded,

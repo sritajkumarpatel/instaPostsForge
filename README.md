@@ -274,7 +274,7 @@ The repo is public, so it is built to hold nothing private:
 - `state/` keys photos by a one-way hash of their Drive file ID, because a raw ID is enough to download that photo from a link-shared folder. Staged images are named by the same hash.
 - In the workflows, secrets are passed only to the step that runs `forge`, never to `pip install` or third-party actions. Actions are pinned to commit SHAs, and Dependabot proposes updates weekly.
 - Network errors from the Instagram API never include the request URL, which carries the access token.
-- Staged JPEGs are re-encoded without EXIF, so no GPS location or camera data is published.
+- Staged JPEGs are re-encoded without EXIF, so no GPS location or camera data is published. Only the colour profile is kept, so colours look as shot.
 - The `media` branch starts empty and holds one image for about a minute per post. Preview artifacts expire after 3 days.
 
 In the repo's Settings → Code security, turn on secret scanning, push protection and Dependabot alerts.

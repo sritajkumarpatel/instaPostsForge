@@ -57,3 +57,16 @@ def test_png_is_converted_to_jpeg():
     Image.new("RGBA", (800, 800), (10, 20, 30, 128)).save(out, format="PNG")
     prepared = prepare_image(out.getvalue(), SETTINGS)
     assert Image.open(io.BytesIO(prepared.jpeg)).format == "JPEG"
+
+
+def test_upload_keeps_colour_profile_and_full_colour_detail(jpeg_factory):
+    from PIL import ImageCms, JpegImagePlugin
+
+    profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    out = io.BytesIO()
+    Image.open(io.BytesIO(jpeg_factory(1200, 1500))).save(out, format="JPEG", icc_profile=profile)
+    prepared = prepare_image(out.getvalue(), {**SETTINGS, "max_width": 1080})
+    saved = Image.open(io.BytesIO(prepared.jpeg))
+    assert saved.info.get("icc_profile") == profile
+    assert JpegImagePlugin.get_sampling(saved) == 0
+    assert saved.size == (1080, 1350)

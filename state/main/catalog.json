@@ -1,4 +1,127 @@
 {
+  "h:075e425a4de370a1edb1435fc19ea3fb": {
+    "analysed_at": "2026-10-26T13:56:19+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "blue",
+        "grey",
+        "green",
+        "brown"
+      ],
+      "description": "A pyramid-shaped stone building with a large spiral pattern on its sloping roof stands behind a neat lawn and wide steps. A tall coconut palm leans across the right side of the frame against a clear blue sky. Blue banners by the entrance and a small footwear stand hint at a quiet, welcoming space.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": true,
+      "has_text_or_logo": true,
+      "is_screenshot_or_meme": false,
+      "main_subject": "pyramid",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "summer",
+      "setting": "meditation centre grounds with lawn and stone steps on a sunny day",
+      "shows_private_home": false,
+      "subject": "Pyramid meditation hall with spiral roof",
+      "taken_at": "Sunday 11 October 2026, 11:20",
+      "themes": [
+        "pyramid architecture",
+        "spiral design",
+        "meditation space",
+        "coconut palm",
+        "Karnataka architecture",
+        "Bengaluru places",
+        "architecture photography",
+        "mobile photography"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "5c1c7d9f9face41f",
+    "name": "IMG20261011112054.jpg"
+  },
+  "h:11642df364dcb41bde847fdca892757d": {
+    "analysed_at": "2026-10-26T13:57:30+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "grey",
+        "green",
+        "white",
+        "dark green",
+        "red"
+      ],
+      "description": "Green forested hills rise behind a belt of trees and a few low rooftops, with a red and white mobile tower standing on the right. Heavy grey clouds fill the upper frame and soft light keeps everything muted and still.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "hills",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 5,
+      "season": "monsoon",
+      "setting": "hill foothills on an overcast morning",
+      "shows_private_home": false,
+      "subject": "Forested hills under overcast sky",
+      "taken_at": "Monday 28 September 2026, 08:28",
+      "themes": [
+        "Karnataka hills",
+        "monsoon mood",
+        "cloudy skies",
+        "mobile photography",
+        "Karnataka landscapes",
+        "nature lovers"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "833e38390882998d",
+    "name": "IMG20260928082844.jpg"
+  },
+  "h:13b31a577eda4062f5390c3d97ab3926": {
+    "analysed_at": "2026-10-26T13:56:43+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "peacock blue",
+        "emerald green",
+        "teal",
+        "brown",
+        "cream"
+      ],
+      "description": "A male Indian peafowl stands side-on on a grassy bank, its head turned toward the camera with the small crest lifted. The deep blue neck and green body stand out against the soft green bamboo and shrubs behind, and the barred wing pattern is sharp and detailed. The train trails low behind it, close to the ground.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "peacock",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "monsoon",
+      "setting": "grassy forest edge with bamboo and scrub",
+      "shows_private_home": false,
+      "subject": "Indian peacock standing on grass",
+      "taken_at": "Monday 28 September 2026, 07:45",
+      "themes": [
+        "peacock",
+        "Indian peafowl",
+        "wildlife photography",
+        "bird photography",
+        "Karnataka wildlife",
+        "mobile photography",
+        "nature lovers",
+        "animals"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "80c0982c39c38739",
+    "name": "IMG20260928074539.jpg"
+  },
   "h:13c1723b688a410e2411ce93d220c472": {
     "analysed_at": "2026-10-26T13:49:22+00:00",
     "analysis": {
@@ -82,6 +205,49 @@
     "fingerprint": "8ec18e8611053782",
     "name": "IMG20260726193218.jpg"
   },
+  "h:1843eea92bfaf8a2cede5d4442ebb520": {
+    "analysed_at": "2026-10-26T13:57:00+00:00",
+    "analysis": {
+      "category": "event",
+      "colors": [
+        "red",
+        "white",
+        "magenta",
+        "blue",
+        "gold",
+        "black"
+      ],
+      "description": "A many-armed Ganesha idol stands in a pandal framed by red and white pleated drapes, with a pink-lit ceiling and a small flower chandelier overhead. Garlands hang beside the idol and the dark night surrounds the bright stage. The symmetrical framing draws the eye straight to the idol's face.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "ganesha idol",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "festival pandal at night",
+      "shows_private_home": false,
+      "subject": "Ganesha idol in decorated pandal",
+      "taken_at": "Saturday 26 September 2026, 21:32",
+      "themes": [
+        "Ganesh Chaturthi",
+        "Ganesha pandal",
+        "festival decor",
+        "Karnataka festivals",
+        "Bengaluru festivals",
+        "night festival photography",
+        "Indian culture",
+        "mobile photography"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "8280130f4d4d5d55",
+    "name": "IMG20260926213206.jpg"
+  },
   "h:1d26afe438b931f7a648d70879ac203c": {
     "analysed_at": "2026-10-26T13:51:20+00:00",
     "analysis": {
@@ -123,6 +289,49 @@
     },
     "fingerprint": "30e86133e3327169",
     "name": "IMG20261024190135.jpg"
+  },
+  "h:21beefd42c5b5e836189cb8329968146": {
+    "analysed_at": "2026-10-26T13:56:49+00:00",
+    "analysis": {
+      "category": "event",
+      "colors": [
+        "pink",
+        "blue",
+        "gold",
+        "cream",
+        "maroon",
+        "white"
+      ],
+      "description": "A tall, multi-armed Ganesha idol stands in a dancing pose inside a festival pandal, draped in colourful flower garlands and a gold crown. White fabric swirls across the ceiling with a hanging cascade of white wisteria-like flowers and a chandelier, while cream curtains and maroon drapes frame the figure.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": true,
+      "is_screenshot_or_meme": false,
+      "main_subject": "ganesha idol",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "Ganesh Chaturthi pandal interior",
+      "shows_private_home": false,
+      "subject": "Ganesha idol in pandal",
+      "taken_at": "Saturday 26 September 2026, 21:05",
+      "themes": [
+        "Ganesh Chaturthi",
+        "Ganesha idol",
+        "pandal decoration",
+        "Indian festivals",
+        "Karnataka festivals",
+        "Bengaluru festivals",
+        "temple and festival photography",
+        "mobile photography"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "0f0f0f2f1f191913",
+    "name": "IMG20260926210511.jpg"
   },
   "h:2d1fabf1df284a87ddfcf4758b0c8c4c": {
     "analysed_at": "2026-10-26T13:51:08+00:00",
@@ -209,6 +418,169 @@
     },
     "fingerprint": "c28f0d8f06321e5a",
     "name": "IMG20261020204639.jpg"
+  },
+  "h:3639c6d44282cab5b3ea759976e6e74b": {
+    "analysed_at": "2026-10-26T13:57:42+00:00",
+    "analysis": {
+      "category": "macro",
+      "colors": [
+        "magenta",
+        "pink",
+        "brown",
+        "green"
+      ],
+      "description": "Magenta bougainvillea bracts glow with sunlight coming through their papery petals, showing fine veins. Thorny brown branches cross the frame, and a soft blur of green and more pink flowers fills the background.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "bougainvillea",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "garden or roadside bougainvillea bush in late afternoon light",
+      "shows_private_home": false,
+      "subject": "Backlit bougainvillea blooms",
+      "taken_at": "Sunday 27 September 2026, 17:34",
+      "themes": [
+        "bougainvillea",
+        "macro flowers",
+        "backlit petals",
+        "Bengaluru gardens",
+        "flower photography",
+        "mobile photography",
+        "nature lovers"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "b3347d4d25210286",
+    "name": "IMG20260927173418.jpg"
+  },
+  "h:3b64bd7e194eb17f9c0b6d8df3276222": {
+    "analysed_at": "2026-10-26T13:57:53+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "charcoal black",
+        "slate blue",
+        "white",
+        "soft cream",
+        "gold"
+      ],
+      "description": "A huge dark cylindrical linga rises from a tiered square base, each level marked with three white horizontal stripes and a small red-and-gold diamond. A pale hazy evening sky sits behind it, and a tiny white shrine at the bottom edge shows how large the structure is.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "linga",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "large temple monument at dusk",
+      "shows_private_home": false,
+      "subject": "Giant black Shiva linga monument",
+      "taken_at": "Saturday 26 September 2026, 17:24",
+      "themes": [
+        "temple architecture",
+        "Karnataka temples",
+        "Shiva monument",
+        "dusk photography",
+        "mobile photography",
+        "Indian heritage",
+        "travel Karnataka"
+      ],
+      "time_of_day": "evening"
+    },
+    "fingerprint": "073131f08ecaca92",
+    "name": "IMG20260926172405.jpg"
+  },
+  "h:3d679c866dd22f5421f0fa45b1290968": {
+    "analysed_at": "2026-10-26T13:57:07+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "terracotta",
+        "salmon pink",
+        "red",
+        "green",
+        "grey"
+      ],
+      "description": "A rounded, earth-toned cottage with a red clay tile roof and a small covered porch with an arched door. A tall chimney-like tower rises on the left, and green trees and a pine tree stand behind under a soft cloudy sky. Raised planter beds and dry leaves sit in the foreground.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cottage",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "nature resort cottage among trees",
+      "shows_private_home": false,
+      "subject": "Terracotta cottage with tiled roof",
+      "taken_at": "Monday 28 September 2026, 08:31",
+      "themes": [
+        "earthy architecture",
+        "cottage stay",
+        "clay tile roof",
+        "Karnataka getaway",
+        "heritage-style design",
+        "architecture lovers",
+        "travel Karnataka"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "3471654df9f1b07a",
+    "name": "IMG20260928083159.jpg"
+  },
+  "h:5608f48e2363ad1910018644972a29d6": {
+    "analysed_at": "2026-10-26T13:57:47+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "orange",
+        "white",
+        "turquoise blue",
+        "dusty pink",
+        "green"
+      ],
+      "description": "An orange and white cat stretches with its front paws forward and tail curled up, standing on the stone edge of a swimming pool. Its reflection ripples in the blue tiled water below, and a pink wall with a round lamp post sits behind it.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cat",
+      "mood": "playful",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "swimming pool edge with a pink wall and garden greenery",
+      "shows_private_home": false,
+      "subject": "Orange and white cat stretching by a pool",
+      "taken_at": "Sunday 27 September 2026, 17:40",
+      "themes": [
+        "cat stretch",
+        "pet photography",
+        "cat lovers",
+        "pool reflection",
+        "candid animal moments",
+        "mobile photography",
+        "Bengaluru pets"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "da6769735d7f9636",
+    "name": "IMG20260927174027.jpg"
   },
   "h:5e09fb0a00d5865dc90e84faa6b41920": {
     "analysed_at": "2026-10-26T13:51:13+00:00",
@@ -334,6 +706,47 @@
     },
     "fingerprint": "2c0e852d28a8292d",
     "name": "IMG20261020195844.jpg"
+  },
+  "h:7f1ded222162ae5c1c2c1ade9a49f6d9": {
+    "analysed_at": "2026-10-26T13:58:10+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "brick red",
+        "teal",
+        "rust orange",
+        "charcoal",
+        "warm brown"
+      ],
+      "description": "A quiet café corner with an exposed red brick wall, three black-and-white cocktail prints and teal benches. Rust-orange velvet chairs sit at dark tables on a wood-plank floor, while tall windows let in green treetop light.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "café interior",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "brick-walled café with large windows",
+      "shows_private_home": false,
+      "subject": "café interior with brick wall",
+      "taken_at": "Sunday 20 September 2026, 16:38",
+      "themes": [
+        "cafe interior",
+        "exposed brick",
+        "Bengaluru cafés",
+        "interior design",
+        "cozy corners",
+        "architecture lovers",
+        "mobile photography"
+      ],
+      "time_of_day": "afternoon"
+    },
+    "fingerprint": "92f83821c9819181",
+    "name": "IMG20260920163820.jpg"
   },
   "h:863a037450547828279e0e7c34224d7a": {
     "analysed_at": "2026-10-26T13:50:48+00:00",
@@ -585,6 +998,132 @@
     "fingerprint": "48f6d88cc6647865",
     "name": "IMG20261020170330.jpg"
   },
+  "h:a154608b21706cfd1f7f0f5f461b9983": {
+    "analysed_at": "2026-10-26T13:56:38+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "cream",
+        "gold",
+        "red",
+        "brown",
+        "green"
+      ],
+      "description": "A cream and gold rooster stands on short grass in front of a thick, deeply grooved tree trunk, its red comb and wattle the brightest spot in the frame. Its white tail feathers curve up with a dark sweep at the tip, and long curved spurs show on its legs. Dry twigs and fallen leaves are scattered around, and the light is soft and even.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "rooster",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "grassy park or farm ground under a large tree",
+      "shows_private_home": false,
+      "subject": "Rooster beside a tree trunk",
+      "taken_at": "Monday 28 September 2026, 08:38",
+      "themes": [
+        "rooster",
+        "farm birds",
+        "bird photography",
+        "animal portraits",
+        "bark texture",
+        "mobile photography",
+        "Karnataka countryside",
+        "animals"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "f0b0909987ce78b4",
+    "name": "IMG20260928083821.jpg"
+  },
+  "h:ae434c106f1ecf13abcbb90d2387407e": {
+    "analysed_at": "2026-10-26T13:56:55+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "green",
+        "blue",
+        "brown",
+        "olive",
+        "teal"
+      ],
+      "description": "A peacock with a deep blue neck stands on a fallen log, looking toward the camera. Misty green forest fills the background. At the lower right, a spotted deer with antlers peeks out from the undergrowth, and more spotted deer are faintly visible behind the log.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "peacock",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "monsoon",
+      "setting": "misty forest clearing in a wildlife reserve",
+      "shows_private_home": false,
+      "subject": "Peacock on a fallen branch",
+      "taken_at": "Monday 28 September 2026, 06:52",
+      "themes": [
+        "peacock",
+        "spotted deer",
+        "Karnataka wildlife",
+        "forest morning",
+        "wildlife photography",
+        "mobile photography",
+        "bird lovers",
+        "nature lovers",
+        "India wildlife"
+      ],
+      "time_of_day": "early morning"
+    },
+    "fingerprint": "f2e44cad31b69ccf",
+    "name": "IMG20260928065254.jpg"
+  },
+  "h:b1355c0cdd8b79363623f7ab1e7a01e2": {
+    "analysed_at": "2026-10-26T13:56:31+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "red",
+        "crimson",
+        "dusky pink",
+        "charcoal grey",
+        "dark green"
+      ],
+      "description": "The crown of a bare-branched tree is covered in clusters of bright red flowers, lit so the thin twigs glow a dusky pink. The sky behind is a flat, dark grey-green, which makes the reds stand out sharply. Leaves at the bottom add a little dark green.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "flowering tree",
+      "mood": "dramatic",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "spring",
+      "setting": "tree-lined street or park at dusk",
+      "shows_private_home": false,
+      "subject": "Flowering tree against dark sky",
+      "taken_at": "Saturday 24 October 2026, 22:34",
+      "themes": [
+        "flowering trees",
+        "red blossoms",
+        "Bengaluru trees",
+        "urban nature",
+        "mobile photography",
+        "dusk light",
+        "nature photography"
+      ],
+      "time_of_day": "dusk"
+    },
+    "fingerprint": "05160f71b184f0d6",
+    "name": "IMG20261024223401.jpg"
+  },
   "h:b2ddf389e03ff51183b812b43f25f189": {
     "analysed_at": "2026-10-26T13:49:13+00:00",
     "analysis": {
@@ -624,6 +1163,49 @@
     },
     "fingerprint": "06190e070383460c",
     "name": "IMG20261020182518.jpg"
+  },
+  "h:b513a7a9af429736927a93621d1c84b5": {
+    "analysed_at": "2026-10-26T13:56:26+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "cream",
+        "tan",
+        "green",
+        "red",
+        "terracotta",
+        "blue"
+      ],
+      "description": "A high-angle view into a sunlit open-air café courtyard with arched white pillars, wrought-iron balconies and a tiered stone fountain at the centre. Red and green croton plants and trailing ivy fill the foreground, while tan shade sails stretch across the top of the frame. Tables sit mostly empty on a warm wooden floor, with a few diners on the upper and side levels.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": true,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "courtyard",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open-air café courtyard with balconies",
+      "shows_private_home": false,
+      "subject": "Courtyard café with fountain",
+      "taken_at": "Sunday 11 October 2026, 15:38",
+      "themes": [
+        "café interiors",
+        "Bengaluru cafés",
+        "courtyard architecture",
+        "fountain",
+        "indoor plants",
+        "heritage style design",
+        "weekend spots",
+        "travel and food lovers"
+      ],
+      "time_of_day": "afternoon"
+    },
+    "fingerprint": "4f6b4ac2868bc3c0",
+    "name": "IMG20261011153819.jpg"
   },
   "h:b560462ff9447166c1100ef33cc7743c": {
     "analysed_at": "2026-10-26T13:50:38+00:00",
@@ -666,6 +1248,87 @@
     "fingerprint": "1d19199f1f1f3919",
     "name": "IMG20260803105732.jpg"
   },
+  "h:c735cde78e07c300b6e1b320d3384bd5": {
+    "analysed_at": "2026-10-26T13:58:03+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "gold",
+        "charcoal grey",
+        "amber",
+        "cream"
+      ],
+      "description": "A dark, heavy cloud fills the frame with its edges glowing gold where the sun burns behind it. Soft rays fan out into the pale, hazy sky above. The warm light suggests late afternoon.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cloud",
+      "mood": "awe",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "open sky at late afternoon",
+      "shows_private_home": false,
+      "subject": "sunlit cloud with rays",
+      "taken_at": "Saturday 26 September 2026, 17:29",
+      "themes": [
+        "cloud photography",
+        "sun rays",
+        "golden hour",
+        "sky lovers",
+        "mobile photography",
+        "Karnataka skies",
+        "nature photography"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "67e76e6c2425c1c4",
+    "name": "IMG20260926172946.jpg"
+  },
+  "h:cae0b308c6552a8ed36dfd9ce4486c96": {
+    "analysed_at": "2026-10-26T13:57:36+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "black",
+        "green",
+        "yellow",
+        "grey"
+      ],
+      "description": "A dark stone statue of a seated Buddha with closed eyes and folded hands sits on a lotus-shaped base. Tall coconut palms and bright green leaves fill the background in sharp midday light. A few visitors are small and distant at the lower left.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": true,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "buddha statue",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "summer",
+      "setting": "garden path with palm trees in a park",
+      "shows_private_home": false,
+      "subject": "Seated Buddha statue among palms",
+      "taken_at": "Sunday 11 October 2026, 11:24",
+      "themes": [
+        "Buddha statue",
+        "sculpture",
+        "meditation",
+        "palm trees",
+        "tropical garden",
+        "Karnataka travel",
+        "mobile photography",
+        "Bengaluru"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "584d7371e2a1b9ca",
+    "name": "IMG20261011112444.jpg"
+  },
   "h:cbae5759a8f9a7723c1b851a758bd7ae": {
     "analysed_at": "2026-10-26T13:50:43+00:00",
     "analysis": {
@@ -706,6 +1369,48 @@
     },
     "fingerprint": "0761f0f250696913",
     "name": "IMG20260718223801_BURST000_COVER.jpg"
+  },
+  "h:cda0cda96a7bd6a9ac676b69afe43df6": {
+    "analysed_at": "2026-10-26T13:57:18+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "orange",
+        "terracotta",
+        "cream",
+        "white",
+        "green"
+      ],
+      "description": "A young ginger kitten stands beside a rough red-laterite wall, one paw resting on a white pipe lying in the dry leaves. Its amber eyes look straight at the camera with a curious, slightly wary expression. The warm orange fur matches the earthy wall behind it.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "kitten",
+      "mood": "playful",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "outdoor corner beside a red laterite wall with dry leaves and small weeds",
+      "shows_private_home": false,
+      "subject": "Ginger kitten on a pipe",
+      "taken_at": "Sunday 27 September 2026, 17:23",
+      "themes": [
+        "kitten",
+        "ginger cat",
+        "street cats",
+        "cat photography",
+        "pet lovers",
+        "Bengaluru strays",
+        "animal portraits",
+        "mobile photography"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "0f37f392d286cc9a",
+    "name": "IMG20260927172334.jpg"
   },
   "h:dafaf5fa19880c00f71eb1570f23ceaa": {
     "analysed_at": "2026-10-26T13:49:52+00:00",
@@ -834,6 +1539,49 @@
     "fingerprint": "8b737e4b33badbf3",
     "name": "IMG20260726193326.jpg"
   },
+  "h:f10dd856e5bc2444fb959084561ca426": {
+    "analysed_at": "2026-10-26T13:57:14+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "black",
+        "yellow",
+        "orange",
+        "blue",
+        "green",
+        "white"
+      ],
+      "description": "Dozens of black stone lingas sit on tiered platforms and brightly painted yellow, orange, blue and green bases inside a whitewashed temple courtyard. A large tree leans in from the left against a soft, hazy evening sky. The colourful miniature shrines and grey stone floor give the frame a quiet, ordered feel.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "shivalinga",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "temple courtyard with whitewashed wall at dusk",
+      "shows_private_home": false,
+      "subject": "Rows of black Shiva lingas on painted bases",
+      "taken_at": "Saturday 26 September 2026, 17:21",
+      "themes": [
+        "temple architecture",
+        "Karnataka temples",
+        "Shiva lingas",
+        "colourful heritage",
+        "spiritual places",
+        "mobile photography",
+        "Karnataka travel",
+        "India"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "87a5a7918cf6f1f9",
+    "name": "IMG20260926172132.jpg"
+  },
   "h:f2fe5abfa9ac162b7522f150d279f2e5": {
     "analysed_at": "2026-10-25T14:23:07+00:00",
     "analysis": {
@@ -871,5 +1619,88 @@
     },
     "fingerprint": "b595d9f3313190d8",
     "name": "IMG20261018104837.jpg"
+  },
+  "h:f724a8b6f205c22d3d16f00c677c0095": {
+    "analysed_at": "2026-10-26T13:57:23+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "olive green",
+        "dusty blue",
+        "muted grey",
+        "red-brown",
+        "straw yellow"
+      ],
+      "description": "Two scrub-forest hills slope down to meet in a V, with a hazy pale sky and a soft patch of cloud between them. In the foreground, dry grassland, scattered trees and a strip of red earth fill the valley floor. The light is muted and quiet, like an early morning.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "hills",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": "post-monsoon",
+      "setting": "dry deciduous forest valley with farmland",
+      "shows_private_home": false,
+      "subject": "Two forested hills meeting in a V",
+      "taken_at": "Monday 28 September 2026, 08:18",
+      "themes": [
+        "Karnataka hills",
+        "scrub forest",
+        "valley view",
+        "quiet morning",
+        "countryside",
+        "mobile landscape photography",
+        "South India travel",
+        "nature lovers"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "0ccc23178e292535",
+    "name": "IMG20260928081814.jpg"
+  },
+  "h:fd3007e4a5645cb120f39bf34c7bfaf2": {
+    "analysed_at": "2026-10-26T13:57:58+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "green",
+        "brown",
+        "tan",
+        "white"
+      ],
+      "description": "A spotted deer lies on a patch of green grass scattered with dry leaves and twigs, its head turned in profile and one ear raised. A tree trunk sits at the top left of the frame. The soft, even light brings out the white spots on its brown coat.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "deer",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "shaded forest clearing with grass and fallen leaves",
+      "shows_private_home": false,
+      "subject": "Resting spotted deer on grass",
+      "taken_at": "Sunday 27 September 2026, 17:27",
+      "themes": [
+        "spotted deer",
+        "chital",
+        "Indian wildlife",
+        "Karnataka wildlife",
+        "wildlife photography",
+        "mobile photography",
+        "nature lovers",
+        "animals"
+      ],
+      "time_of_day": "afternoon"
+    },
+    "fingerprint": "cbcd3f0cecc1e093",
+    "name": "IMG20260927172757.jpg"
   }
 }

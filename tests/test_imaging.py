@@ -24,6 +24,21 @@ def test_tall_phone_photo_is_padded_not_cropped(jpeg_factory):
     assert h == 1600 and abs(w / h - 0.8) < 0.01
 
 
+def test_three_by_four_portrait_is_trimmed_to_four_by_five_without_a_border(jpeg_factory):
+    prepared = prepare_image(jpeg_factory(900, 1200), SETTINGS)  # 3:4, the usual phone portrait
+    assert prepared.cropped and not prepared.padded
+    w, h = size_of(prepared.jpeg)
+    assert w == 900 and abs(w / h - 0.8) < 0.01
+    assert prepared.shape == 0.75
+
+
+def test_slightly_too_wide_photo_is_trimmed(jpeg_factory):
+    prepared = prepare_image(jpeg_factory(2000, 1000), SETTINGS)  # 2:1
+    assert prepared.cropped and not prepared.padded
+    w, h = size_of(prepared.jpeg)
+    assert abs(w / h - 1.91) < 0.01
+
+
 def test_very_wide_photo_is_padded(jpeg_factory):
     prepared = prepare_image(jpeg_factory(1400, 400), SETTINGS)
     assert prepared.padded

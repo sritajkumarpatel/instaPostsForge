@@ -1,6 +1,6 @@
 {
   "h:075e425a4de370a1edb1435fc19ea3fb": {
-    "analysed_at": "2026-10-26T13:56:19+00:00",
+    "analysed_at": "2026-10-26T19:06:48+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -22,6 +22,7 @@
       "quality_score": 7,
       "season": "summer",
       "setting": "meditation centre grounds with lawn and stone steps on a sunny day",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Pyramid meditation hall with spiral roof",
       "taken_at": "Sunday 11 October 2026, 11:20",
@@ -206,7 +207,7 @@
     "name": "IMG20261020202113.jpg"
   },
   "h:1401822f8bc2e3158ee244d8ff2e82d4": {
-    "analysed_at": "2026-10-26T13:49:37+00:00",
+    "analysed_at": "2026-10-26T19:06:15+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -229,6 +230,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "rooftop bar with an ancient-temple inspired interior",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "glowing stone-block bar ceiling",
       "taken_at": "Sunday 26 July 2026, 19:32",
@@ -330,7 +332,7 @@
     "name": "IMG20260927172032.jpg"
   },
   "h:1d26afe438b931f7a648d70879ac203c": {
-    "analysed_at": "2026-10-26T13:51:20+00:00",
+    "analysed_at": "2026-10-26T19:06:45+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -353,6 +355,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "indoor shopping mall atrium",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "mall atrium with glass roof",
       "taken_at": "Saturday 24 October 2026, 19:01",
@@ -457,7 +460,7 @@
     "name": "IMG20260926210511.jpg"
   },
   "h:2d1fabf1df284a87ddfcf4758b0c8c4c": {
-    "analysed_at": "2026-10-26T13:51:08+00:00",
+    "analysed_at": "2026-10-26T19:06:39+00:00",
     "analysis": {
       "category": "macro",
       "colors": [
@@ -480,6 +483,7 @@
       "quality_score": 8,
       "season": "monsoon",
       "setting": "balcony or window ledge on a rainy evening",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Marigold against a rainy window at night",
       "taken_at": "Sunday 25 October 2026, 19:06",
@@ -540,7 +544,7 @@
     "name": "IMG20260920163348.jpg"
   },
   "h:33309d3cff0f4e47284bde45df7516b0": {
-    "analysed_at": "2026-10-26T13:50:13+00:00",
+    "analysed_at": "2026-10-26T19:06:22+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -564,6 +568,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "street festival decoration at night",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Lit-up goddess and lion display",
       "taken_at": "Tuesday 20 October 2026, 20:46",
@@ -790,7 +795,7 @@
     "name": "IMG20260927174027.jpg"
   },
   "h:5e09fb0a00d5865dc90e84faa6b41920": {
-    "analysed_at": "2026-10-26T13:51:13+00:00",
+    "analysed_at": "2026-10-26T19:06:42+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -814,6 +819,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "temple courtyard",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Rows of black shivalingas on yellow steps",
       "taken_at": "Saturday 26 September 2026, 17:18",
@@ -955,7 +961,7 @@
     "name": "IMG20261021203914.jpg"
   },
   "h:710653f785575727726083363effc972": {
-    "analysed_at": "2026-10-26T13:49:44+00:00",
+    "analysed_at": "2026-10-26T19:06:17+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -978,6 +984,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "rooftop bar at night",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "glowing stepped wall at rooftop bar",
       "taken_at": "Sunday 26 July 2026, 19:18",
@@ -1160,7 +1167,7 @@
     "name": "IMG20260928211517.jpg"
   },
   "h:863a037450547828279e0e7c34224d7a": {
-    "analysed_at": "2026-10-26T13:50:48+00:00",
+    "analysed_at": "2026-10-26T19:06:34+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -1184,6 +1191,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "temple shrine during a festival",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "decorated goddess idol with flowers and flame",
       "taken_at": "Tuesday 20 October 2026, 20:22",
@@ -1204,7 +1212,7 @@
     "name": "IMG20261020202230.jpg"
   },
   "h:8a0e825c5a8c5d2ed2ce004215695329": {
-    "analysed_at": "2026-10-26T13:50:20+00:00",
+    "analysed_at": "2026-10-26T19:06:24+00:00",
     "analysis": {
       "category": "abstract",
       "colors": [
@@ -1227,6 +1235,7 @@
       "quality_score": 6,
       "season": null,
       "setting": "apartment balcony at dusk",
+      "shape": 0.751,
       "shows_private_home": true,
       "subject": "potted plants on a balcony",
       "taken_at": "Sunday 25 October 2026, 18:29",
@@ -1286,7 +1295,7 @@
     "name": "IMG20261011114952.jpg"
   },
   "h:8adbbe98f068363413a69c422f5ded49": {
-    "analysed_at": "2026-10-26T13:50:25+00:00",
+    "analysed_at": "2026-10-26T19:06:26+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -1309,6 +1318,7 @@
       "quality_score": 7,
       "season": "autumn",
       "setting": "festival pandal during a temple celebration",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Ornate festival goddess idols",
       "taken_at": "Tuesday 20 October 2026, 20:25",
@@ -1328,7 +1338,7 @@
     "name": "IMG20261020202545.jpg"
   },
   "h:8dfd8416473ece79df89ef77183408db": {
-    "analysed_at": "2026-10-26T13:49:58+00:00",
+    "analysed_at": "2026-10-26T19:06:18+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -1352,6 +1362,7 @@
       "quality_score": 7,
       "season": "monsoon",
       "setting": "outdoor café patio at night after rain",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "wooden picnic tables on a wet patio",
       "taken_at": "Saturday 24 October 2026, 23:34",
@@ -1370,7 +1381,7 @@
     "name": "IMG20261024233437.jpg"
   },
   "h:8e2535b0e0d5ae2bc7890e85181bd5c5": {
-    "analysed_at": "2026-10-26T13:51:02+00:00",
+    "analysed_at": "2026-10-26T19:06:37+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1393,6 +1404,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "themed bar interior with Egyptian-style carved wall",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "backlit bar shelves with bottles",
       "taken_at": "Sunday 26 July 2026, 19:34",
@@ -1452,7 +1464,7 @@
     "name": "IMG20260926194239.jpg"
   },
   "h:9acac2ec8e1bb568abd47f0e91bede14": {
-    "analysed_at": "2026-10-26T13:49:07+00:00",
+    "analysed_at": "2026-10-26T19:06:10+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -1473,6 +1485,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "clear afternoon sky",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Daytime waxing gibbous moon",
       "taken_at": "Tuesday 20 October 2026, 17:03",
@@ -1574,7 +1587,7 @@
     "name": "IMG20261011125703.jpg"
   },
   "h:a154608b21706cfd1f7f0f5f461b9983": {
-    "analysed_at": "2026-10-26T13:56:38+00:00",
+    "analysed_at": "2026-10-26T19:06:55+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -1597,6 +1610,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "grassy park or farm ground under a large tree",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Rooster beside a tree trunk",
       "taken_at": "Monday 28 September 2026, 08:38",
@@ -1700,7 +1714,7 @@
     "name": "IMG20260928120717.jpg"
   },
   "h:b1355c0cdd8b79363623f7ab1e7a01e2": {
-    "analysed_at": "2026-10-26T13:56:31+00:00",
+    "analysed_at": "2026-10-26T19:06:53+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -1723,6 +1737,7 @@
       "quality_score": 7,
       "season": "spring",
       "setting": "tree-lined street or park at dusk",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Flowering tree against dark sky",
       "taken_at": "Saturday 24 October 2026, 22:34",
@@ -1741,7 +1756,7 @@
     "name": "IMG20261024223401.jpg"
   },
   "h:b2ddf389e03ff51183b812b43f25f189": {
-    "analysed_at": "2026-10-26T13:49:13+00:00",
+    "analysed_at": "2026-10-26T19:06:12+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -1763,6 +1778,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "night sky",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Waxing gibbous moon",
       "taken_at": "Tuesday 20 October 2026, 18:25",
@@ -1781,7 +1797,7 @@
     "name": "IMG20261020182518.jpg"
   },
   "h:b513a7a9af429736927a93621d1c84b5": {
-    "analysed_at": "2026-10-26T13:56:26+00:00",
+    "analysed_at": "2026-10-26T19:06:52+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1805,6 +1821,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "open-air café courtyard with balconies",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Courtyard café with fountain",
       "taken_at": "Sunday 11 October 2026, 15:38",
@@ -1824,7 +1841,7 @@
     "name": "IMG20261011153819.jpg"
   },
   "h:b560462ff9447166c1100ef33cc7743c": {
-    "analysed_at": "2026-10-26T13:50:38+00:00",
+    "analysed_at": "2026-10-26T19:06:31+00:00",
     "analysis": {
       "category": "macro",
       "colors": [
@@ -1847,6 +1864,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "flower resting on a dark tabletop indoors",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Yellow wildflower on a dark surface",
       "taken_at": "Monday 03 August 2026, 10:57",
@@ -2031,7 +2049,7 @@
     "name": "IMG20261011112444.jpg"
   },
   "h:cbae5759a8f9a7723c1b851a758bd7ae": {
-    "analysed_at": "2026-10-26T13:50:43+00:00",
+    "analysed_at": "2026-10-26T19:06:32+00:00",
     "analysis": {
       "category": "food",
       "colors": [
@@ -2054,6 +2072,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "café dessert table, wooden tabletop",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "Cheesecake slice on plated dessert",
       "taken_at": "Saturday 18 July 2026, 22:38",
@@ -2241,7 +2260,7 @@
     "name": "IMG20261020205445.jpg"
   },
   "h:ed2879e6748e42ee54a85e0c28959266": {
-    "analysed_at": "2026-10-26T13:50:32+00:00",
+    "analysed_at": "2026-10-26T19:06:29+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -2264,6 +2283,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "themed bar interior with Egyptian-style carved stone wall",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "backlit bar shelves with Egyptian carvings",
       "taken_at": "Sunday 26 July 2026, 19:33",

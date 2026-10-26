@@ -17,7 +17,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 3. **Planner** (AI): picks today's photo from the unposted ones and chooses the caption angle. When `selection.multi_photo` is on (the `MULTI_PHOTO` env var overrides it), it may instead pick a cover plus `extra_ids` from one of the sets `grouping.py` proposes; `Run.check_extras` drops any extra outside the cover's set. If it fails, or returns an ID that isn't in the list, the run falls back to a random photo.
 4. **Prepare image** (code): converts to JPEG and keeps the aspect ratio. A border is added only outside 4:5 to 1.91:1; nothing is cropped.
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
-7. **Reviewer** (AI): approves the post, or sends it back with feedback. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
+7. **Reviewer** (AI): approves the post, or sends it back with feedback. Caption length is code's job: `trim_caption_text` holds the text to `ai.max_caption_text_chars` (150) before review by dropping body sentences, and a reviewer complaint about length alone doesn't block a post. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
 8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. A set only holds photos of one shape (`same_shape`, from the `shape` code adds to each analysis), so nothing is framed or cropped.
 9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the Drive file ID; a set's other photos are listed under `more_photos` and count as posted.
 
@@ -30,7 +30,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 | Account-wide voice and rules for every agent | `config/ai-instructions.md` (path set by `ai.instructions_file`) |
 | What the account is about (niche, audience, location, voice) | `ai.account` in `config/profiles.yaml`, rendered into every prompt as `$account_notes` |
 | Rules per photo category and mood | `config/playbooks/categories.md` and `moods.md`, one `## key` section each; only the photo's sections reach the caption writer, hashtag strategist and reviewer as `$playbook` |
-| Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (category, main-subject and mood variety), applied in `Run.eligible` and `Run.keep_variety` |
+| Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (main-subject and mood variety, plus category variety when `no_repeat_category` is on), applied in `Run.eligible` and `Run.keep_variety` |
 | Structured output schemas | Pydantic models in `src/instapostsforge/agents/claude.py` |
 | Interface the pipeline depends on | `AIWorkflow` in `src/instapostsforge/agents/base.py` |
 
@@ -52,7 +52,7 @@ Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether 
 - **No repeats:** a photo must never be posted twice, including the other photos of a multi-photo post. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
 - **Instagram limits:** at most 5 hashtags, at most 2,200 characters, JPEG only, and an aspect ratio between 4:5 and 1.91:1. These are enforced in `captions/validator.py` and `imaging/processor.py`. Don't loosen them.
 - **Quote authors:** never publish an attributed quote unless the model was certain of the author (`quote_is_attributed`).
-- **Content rules:** screenshots, photos with children (unless `allow_children`), and near-duplicates of recent posts are never posted. These are enforced in `pipeline.py`, not just asked for in a prompt. Keep it that way.
+- **Content rules:** explicit or nude photos (`is_explicit`), screenshots, photos with children (unless `allow_children`), and near-duplicates of recent posts are never posted. Otherwise the photos are handpicked, so homes, cars and belongings are fine; only addresses and number plates stay out of the text. These are enforced in `pipeline.py`, not just asked for in a prompt. Keep it that way.
 - **AI fallbacks:** an AI failure must never produce a broken post. Fall back (random photo) or skip the day (`ReviewRejected`). Don't post unvalidated text.
 
 ## Working on the code

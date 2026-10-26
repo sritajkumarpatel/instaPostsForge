@@ -65,6 +65,7 @@ class PhotoAnalysis(BaseModel):
     has_text_or_logo: bool
     is_screenshot_or_meme: bool
     shows_private_home: bool
+    is_explicit: bool = Field(default=False, description="Nudity, sexual content or graphic gore; such photos are never posted.")
     themes: list[str] = Field(description="Themes and audiences, specific to broad.")
 
 
@@ -149,6 +150,7 @@ class ClaudeWorkflow(AIWorkflow):
         return "\n## About this account\n\n" + "\n".join(lines) + "\n"
 
     def _prompt(self, name: str, **values) -> str:
+        values.setdefault("caption_max", int(self.settings.get("max_caption_text_chars", 150)))
         return Template(load_prompt(name)).safe_substitute(account_notes=self.account_notes, **values)
 
     @staticmethod

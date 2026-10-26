@@ -61,11 +61,23 @@ def test_near_duplicate_of_recent_post_is_held_back(tmp_path, photos, distinct_j
     assert result.photo.id == "c.jpg"
 
 
-def test_category_never_repeats_on_consecutive_days(tmp_path, photos):
-    analyses = {"a.jpg": {"category": "food"}, "b.jpg": {"category": "food"}, "c.jpg": {"category": "sky"}}
+STRICT_CATEGORIES = {"hashtags": {"min": 3, "max": 5}, "review": True, "max_revisions": 1, "planning": {"no_repeat_category": True}}
+
+
+def test_category_may_repeat_when_the_subject_differs(tmp_path, photos):
+    analyses = {"a.jpg": {"category": "macro", "main_subject": "dragonfly"}, "b.jpg": {"category": "macro", "main_subject": "marigold"}}
     pipeline.run(make_profile(), components(tmp_path, photos, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
     ai = FakeAI(plan_order=["b.jpg", "c.jpg"], analyses=analyses)
     result = pipeline.run(make_profile(), components(tmp_path, photos, ai), publish=True)
+    assert result.photo.id == "b.jpg"
+
+
+def test_category_never_repeats_on_consecutive_days_when_switched_on(tmp_path, photos):
+    analyses = {"a.jpg": {"category": "food"}, "b.jpg": {"category": "food"}, "c.jpg": {"category": "sky"}}
+    profile = make_profile(ai=STRICT_CATEGORIES)
+    pipeline.run(profile, components(tmp_path, photos, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
+    ai = FakeAI(plan_order=["b.jpg", "c.jpg"], analyses=analyses)
+    result = pipeline.run(profile, components(tmp_path, photos, ai), publish=True)
     assert result.photo.id == "c.jpg"
 
 
@@ -194,3 +206,52 @@ def test_old_analyses_without_a_main_subject_are_redone(tmp_path, photos):
     c.state.save_analysis("a.jpg", "a.jpg", {"category": "sky", "mood": "calm", "quality_score": 7})
     pipeline.Run(make_profile(), c).analyse_new([pipeline.Photo(id="a.jpg", name="a.jpg")])
     assert c.state.analysis_for("a.jpg")["main_subject"] == "thing a.jpg"
+
+
+def test_explicit_photos_are_never_planned(tmp_path, photos):
+    ai = FakeAI(plan_order=["a.jpg", "b.jpg"], analyses={"a.jpg": {"is_explicit": True}})
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.photo.id == "b.jpg"
+    assert "a.jpg" not in {c["photo_id"] for c in ai.calls["plan"][0]["candidates"]}
+
+
+def test_long_caption_is_trimmed_in_code_before_review(tmp_path, photos):
+    long = "Rain on the glass. " + "The marigold held its colour as the light went. " * 4 + "Who else watches the rain?"
+    ai = FakeAI(plan_order=["a.jpg"], captions=[long])
+    result, _ = preview(tmp_path, photos, ai)
+    assert len(result.caption.text) <= 150
+    assert result.caption.text.startswith("Rain on the glass.") and result.caption.text.endswith("Who else watches the rain?")
+    assert len(ai.calls["caption"]) == 1
+
+
+def test_hook_too_long_to_trim_goes_back_to_the_writer(tmp_path, photos):
+    ai = FakeAI(plan_order=["a.jpg"], captions=["x" * 200, "Rain on the glass."])
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "Rain on the glass."
+    assert "150" in ai.calls["caption"][1]["feedback"]
+
+
+def test_length_alone_never_costs_the_day(tmp_path, photos):
+    from instapostsforge.agents import Review
+
+    ai = FakeAI(plan_order=["a.jpg"], reviews=[Review(approved=False, feedback="length: about 285", failed=["length"])])
+    result, _ = preview(tmp_path, photos, ai)
+    assert result.caption.text == "Quiet streets after rain."
+    assert len(ai.calls["caption"]) == 1
+
+
+def test_category_of_yesterdays_posts_is_blocked_even_after_a_second_post(tmp_path, distinct_jpeg):
+    from instapostsforge.state import ProfileState
+
+    files = {name: distinct_jpeg(i) for i, name in enumerate(["a.jpg", "b.jpg", "c.jpg", "d.jpg"])}
+    analyses = {"a.jpg": {"category": "macro"}, "b.jpg": {"category": "event"}, "c.jpg": {"category": "macro"}, "d.jpg": {"category": "sky", "mood": "joyful"}}
+    today, profile = date(2026, 10, 26), make_profile(ai=STRICT_CATEGORIES)
+    for pick in ["a.jpg", "b.jpg"]:
+        pipeline.run(profile, components(tmp_path, files, FakeAI(plan_order=[pick], analyses=analyses)), publish=True, today=today)
+    state = ProfileState("test", tmp_path / "state")
+    for post, when in zip(sorted(state.posts.values(), key=lambda p: p["posted_at"]), ["2026-10-25T14:00:00+00:00", "2026-10-26T18:00:00+00:00"]):
+        post["posted_at"] = when
+    state._save("posts.json", state.posts)
+    ai = FakeAI(plan_order=["c.jpg", "d.jpg"], analyses=analyses)
+    result = pipeline.run(profile, components(tmp_path, files, ai), publish=True, today=today)
+    assert result.photo.id == "d.jpg"

@@ -39,7 +39,8 @@ Score it as a scrolling viewer would: sharpness, exposure, composition, and how 
 - has_identifiable_strangers: a face other than the account owner's is in focus and identifiable. If unsure, say true.
 - has_text_or_logo: readable text, a sign, or a brand logo is prominent.
 - is_screenshot_or_meme: a screenshot, meme, document, receipt or mostly text.
-- shows_private_home: the outside of a private home, a house number, a street address or a car number plate is readable.
+- shows_private_home: the outside of a private home, a house number, a street address or a car number plate is readable. This only keeps the address out of the text; such photos are still posted.
+- is_explicit: nudity, sexual content or graphic gore. Ordinary rooms, homes, cars and belongings are not explicit.
 
 ## Main subject
 

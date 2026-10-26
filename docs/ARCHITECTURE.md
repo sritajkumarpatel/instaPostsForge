@@ -34,12 +34,12 @@ flowchart TD
     List --> Empty{Any unposted photos?}
     Empty -- no --> Stop([Stop: add more photos])
     Empty -- yes --> Analyst[["AI: Photo analyst<br/>new photos only"]]
-    Analyst --> Sets[Group photos into sets<br/>same outing or place, if multi-photo is on]
+    Analyst --> Sets[Group photos into sets<br/>same outing or place and same shape, if multi-photo is on]
     Sets --> Planner[["AI: Planner<br/>picks today's photo, or 2 to 5 from one set, and the angle"]]
     Planner --> ValidPick{Valid photo ID?}
     ValidPick -- no --> Random[Fall back to a random unposted photo]
     ValidPick -- yes --> Prepare
-    Random --> Prepare[Prepare JPEGs, keep aspect ratio<br/>set photos framed to the cover's shape]
+    Random --> Prepare[Prepare JPEGs, keep aspect ratio<br/>a set's photos all share one shape]
     Prepare --> Writer[["AI: Caption writer"]]
     Writer --> Tags[["AI: Hashtag strategist"]]
     Tags --> Rules{"Passes Instagram rules?<br/>3 to 5 tags, 2,200 chars"}

@@ -18,7 +18,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 4. **Prepare image** (code): converts to JPEG and keeps the aspect ratio. A border is added only outside 4:5 to 1.91:1; nothing is cropped.
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
 7. **Reviewer** (AI): approves the post, or sends it back with feedback. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
-8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. Photos shaped unlike the cover are framed with `frame_to_ratio`, never cropped.
+8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. A set only holds photos of one shape (`same_shape`, from the `shape` code adds to each analysis), so nothing is framed or cropped.
 9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the Drive file ID; a set's other photos are listed under `more_photos` and count as posted.
 
 ## Where the AI is configured

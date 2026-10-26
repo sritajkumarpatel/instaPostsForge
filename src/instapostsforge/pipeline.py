@@ -4,8 +4,8 @@ Code steps fetch, prepare, post and keep score; AI steps (see agents/) decide wh
 and what to say. Every AI step has a safe fallback, so a bad AI answer never produces a
 broken post: at worst the planner falls back to a random photo, or nothing is posted.
 
-A day's post is one photo, or, when multi-photo posts are on, possibly 2 to 5 photos from
-one outing or place (see grouping.py). Code proposes the sets; the planner decides.
+A day's post is one photo, or, when multi-photo posts are on, possibly 2 to 5 photos of the
+same shape from one outing or place (see grouping.py). Code proposes the sets; the planner decides.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from .captions import CaptionError, CaptionRules, normalize_caption
 from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
-from .imaging import PreparedImage, fingerprint, fingerprint_distance, frame_to_ratio, name_time, prepare_image
+from .imaging import PreparedImage, fingerprint, fingerprint_distance, name_time, prepare_image
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
@@ -36,10 +36,21 @@ log = logging.getLogger(__name__)
 
 DRAFTS_DIR = Path("drafts")
 ANALYSIS_FIELDS = (
-    "category", "mood", "subject", "main_subject", "orientation", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
+    "category", "mood", "subject", "main_subject", "orientation", "shape", "setting", "place_name", "taken_at", "colors", "season", "time_of_day", "quality_score", "themes",
 )
 NEAR_DUPLICATE_DISTANCE = 6  # fingerprint bits that may differ for two photos to count as near-duplicates
 TAKEN_AT_FORMAT = "%A %d %B %Y, %H:%M"
+# Instagram shows every photo of a multi-photo post in the cover's shape, so a set only holds photos
+# whose own width:height matches to within this much: they go out as they are, with no added border.
+SAME_SHAPE_TOLERANCE = 0.01
+
+
+def same_shape(a: float | None, b: float | None) -> bool:
+    return bool(a and b) and abs(a / b - 1) <= SAME_SHAPE_TOLERANCE
+
+
+def orientation(shape: float) -> str:
+    return "portrait" if shape < 0.95 else "landscape" if shape > 1.05 else "square"
 OFF_WORDS = {"false", "0", "no", "off"}
 
 
@@ -156,6 +167,14 @@ class Run:
         for photo in photos:
             existing = self.c.state.analysis_for(photo.id)
             if existing is not None and "category" in existing and "main_subject" in existing:
+                if "shape" not in existing and budget > 0:  # added later: measured by code, no AI call
+                    budget -= 1
+                    try:
+                        shape = self.image(photo).shape
+                        updated = {**existing, "shape": shape, "orientation": orientation(shape)}
+                        self.c.state.save_analysis(photo.id, photo.name, updated, self.c.state.fingerprint_for(photo.id))
+                    except Exception as err:
+                        log.warning("Could not measure %s: %s", photo.name, err)
                 continue  # older analyses, from before categories or main subjects existed, are redone once
             if budget <= 0:
                 break
@@ -165,9 +184,8 @@ class Run:
                 analysis = self.c.ai.analyze(preview, photo_name=photo.name)
                 if taken := self.taken_at(photo):
                     analysis["taken_at"] = taken  # from metadata, not the model, so later steps can trust it
-                image = self.image(photo)
-                ratio = image.width / image.height
-                analysis["orientation"] = "portrait" if ratio < 0.95 else "landscape" if ratio > 1.05 else "square"
+                analysis["shape"] = self.image(photo).shape
+                analysis["orientation"] = orientation(analysis["shape"])
                 self.c.state.save_analysis(photo.id, photo.name, analysis, fingerprint(preview))
             except Exception as err:
                 log.warning("Could not analyse %s: %s", photo.name, err)
@@ -258,7 +276,8 @@ class Run:
         return chosen
 
     def photo_sets(self, pool: list[Photo]) -> list[PhotoSet]:
-        """Sets of photos that could go out together, with near-identical frames inside a set removed."""
+        """Sets of photos that could go out together: split by shape, so every photo in a set has the
+        same width:height and nothing needs a border, and with near-identical frames removed."""
         settings = multi_photo_settings(self.profile)
         analyses = {p.id: self.c.state.analysis_for(p.id) or {} for p in pool}
         times = {p.id: t for p in pool if (t := self.known_time(p))}
@@ -285,12 +304,21 @@ class Run:
                 ):
                     continue
                 kept.append(photo)
-            if len(kept) >= 2:
-                sets.append(PhotoSet(found.set_id, found.kind, kept))
+            by_shape: list[list[Photo]] = []
+            for photo in kept:
+                shape = analyses[photo.id].get("shape")
+                group = next((g for g in by_shape if same_shape(shape, analyses[g[0].id].get("shape"))), None)
+                if group:
+                    group.append(photo)
+                elif shape:  # a photo whose shape isn't measured yet waits for a later run
+                    by_shape.append([photo])
+            for n, group in enumerate(g for g in by_shape if len(g) >= 2):
+                sets.append(PhotoSet(f"{found.set_id}{'abcdefghij'[n]}" if n else found.set_id, found.kind, group))
         return sets
 
     def check_extras(self, item: PlanItem, sets: list[PhotoSet], allowed: set[str]) -> list[str]:
-        """The planner's extra photos, kept only if they come from one set with the cover and may be posted."""
+        """The planner's extra photos, kept only if they come from one set with the cover (so they have
+        its shape) and may be posted."""
         best: list[str] = []
         for photo_set in sets:
             if item.photo_id not in photo_set.ids:
@@ -356,19 +384,11 @@ class Run:
         return self.keep_variety([(p, PlanItem(p.id, f"{strategy} pick", "")) for p in order], horizon)
 
     def post_images(self, photo: Photo, more: list[Photo]) -> list[bytes]:
-        """The JPEGs to post, cover first. Instagram shows every photo of a multi-photo post in the
-        cover's shape, so the others are framed to that shape with a border instead of being cropped."""
-        cover = self.image(photo)
-        if not more:
-            return [cover.jpeg]
-        border = str(self.profile.image.get("multi_photo_border", "blur"))
-        quality = int(self.profile.image.get("jpeg_quality", 90))
-        ratio = cover.width / cover.height
-        framed = [frame_to_ratio(self.image(p).jpeg, ratio, width=cover.width, border=border, quality=quality) for p in more]
-        reshaped = sum(1 for p in more if abs(self.image(p).width / self.image(p).height - ratio) >= 0.01)
-        if reshaped:
-            self.notes.append(f"{reshaped} photo(s) got a {border} border to match the cover's shape; nothing was cropped.")
-        return [cover.jpeg, *framed]
+        """The JPEGs to post, cover first. Sets only hold photos of one shape, so each goes out as it is."""
+        images = [self.image(p) for p in [photo, *more]]
+        if any(not same_shape(images[0].shape, i.shape) for i in images[1:]):
+            raise RuntimeError("A multi-photo post must have photos of one shape; refusing to crop or add borders.")
+        return [i.jpeg for i in images]
 
     def notes_for(self, photo: Photo) -> dict:
         """The analyst's notes as the writing steps see them."""

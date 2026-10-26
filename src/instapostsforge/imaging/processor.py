@@ -2,8 +2,7 @@
 
 The photo keeps its own aspect ratio whenever Instagram allows it. Only a photo
 outside the feed range (4:5 portrait to 1.91:1 landscape) gets a border, and
-nothing is ever cropped. In a multi-photo post Instagram shows every photo in the
-first photo's shape, so the others are framed to that shape with a border instead.
+nothing is ever cropped.
 """
 
 from __future__ import annotations
@@ -13,7 +12,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from PIL import Image, ImageFilter, ImageOps, ImageStat
+from PIL import Image, ImageOps, ImageStat
 
 try:  # iPhone photos arrive as HEIC; support them when pillow-heif is installed.
     from pillow_heif import register_heif_opener
@@ -31,6 +30,7 @@ class PreparedImage:
     padded: bool
     preview_jpeg: bytes  # a smaller copy for the caption writer
     taken_at: datetime | None = None  # from the photo's EXIF, when it has one
+    shape: float = 0.0  # the photo's own width:height, before any border; equal shapes can share a multi-photo post
 
 
 def _pad_color(image: Image.Image, setting: str) -> tuple[int, int, int]:
@@ -71,26 +71,6 @@ def fit_ratio(image: Image.Image, min_ratio: float, max_ratio: float, pad_color:
     return canvas, True
 
 
-def frame_to_ratio(jpeg: bytes, ratio: float, *, width: int, border: str = "blur", quality: int = 90) -> bytes:
-    """Places the whole photo on a canvas of the given width:height ratio, never cropping it.
-
-    border "blur" fills the space with a soft, darkened, enlarged copy of the photo; any other
-    value is a colour as for pad_color ("auto" or a hex colour)."""
-    image = Image.open(io.BytesIO(jpeg)).convert("RGB")
-    canvas_size = (width, round(width / ratio))
-    if abs(image.width / image.height - ratio) < 0.01:
-        return _to_jpeg(image.resize(canvas_size, Image.LANCZOS), quality)
-    if border == "blur":
-        background = ImageOps.fit(image, canvas_size, Image.LANCZOS)
-        background = background.filter(ImageFilter.GaussianBlur(radius=max(8, width // 40)))
-        canvas = Image.eval(background, lambda v: int(v * 0.7))
-    else:
-        canvas = Image.new("RGB", canvas_size, _pad_color(image, border))
-    photo = ImageOps.contain(image, canvas_size, Image.LANCZOS)
-    canvas.paste(photo, ((canvas.width - photo.width) // 2, (canvas.height - photo.height) // 2))
-    return _to_jpeg(canvas, quality)
-
-
 def _to_jpeg(image: Image.Image, quality: int) -> bytes:
     out = io.BytesIO()
     image.save(out, format="JPEG", quality=quality, optimize=True, progressive=True)
@@ -101,6 +81,7 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     image = Image.open(io.BytesIO(original))
     taken_at = exif_time(image)
     image = ImageOps.exif_transpose(image).convert("RGB")
+    shape = round(image.width / image.height, 3)
 
     padded = False
     if settings.get("keep_aspect_ratio", True):
@@ -125,6 +106,7 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
         padded=padded,
         preview_jpeg=_to_jpeg(preview, 85),
         taken_at=taken_at,
+        shape=shape,
     )
 
 

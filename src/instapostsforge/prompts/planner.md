@@ -20,7 +20,7 @@ For each photo in your order, give:
 
 ## Multi-photo posts
 
-The brief may give photo_sets: groups of unposted photos that code found were taken on the same outing (one after another, close together) or at the same place on different days. It also says the most photos one post may have (max_photos_per_post) and how many of the last 7 posts were multi-photo posts.
+The brief may give photo_sets: groups of unposted photos of the same shape that code found were taken on the same outing (one after another, close together) or at the same place on different days. It also says the most photos one post may have (max_photos_per_post) and how many of the last 7 posts were multi-photo posts.
 
 A day's post may be a multi-photo post instead of a single photo when, and only when, the photos are stronger together than any one of them alone:
 - They tell one story (a morning at Bannerghatta, the moon rising over an hour) or show one place from different angles.
@@ -31,7 +31,7 @@ Single photos are the default. Choose a multi-photo post only when a set clearly
 
 For a multi-photo post:
 - photo_id is the cover: the strongest photo, the one that stops the scroll. Its category and mood count for the variety rules above.
-- extra_photo_ids lists the other photos, at least 1 and at most max_photos_per_post minus 1, all from the cover's set, in the order to show them. Prefer photos with the same orientation as the cover; others get a blurred border to match its shape.
+- extra_photo_ids lists the other photos, at least 1 and at most max_photos_per_post minus 1, all from the cover's set, in the order to show them. Every photo in a set already has the same shape, so it goes out exactly as shot.
 - Photos inside one post may share a subject, but the main subject rule against recent posts applies to every photo in it.
 - reason says why these photos work better together; angle is the one idea that ties them.
 

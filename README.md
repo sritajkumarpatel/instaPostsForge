@@ -32,7 +32,7 @@ flowchart TB
 | 1 | Fetch results | code | Reads reach, likes, comments, saves and shares for posts from the last 30 days. |
 | 2 | Photo analyst | AI | Looks at each new photo in the Drive folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
 | 3 | Planner | AI | Picks today's photo from the unposted ones, or a set of 2 to 5 when they are stronger together (see [Multi-photo posts](#multi-photo-posts)). It balances strong photos with variety, and leans toward what has performed well. It also chooses the angle for the caption. |
-| 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A border is added only if the photo is outside 4:5 to 1.91:1; nothing is cropped. In a multi-photo post, photos shaped unlike the cover get a blurred border to match it. |
+| 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A border is added only if the photo is outside 4:5 to 1.91:1; nothing is cropped. |
 | 5 | Caption writer | AI | Writes a hook, a caption in the photo's tone, a quote when one fits, and alt text, in English. A quote's author is kept only when the model is certain of it. |
 | 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
 | 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. |
@@ -116,12 +116,12 @@ Costs are estimates from the per-model prices in `ai.pricing`. Update those if A
 
 ## Multi-photo posts
 
-On some days the post is 2 to 5 photos that go together instead of one photo. Code finds the candidate sets; the planner decides whether one makes a stronger post than any single photo, and picks the photos and their order. Most days stay single photos.
+On some days the post is 2 to 5 photos of the same shape that go together instead of one photo. Code finds the candidate sets; the planner decides whether one makes a stronger post than any single photo, and picks the photos and their order. Most days stay single photos.
 
 - **Outings:** photos taken one after another, with no gap over 3 hours (`group_hours`), and within 2 km of each other (`group_km`) when both have GPS. Capture times come from the photo's metadata or its file name, such as `IMG20261018104837.jpg`.
 - **Places:** photos from different days taken within 2 km of each other, or with the same place name from the analyst.
 - **Rules in code:** every photo must pass the content rules on its own; near-identical frames never share a set; the extra photos must come from the cover's set; at most `max_photos` (5) photos and `max_per_7_days` (3) multi-photo posts in any 7 posts; and the main subject of every photo counts for the variety rules.
-- **Shapes:** through the API, Instagram shows every photo in the cover's shape. So photos shaped differently from the cover are placed whole on a blurred copy of themselves (`image.multi_photo_border`), never cropped.
+- **Shapes:** through the API, Instagram shows every photo in the first photo's shape. So a set only holds photos with the same width:height (to within 1%), and each goes out exactly as shot: no added border, no crop. A portrait and a landscape shot from the same outing are never posted together.
 - **Privacy:** GPS is read from Drive's photo metadata during the run, only compared in memory, and never saved: the repo is public.
 - **Switch:** set the repository variable `MULTI_PHOTO` to `false` to post single photos only, with no commit. Without the variable, `selection.multi_photo.enabled` in `config/profiles.yaml` decides. `forge check` shows how many photos have a capture time and GPS.
 

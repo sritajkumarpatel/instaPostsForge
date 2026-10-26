@@ -10,7 +10,6 @@ from test_pipeline import components, make_profile
 
 from instapostsforge import pipeline
 from instapostsforge.grouping import km_between, propose_sets
-from instapostsforge.imaging import frame_to_ratio
 from instapostsforge.models import Photo
 from instapostsforge.state import ProfileState
 from instapostsforge.state.store import photo_key
@@ -89,8 +88,7 @@ def test_planner_sees_the_outing_as_a_set(tmp_path, files):
     assert [sorted(s["photo_ids"]) for s in sets["sets"]] == [sorted(OUTING)]
 
 
-def test_multi_photo_post_publishes_frames_and_records_every_photo(tmp_path, files, distinct_jpeg):
-    files[OUTING[1]] = distinct_jpeg(11, width=600, height=400)  # landscape among square photos
+def test_multi_photo_post_publishes_and_records_every_photo(tmp_path, files):
     ai = FakeAI(plan_order=[OUTING[0]], extras={OUTING[0]: [OUTING[1], OUTING[2]]}, analyses=subjects(OUTING))
     c = components(tmp_path, files, ai)
     result = pipeline.run(make_profile(selection=MULTI), c, publish=True)
@@ -98,10 +96,7 @@ def test_multi_photo_post_publishes_frames_and_records_every_photo(tmp_path, fil
     assert [p.id for p in result.photos] == OUTING
     urls, caption, alts = c.publisher.posts[0]
     assert len(urls) == 3 and alts == ["A wet street at night.", "Photo 2 of the set.", "Photo 3 of the set."]
-    sizes = {Image.open(io.BytesIO(j)).size for j in c.host.uploaded.values()}
-    assert len(sizes) == 1  # every photo in the cover's shape
     assert sorted(c.host.deleted) == sorted(c.host.uploaded)
-    assert any("blur border" in n for n in result.notes)
     assert len(ai.calls["caption"][0]["more_photos"]) == 2 and ai.reviewed_photo_counts == [3]
     assert all("IMG" not in key for key in c.host.uploaded)  # staged names are hashed, never Drive IDs
 
@@ -173,11 +168,31 @@ def test_near_identical_frames_are_not_put_in_one_set(tmp_path, files):
 # --- framing --------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("border", ["blur", "#000000"])
-def test_frame_to_ratio_keeps_the_whole_photo(border):
-    src = io.BytesIO()
-    Image.new("RGB", (600, 300), (250, 10, 10)).save(src, format="JPEG")
-    framed = Image.open(io.BytesIO(frame_to_ratio(src.getvalue(), 0.8, width=400, border=border)))
-    assert framed.size == (400, 500)
-    r, g, b = framed.getpixel((200, 250))  # the photo sits in the middle, whole and unstretched
-    assert r > 200 and g < 60
+def test_only_photos_of_one_shape_share_a_set(tmp_path, files, distinct_jpeg):
+    files[OUTING[1]] = distinct_jpeg(11, width=600, height=400)  # a landscape shot in a square outing
+    ai = FakeAI(plan_order=[OUTING[0]], extras={OUTING[0]: [OUTING[1], OUTING[2]]}, analyses=subjects(OUTING))
+    c = components(tmp_path, files, ai)
+    result = pipeline.run(make_profile(selection=MULTI), c, publish=True)
+    (only,) = ai.calls["plan"][0]["photo_sets"]["sets"]
+    assert OUTING[1] not in only["photo_ids"]
+    assert [p.id for p in result.photos] == [OUTING[0], OUTING[2]]  # the landscape one is left for another day
+    sizes = {Image.open(io.BytesIO(j)).size for j in c.host.uploaded.values()}
+    assert sizes == {(400, 400)}  # posted exactly as they are: no border, no crop
+
+
+def test_photos_analysed_before_shapes_are_measured_without_ai(tmp_path, files):
+    c = components(tmp_path, files, FakeAI(), publish=False)
+    for name in OUTING:
+        c.state.save_analysis(name, name, {"category": "sky", "mood": "calm", "main_subject": name, "quality_score": 7})
+    run = pipeline.Run(make_profile(selection=MULTI), c)
+    run.analyse_new([pipeline.Photo(id=n, name=n) for n in OUTING])
+    assert c.ai.calls["analyze"] == []
+    assert all(c.state.analysis_for(n)["shape"] == 1.0 for n in OUTING)
+    assert c.state.analysis_for(OUTING[0])["orientation"] == "square"
+
+
+def test_mixed_shapes_are_never_posted_together(tmp_path, files, distinct_jpeg):
+    files[OUTING[1]] = distinct_jpeg(11, width=600, height=400)
+    run = pipeline.Run(make_profile(selection=MULTI), components(tmp_path, files, FakeAI(), publish=False))
+    with pytest.raises(RuntimeError, match="one shape"):
+        run.post_images(pipeline.Photo(id=OUTING[0], name=OUTING[0]), [pipeline.Photo(id=OUTING[1], name=OUTING[1])])

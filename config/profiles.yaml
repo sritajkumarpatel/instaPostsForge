@@ -67,7 +67,8 @@ defaults:
     allow_children: false     # photos where a child is visible are skipped unless true
     near_duplicate_days: 30   # keep a near-identical photo at least this many days from the first
     # Multi-photo (carousel) posts: on some days the planner may post 2 to max_photos photos from
-    # one outing or one place instead of a single photo. The MULTI_PHOTO environment variable
+    # one outing or one place instead of a single photo. Only photos of the same shape share a post,
+    # so each goes out exactly as shot, with no added border. The MULTI_PHOTO environment variable
     # (a repository variable in GitHub Actions) overrides "enabled": set it to false to turn
     # multi-photo posts off without a commit.
     multi_photo:
@@ -83,7 +84,6 @@ defaults:
     max_width: 1440
     jpeg_quality: 90
     pad_color: auto           # auto (picks from the photo) or a hex colour like "#ffffff"
-    multi_photo_border: blur  # in a multi-photo post, photos shaped unlike the cover get this border: blur, auto or a hex colour
   hosting:
     type: github              # Instagram can't read Drive links; the photo is staged here briefly
     branch: media

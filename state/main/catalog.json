@@ -42,7 +42,7 @@
     "name": "IMG20261011112054.jpg"
   },
   "h:112b0cfbe2b682831612c8cd5e588aa7": {
-    "analysed_at": "2026-10-26T18:50:34+00:00",
+    "analysed_at": "2026-10-26T19:26:53+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -64,6 +64,7 @@
       "quality_score": 6,
       "season": "monsoon",
       "setting": "forested hillside on a misty morning",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Misty forested hillside",
       "taken_at": "Monday 28 September 2026, 07:48",
@@ -167,7 +168,7 @@
     "name": "IMG20260928074539.jpg"
   },
   "h:13c1723b688a410e2411ce93d220c472": {
-    "analysed_at": "2026-10-26T13:49:22+00:00",
+    "analysed_at": "2026-10-26T19:26:44+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -190,6 +191,7 @@
       "quality_score": 8,
       "season": "autumn",
       "setting": "decorated festival pandal at night",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Durga idol in festival pandal",
       "taken_at": "Tuesday 20 October 2026, 20:21",
@@ -295,7 +297,7 @@
     "name": "IMG20260926213206.jpg"
   },
   "h:19b7632863960b11316e2851bf531067": {
-    "analysed_at": "2026-10-26T18:50:38+00:00",
+    "analysed_at": "2026-10-26T19:26:55+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -318,6 +320,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "shaded garden corner beside a textured red wall",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Black and white cat resting under shrubs",
       "taken_at": "Sunday 27 September 2026, 17:20",
@@ -378,7 +381,7 @@
     "name": "IMG20261024190135.jpg"
   },
   "h:1ef315480b7f19313b95c862f69ebd38": {
-    "analysed_at": "2026-10-26T18:51:10+00:00",
+    "analysed_at": "2026-10-26T19:27:08+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -400,6 +403,7 @@
       "quality_score": 5,
       "season": "monsoon",
       "setting": "hill road with a view over the plains",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "hilltop view through a wire fence",
       "taken_at": "Monday 28 September 2026, 12:14",
@@ -719,7 +723,7 @@
     "name": "IMG20260928083159.jpg"
   },
   "h:40bb2b2066288e407bf91a966d71463c": {
-    "analysed_at": "2026-10-26T18:51:03+00:00",
+    "analysed_at": "2026-10-26T19:27:05+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -743,6 +747,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "fairground at night",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Illuminated Ferris wheel at night",
       "taken_at": "Tuesday 20 October 2026, 20:48",
@@ -890,7 +895,7 @@
     "name": "IMG20261020170457.jpg"
   },
   "h:5f593cfc74dd1d097e5fecb4fa0239ca": {
-    "analysed_at": "2026-10-26T18:51:39+00:00",
+    "analysed_at": "2026-10-26T19:27:17+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -913,6 +918,7 @@
       "quality_score": 7,
       "season": "post-monsoon",
       "setting": "forested hillside at late afternoon",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Cumulus clouds over a forested hill",
       "taken_at": "Sunday 27 September 2026, 17:52",
@@ -931,7 +937,7 @@
     "name": "IMG20260927175204.jpg"
   },
   "h:6937fba14e8b797a1fe41c488f37ddd2": {
-    "analysed_at": "2026-10-26T18:51:34+00:00",
+    "analysed_at": "2026-10-26T19:27:15+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -953,6 +959,7 @@
       "quality_score": 6,
       "season": null,
       "setting": "roadside tree under a night sky in the city",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "Glowing cloud behind a tree",
       "taken_at": "Wednesday 21 October 2026, 20:39",
@@ -1012,7 +1019,7 @@
     "name": "IMG20260726191849.jpg"
   },
   "h:761969127cbde04d5165acdd02246548": {
-    "analysed_at": "2026-10-26T18:50:49+00:00",
+    "analysed_at": "2026-10-26T19:27:00+00:00",
     "analysis": {
       "category": "travel",
       "colors": [
@@ -1035,6 +1042,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "open-air temple courtyard at sunset",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "Nandi statue and Shivalinga at sunset",
       "taken_at": "Saturday 26 September 2026, 17:31",
@@ -1054,7 +1062,7 @@
     "name": "IMG20260926173149.jpg"
   },
   "h:7c38b08c58c704eee1f0acd68e2f5050": {
-    "analysed_at": "2026-10-26T13:50:06+00:00",
+    "analysed_at": "2026-10-26T19:26:51+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -1078,6 +1086,7 @@
       "quality_score": 8,
       "season": "autumn",
       "setting": "festival pandal during Durga Puja",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Durga idol at festival pandal",
       "taken_at": "Tuesday 20 October 2026, 19:58",
@@ -1138,7 +1147,7 @@
     "name": "IMG20260920163820.jpg"
   },
   "h:7f92c2904b10a7e7f63851428be3cb64": {
-    "analysed_at": "2026-10-26T18:51:16+00:00",
+    "analysed_at": "2026-10-26T19:27:11+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1160,6 +1169,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "heritage palace facade at night",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Illuminated palace domes at night",
       "taken_at": "Monday 28 September 2026, 21:15",
@@ -1265,7 +1275,7 @@
     "name": "IMG20261025182940.jpg"
   },
   "h:8adb7a2cbae42ae14112e8bb824c215d": {
-    "analysed_at": "2026-10-26T18:50:54+00:00",
+    "analysed_at": "2026-10-26T19:27:01+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1288,6 +1298,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "carved relief in a temple or monastery interior",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "Reclining Buddha relief",
       "taken_at": "Sunday 11 October 2026, 11:49",
@@ -1434,7 +1445,7 @@
     "name": "IMG20260726193405.jpg"
   },
   "h:9a49b89716c21f1417fe79d2fbd66d31": {
-    "analysed_at": "2026-10-26T18:51:25+00:00",
+    "analysed_at": "2026-10-26T19:27:13+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -1456,6 +1467,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "open night sky",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Full moon in a dark sky",
       "taken_at": "Saturday 26 September 2026, 19:42",
@@ -1516,7 +1528,7 @@
     "name": "IMG20261020170330.jpg"
   },
   "h:9dab290653869202e8474a646f9c9efe": {
-    "analysed_at": "2026-10-26T18:51:30+00:00",
+    "analysed_at": "2026-10-26T19:27:14+00:00",
     "analysis": {
       "category": "night",
       "colors": [
@@ -1538,6 +1550,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "night sky with thin clouds",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Moon behind thin clouds",
       "taken_at": "Saturday 26 September 2026, 19:42",
@@ -1686,7 +1699,7 @@
     "name": "IMG20260928065254.jpg"
   },
   "h:ae67901204d45e5680251ea12ff7b71d": {
-    "analysed_at": "2026-10-26T18:50:58+00:00",
+    "analysed_at": "2026-10-26T19:27:02+00:00",
     "analysis": {
       "category": "landscape",
       "colors": [
@@ -1708,6 +1721,7 @@
       "quality_score": 5,
       "season": "monsoon",
       "setting": "open grassy hilltop viewpoint",
+      "shape": 0.751,
       "shows_private_home": false,
       "subject": "green hills behind a wire fence",
       "taken_at": "Monday 28 September 2026, 12:07",
@@ -1896,7 +1910,7 @@
     "name": "IMG20260803105732.jpg"
   },
   "h:b99bda13d39c9bc398bfda9e66605c18": {
-    "analysed_at": "2026-10-26T18:51:21+00:00",
+    "analysed_at": "2026-10-26T19:27:12+00:00",
     "analysis": {
       "category": "city",
       "colors": [
@@ -1919,6 +1933,7 @@
       "quality_score": 7,
       "season": null,
       "setting": "open-air temple statue against a clear sky",
+      "shape": 1.333,
       "shows_private_home": false,
       "subject": "Black Nandi bull statue with parakeets",
       "taken_at": "Saturday 26 September 2026, 17:30",
@@ -1939,7 +1954,7 @@
     "name": "IMG20260926173002.jpg"
   },
   "h:c359b900f6c9da6a25a816ad34c85701": {
-    "analysed_at": "2026-10-26T18:50:44+00:00",
+    "analysed_at": "2026-10-26T19:26:58+00:00",
     "analysis": {
       "category": "animals",
       "colors": [
@@ -1962,6 +1977,7 @@
       "quality_score": 8,
       "season": "summer",
       "setting": "forest clearing near a park or reserve",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Two spotted deer grazing",
       "taken_at": "Sunday 27 September 2026, 17:23",
@@ -2192,7 +2208,7 @@
     "name": "IMG20260926173251.jpg"
   },
   "h:dafaf5fa19880c00f71eb1570f23ceaa": {
-    "analysed_at": "2026-10-26T13:49:52+00:00",
+    "analysed_at": "2026-10-26T19:26:49+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -2215,6 +2231,7 @@
       "quality_score": 8,
       "season": "autumn",
       "setting": "festival pandal during Durga Puja",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Goddess Durga idol at a festival pandal",
       "taken_at": "Tuesday 20 October 2026, 19:57",
@@ -2235,7 +2252,7 @@
     "name": "IMG20261020195709.jpg"
   },
   "h:e1167f6f262b452ab5f37c27d1a37588": {
-    "analysed_at": "2026-10-26T13:49:29+00:00",
+    "analysed_at": "2026-10-26T19:26:46+00:00",
     "analysis": {
       "category": "event",
       "colors": [
@@ -2259,6 +2276,7 @@
       "quality_score": 8,
       "season": null,
       "setting": "festival pandal during Durga Puja",
+      "shape": 0.75,
       "shows_private_home": false,
       "subject": "Durga idol at festival pandal",
       "taken_at": "Tuesday 20 October 2026, 20:54",
@@ -2402,7 +2420,7 @@
     "name": "IMG20261018104837.jpg"
   },
   "h:f504050102b11121536ccaa17a3f1cc2": {
-    "analysed_at": "2026-10-26T18:51:43+00:00",
+    "analysed_at": "2026-10-26T19:27:18+00:00",
     "analysis": {
       "category": "sky",
       "colors": [
@@ -2425,6 +2443,7 @@
       "quality_score": 7,
       "season": "monsoon",
       "setting": "open sky at dusk",
+      "shape": 1.332,
       "shows_private_home": false,
       "subject": "dusky clouds at sunset",
       "taken_at": "Monday 28 September 2026, 18:42",

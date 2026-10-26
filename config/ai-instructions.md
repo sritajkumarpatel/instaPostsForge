@@ -26,7 +26,7 @@ This file holds the rules that apply to every photo. Rules for one kind of photo
 
 ## Planning
 
-- Variety beats streaks: never the same category two days running, never the same main subject (a second moon, a second dog) within three days, and at most two posts with the same mood in a week.
+- Variety beats streaks: never the same main subject (a second moon, a second dog) within three days, and at most two posts with the same mood in a week. Categories are broad, so a cat after a dog or a flower macro after an insect macro is fine; just spread the categories across the folder over time.
 - When in doubt between two photos, prefer the sharper, better-lit one.
 
 ## People and privacy

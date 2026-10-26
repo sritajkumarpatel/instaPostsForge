@@ -72,7 +72,7 @@ Some rules are enforced in code, whatever the AI says:
 - Photos where a child is visible are skipped unless `selection.allow_children: true`.
 - A near-identical copy of a photo posted in the last 30 days is held back.
 - Photos scoring below 4 for quality are used only when nothing better is left.
-- No category two days running, no main subject (moon, dog, sunset...) within 3 days even under another category, and at most 2 posts with the same mood in 7 days. If nothing else is left, the repeat goes ahead.
+- No main subject (moon, dog, sunset...) within 3 days even under another category, and at most 2 posts with the same mood in 7 days. If nothing else is left, the repeat goes ahead. Categories (macro, animals...) may repeat on the next day when the subject differs; set `ai.planning.no_repeat_category: true` to forbid that.
 - No quote on food or animal posts, and never a house number, street address or number plate in the text. Homes, cars and belongings are fine to show: the photos are handpicked.
 - Captions are short: at most `ai.max_caption_text_chars` (150) characters of text. Code drops body sentences from a longer one, keeping the hook and the closing question, so a long draft never costs the day.
 - Explicit or nude photos (`is_explicit`) are never posted.

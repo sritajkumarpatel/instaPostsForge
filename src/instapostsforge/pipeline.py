@@ -231,11 +231,11 @@ class Run:
         return [entry[0].id, *entry[1].extra_ids]
 
     def keep_variety(self, order: list[tuple[Photo, PlanItem]], horizon: int) -> list[tuple[Photo, PlanItem]]:
-        """Reorders so no category repeats on consecutive days, no main subject repeats within a few
-        days, and no mood exceeds its weekly limit. If nothing fits, the planner's next pick goes ahead.
+        """Reorders so no main subject repeats within a few days and no mood exceeds its weekly limit
+        (and, when no_repeat_category is on, no category follows the last post or yesterday's). If nothing fits, the planner's next pick goes ahead.
         A multi-photo post counts with its cover's category and mood and every photo's subject."""
         planning = self.profile.ai.get("planning") or {}
-        no_repeat = planning.get("no_repeat_category", True)
+        no_repeat = planning.get("no_repeat_category", False)
         subject_days = int(planning.get("no_repeat_subject_days", 3))
         max_mood = int(planning.get("max_same_mood_per_7_days", 2))
         max_multi = int(multi_photo_settings(self.profile).get("max_per_7_days", 3))

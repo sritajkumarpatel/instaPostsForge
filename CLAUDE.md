@@ -30,7 +30,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 | Account-wide voice and rules for every agent | `config/ai-instructions.md` (path set by `ai.instructions_file`) |
 | What the account is about (niche, audience, location, voice) | `ai.account` in `config/profiles.yaml`, rendered into every prompt as `$account_notes` |
 | Rules per photo category and mood | `config/playbooks/categories.md` and `moods.md`, one `## key` section each; only the photo's sections reach the caption writer, hashtag strategist and reviewer as `$playbook` |
-| Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (category, main-subject and mood variety; a category can't follow the last post or anything posted yesterday), applied in `Run.eligible` and `Run.keep_variety` |
+| Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (main-subject and mood variety, plus category variety when `no_repeat_category` is on), applied in `Run.eligible` and `Run.keep_variety` |
 | Structured output schemas | Pydantic models in `src/instapostsforge/agents/claude.py` |
 | Interface the pipeline depends on | `AIWorkflow` in `src/instapostsforge/agents/base.py` |
 

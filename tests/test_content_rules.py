@@ -61,11 +61,23 @@ def test_near_duplicate_of_recent_post_is_held_back(tmp_path, photos, distinct_j
     assert result.photo.id == "c.jpg"
 
 
-def test_category_never_repeats_on_consecutive_days(tmp_path, photos):
-    analyses = {"a.jpg": {"category": "food"}, "b.jpg": {"category": "food"}, "c.jpg": {"category": "sky"}}
+STRICT_CATEGORIES = {"hashtags": {"min": 3, "max": 5}, "review": True, "max_revisions": 1, "planning": {"no_repeat_category": True}}
+
+
+def test_category_may_repeat_when_the_subject_differs(tmp_path, photos):
+    analyses = {"a.jpg": {"category": "macro", "main_subject": "dragonfly"}, "b.jpg": {"category": "macro", "main_subject": "marigold"}}
     pipeline.run(make_profile(), components(tmp_path, photos, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
     ai = FakeAI(plan_order=["b.jpg", "c.jpg"], analyses=analyses)
     result = pipeline.run(make_profile(), components(tmp_path, photos, ai), publish=True)
+    assert result.photo.id == "b.jpg"
+
+
+def test_category_never_repeats_on_consecutive_days_when_switched_on(tmp_path, photos):
+    analyses = {"a.jpg": {"category": "food"}, "b.jpg": {"category": "food"}, "c.jpg": {"category": "sky"}}
+    profile = make_profile(ai=STRICT_CATEGORIES)
+    pipeline.run(profile, components(tmp_path, photos, FakeAI(plan_order=["a.jpg"], analyses=analyses)), publish=True)
+    ai = FakeAI(plan_order=["b.jpg", "c.jpg"], analyses=analyses)
+    result = pipeline.run(profile, components(tmp_path, photos, ai), publish=True)
     assert result.photo.id == "c.jpg"
 
 
@@ -233,13 +245,13 @@ def test_category_of_yesterdays_posts_is_blocked_even_after_a_second_post(tmp_pa
 
     files = {name: distinct_jpeg(i) for i, name in enumerate(["a.jpg", "b.jpg", "c.jpg", "d.jpg"])}
     analyses = {"a.jpg": {"category": "macro"}, "b.jpg": {"category": "event"}, "c.jpg": {"category": "macro"}, "d.jpg": {"category": "sky", "mood": "joyful"}}
-    today = date(2026, 10, 26)
+    today, profile = date(2026, 10, 26), make_profile(ai=STRICT_CATEGORIES)
     for pick in ["a.jpg", "b.jpg"]:
-        pipeline.run(make_profile(), components(tmp_path, files, FakeAI(plan_order=[pick], analyses=analyses)), publish=True, today=today)
+        pipeline.run(profile, components(tmp_path, files, FakeAI(plan_order=[pick], analyses=analyses)), publish=True, today=today)
     state = ProfileState("test", tmp_path / "state")
     for post, when in zip(sorted(state.posts.values(), key=lambda p: p["posted_at"]), ["2026-10-25T14:00:00+00:00", "2026-10-26T18:00:00+00:00"]):
         post["posted_at"] = when
     state._save("posts.json", state.posts)
     ai = FakeAI(plan_order=["c.jpg", "d.jpg"], analyses=analyses)
-    result = pipeline.run(make_profile(), components(tmp_path, files, ai), publish=True, today=today)
+    result = pipeline.run(profile, components(tmp_path, files, ai), publish=True, today=today)
     assert result.photo.id == "d.jpg"

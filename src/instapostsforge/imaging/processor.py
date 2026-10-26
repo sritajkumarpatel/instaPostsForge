@@ -1,8 +1,9 @@
 """Turns an original photo into a JPEG Instagram will accept.
 
-The photo keeps its own aspect ratio whenever Instagram allows it. Only a photo
-outside the feed range (4:5 portrait to 1.91:1 landscape) gets a border, and
-nothing is ever cropped.
+The photo keeps its own aspect ratio whenever Instagram allows it. A photo just
+outside the feed range (4:5 portrait to 1.91:1 landscape), such as a 3:4 phone
+portrait, loses a thin centred strip to fit (at most max_crop of its length).
+Only a photo further outside gets a border instead.
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ class PreparedImage:
     preview_jpeg: bytes  # a smaller copy for the caption writer
     taken_at: datetime | None = None  # from the photo's EXIF, when it has one
     shape: float = 0.0  # the photo's own width:height, before any border; equal shapes can share a multi-photo post
+    cropped: bool = False  # a thin strip was trimmed to reach Instagram's range
 
 
 def _pad_color(image: Image.Image, setting: str) -> tuple[int, int, int]:
@@ -54,6 +56,23 @@ def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     if len(value) != 6:
         raise ValueError(f"pad_color must be 'auto' or a hex colour like #ffffff, got {hex_color!r}")
     return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+def crop_to_ratio(image: Image.Image, min_ratio: float, max_ratio: float, max_crop: float) -> Image.Image | None:
+    """Trims a centred strip so the ratio fits the range, or None if that would cut more than
+    max_crop of the photo's height (too tall) or width (too wide)."""
+    w, h = image.size
+    if w / h < min_ratio:
+        new_h = int(w / min_ratio)
+        if 1 - new_h / h > max_crop:
+            return None
+        top = (h - new_h) // 2
+        return image.crop((0, top, w, top + new_h))
+    new_w = int(h * max_ratio)
+    if 1 - new_w / w > max_crop:
+        return None
+    left = (w - new_w) // 2
+    return image.crop((left, 0, left + new_w, h))
 
 
 def fit_ratio(image: Image.Image, min_ratio: float, max_ratio: float, pad_color: str) -> tuple[Image.Image, bool]:
@@ -83,12 +102,17 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     image = ImageOps.exif_transpose(image).convert("RGB")
     shape = round(image.width / image.height, 3)
 
-    padded = False
+    padded = cropped = False
+    min_ratio, max_ratio = float(settings.get("min_ratio", 0.8)), float(settings.get("max_ratio", 1.91))
+    if settings.get("keep_aspect_ratio", True) and not min_ratio <= image.width / image.height <= max_ratio:
+        trimmed = crop_to_ratio(image, min_ratio, max_ratio, float(settings.get("max_crop", 0.1)))
+        if trimmed is not None:
+            image, cropped = trimmed, True
     if settings.get("keep_aspect_ratio", True):
         image, padded = fit_ratio(
             image,
-            float(settings.get("min_ratio", 0.8)),
-            float(settings.get("max_ratio", 1.91)),
+            min_ratio,
+            max_ratio,
             str(settings.get("pad_color", "auto")),
         )
 
@@ -107,6 +131,7 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
         preview_jpeg=_to_jpeg(preview, 85),
         taken_at=taken_at,
         shape=shape,
+        cropped=cropped,
     )
 
 

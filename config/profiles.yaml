@@ -84,7 +84,8 @@ defaults:
     max_ratio: 1.91           # 1.91:1 landscape, the widest
     max_width: 1440
     jpeg_quality: 90
-    pad_color: auto           # auto (picks from the photo) or a hex colour like "#ffffff"
+    max_crop: 0.1             # a 3:4 portrait loses a thin centred strip (6%) to reach 4:5 instead of getting side borders
+    pad_color: auto           # border colour, only for photos that would lose more than max_crop: auto or a hex like "#ffffff"
   hosting:
     type: github              # Instagram can't read Drive links; the photo is staged here briefly
     branch: media

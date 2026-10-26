@@ -32,7 +32,7 @@ flowchart TB
 | 1 | Fetch results | code | Reads reach, likes, comments, saves and shares for posts from the last 30 days. |
 | 2 | Photo analyst | AI | Looks at each new photo in the Drive folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
 | 3 | Planner | AI | Picks today's photo from the unposted ones, or a set of 2 to 5 when they are stronger together (see [Multi-photo posts](#multi-photo-posts)). It balances strong photos with variety, and leans toward what has performed well. It also chooses the angle for the caption. |
-| 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio. A photo just outside 4:5 to 1.91:1, like a 3:4 phone portrait, loses a thin centred strip to fit (`image.max_crop`, 10%); only one further outside gets a border. |
+| 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio, 1080 pixels wide (Instagram's feed width), quality 95 with full colour detail and the photo's colour profile. A photo just outside 4:5 to 1.91:1, like a 3:4 phone portrait, loses a thin centred strip to fit (`image.max_crop`, 10%); only one further outside gets a border. |
 | 5 | Caption writer | AI | Writes a short, crisp caption (at most 150 characters of text): a hook, a line in the photo's tone and a closing question, plus a quote when one fits and alt text, in English. A quote's author is kept only when the model is certain of it. A longer draft goes back to the writer once to shorten; code trims whatever is still too long. |
 | 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
 | 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback, but after the first round only its first concerns and serious problems count, so it can't keep moving the goalposts. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. Length isn't its call: code has already counted it, so a length complaint alone never stops a post. |
@@ -64,7 +64,8 @@ The architecture doc explains why, and which patterns (routing, parallelization,
 | Content rules: quality floor, screenshots, children, near-duplicates, variety | `selection.*` and `ai.planning` in `config/profiles.yaml` |
 | Caption length | `ai.max_caption_text_chars` (150), plus the per-category ranges in `config/playbooks/categories.md` |
 | How much of a 3:4 portrait may be trimmed to fit 4:5 | `image.max_crop` (0.1) |
-| Multi-photo posts | `selection.multi_photo` in `config/profiles.yaml`, or the `MULTI_PHOTO` repository variable |
+| Multi-photo posts | `selection.multi_photo` in `config/profiles.yaml`, or `MULTI_PHOTO` (a repository variable or secret) |
+| Upload size and quality | `image.max_width` (1080) and `image.jpeg_quality` (95) |
 | Which model each agent uses, its effort and token limit | `ai.model`, `ai.effort`, `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
 | Quote policy, hashtag count, review and revisions | `ai.quote`, `ai.hashtags`, `ai.review`, `ai.max_revisions` |
 
@@ -128,7 +129,7 @@ On some days the post is 2 to 5 photos of the same shape that go together instea
 - **Rules in code:** every photo must pass the content rules on its own; near-identical frames never share a set; the extra photos must come from the cover's set; at most `max_photos` (5) photos and `max_per_7_days` (3) multi-photo posts in any 7 posts; and the main subject of every photo counts for the variety rules.
 - **Shapes:** through the API, Instagram shows every photo in the first photo's shape. So a set only holds photos with the same width:height (to within 1%), and every photo gets the same treatment (a 3:4 set is trimmed to 4:5 alike), so none gets a border. A portrait and a landscape shot from the same outing are never posted together.
 - **Privacy:** GPS is read from Drive's photo metadata during the run, only compared in memory, and never saved: the repo is public.
-- **Switch:** set the repository variable `MULTI_PHOTO` to `false` to post single photos only, with no commit. Without the variable, `selection.multi_photo.enabled` in `config/profiles.yaml` decides. `forge check` shows how many photos have a capture time and GPS.
+- **Switch:** set `MULTI_PHOTO` to `false` (a repository variable or secret; any spelling, such as `False`, works) to post single photos only, with no commit. The run log says which setting it used. Without the variable, `selection.multi_photo.enabled` in `config/profiles.yaml` decides. `forge check` shows how many photos have a capture time and GPS.
 
 A multi-photo post costs a little more, about $0.08 to $0.12, because the caption writer and reviewer look at every photo in it.
 
@@ -180,11 +181,11 @@ Add these under the repo's **Settings → Secrets and variables → Actions → 
 | `GOOGLE_DRIVE_API_KEY` | [Google Cloud console](https://console.cloud.google.com/) → new project → APIs and services → enable Google Drive API → Credentials → Create credentials → API key → restrict it to the Drive API |
 | `GH_SECRETS_TOKEN` (optional) | GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Only this repository, permission **Secrets: Read and write**. It lets the monthly job save the refreshed Instagram token. |
 
-GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under **Variables** (next to Secrets) you can also set:
+GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under the **Variables** tab (next to Secrets), as **repository variables**, you can also set:
 
 | Variable | Meaning |
 | --- | --- |
-| `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. |
+| `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. It must be a **variable**: the check that lets the schedule run happens before any step, and GitHub doesn't let it read secrets, so an `AUTO_POST` secret is ignored. |
 | `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
 | `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). Set it under the **Variables** tab, Repository variables (a secret of the same name works too; an Environment variable doesn't). Each run's log says which it used, for example "Multi-photo posts are off (MULTI_PHOTO=false)". |
 
@@ -237,7 +238,7 @@ The run name shows the mode, for example "Daily post: preview". A preview's summ
     2. **plan**: shows the next 7 days of photos and why each was picked.
     3. **preview**: download the `preview-main` artifact to see the exact image and caption.
     4. **post**: posts once. Check your feed.
-4. Set the repository variable `AUTO_POST` to `true`. From then on the schedule posts every day.
+4. Set the repository variable `AUTO_POST` to `true` (Variables tab, not Secrets). From then on the schedule posts every day.
 5. To change the time, edit the `cron` line. It is in UTC, and GitHub may start a few minutes late when busy.
 
 After each run, the workflow commits `state/` so the next run knows what was posted, what each photo looks like, and how past posts performed. That commit also keeps the schedule alive: GitHub turns off schedules in a public repo after 60 days without activity. When a scheduled run fails, GitHub emails you, and the run page says why.
@@ -263,7 +264,13 @@ After a new token, run the workflow in **check** mode before posting.
 
 **"No post today: the caption did not pass review".** After two revisions the reviewer still found a serious problem: a claim that isn't true of the photos, a doubtful quote author, or a safety issue. Style notes (hook, tone, hashtags, alt text) never skip a day: after the first round they are only suggestions, and the best draft is posted. The run page shows each round's feedback. `ai.on_review_reject` changes this: `skip` skips on any concern, `post` always posts.
 
+**The schedule never posts.** Check that `AUTO_POST` is a repository **variable** set to `true`, not a secret. Scheduled runs whose check fails show as skipped on the Actions page.
+
+**Multi-photo posts still go out with `MULTI_PHOTO=false`.** Look for "Multi-photo posts are …" in the Run forge step. If it names the config instead of `MULTI_PHOTO`, the value didn't reach the run: it may be an Environment variable, which this workflow doesn't read.
+
 **You deleted a post from Instagram and want its photos posted again.** Remove that post's entry from `state/<profile>/posts.json` and commit. Each entry is keyed by a hash and shows the photo's `name`; a multi-photo post lists its other photos under `more_photos`, and they are freed with it. The photos' analyses stay in `catalog.json`, so nothing is analysed again. Do this between runs, since every run commits `state/`.
+
+**Start the posting history over.** Replace `state/<profile>/posts.json` and `insights.json` with `{}` and commit. Every photo becomes unposted, and the subject, mood and repeat rules start fresh. Keep `catalog.json`, so no photo is analysed (and paid for) again.
 
 **Two posts on one day.** Scheduled runs post once a day, but every manual run in **post** mode posts again. Use **check**, **plan** or **preview** to look without posting.
 

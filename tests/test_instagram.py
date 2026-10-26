@@ -73,7 +73,7 @@ def test_publish_carousel_makes_children_then_the_carousel():
 
 
 def test_carousel_child_retries_without_alt_text():
-    replies = [{"error": {"message": "alt_text not supported"}}, {"id": "k1"}, {"status_code": "FINISHED"}, {"id": "k2"}, {"status_code": "FINISHED"}, {"id": "car"}, {"status_code": "FINISHED"}, {"id": "m1"}]
+    replies = [{"error": {"message": "Param alt_text is not supported"}}, {"id": "k1"}, {"status_code": "FINISHED"}, {"id": "k2"}, {"status_code": "FINISHED"}, {"id": "car"}, {"status_code": "FINISHED"}, {"id": "m1"}]
     session = FakeSession(replies)
     publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
     assert publisher.publish_carousel(["https://x/1.jpg", "https://x/2.jpg"], "hi", ["one", "two"]) == "m1"
@@ -84,3 +84,26 @@ def test_carousel_needs_two_to_ten_photos():
     publisher = InstagramPublisher(SETTINGS, session=FakeSession([]), sleep=lambda s: None)
     with pytest.raises(PublishError, match="2 to 10"):
         publisher.publish_carousel(["https://x/1.jpg"], "hi")
+
+
+def test_blocked_access_explains_what_to_do_and_is_not_retried():
+    session = FakeSession([{"error": {"message": "API access blocked.", "type": "OAuthException", "code": 200}}])
+    publisher = InstagramPublisher({**SETTINGS, "user_id_env": "NO_SUCH_VAR"}, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match=r"API access blocked\. \(code 200\) Meta refused API access") as err:
+        publisher.publish_carousel(["https://x/1.jpg", "https://x/2.jpg"], "hi", ["one", "two"])
+    assert "developers.facebook.com" in str(err.value) and len(session.calls) == 1  # one GET me, no blind retries
+
+
+def test_other_child_errors_are_not_retried_without_alt_text():
+    session = FakeSession([{"error": {"message": "Media download has failed.", "code": 9004}}])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match="Media download has failed"):
+        publisher.publish_carousel(["https://x/1.jpg", "https://x/2.jpg"], "hi", ["one", "two"])
+    assert len(session.calls) == 1
+
+
+def test_expired_token_says_how_to_fix_it():
+    session = FakeSession([{"error": {"message": "Error validating access token", "code": 190}}])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match="expired or was revoked"):
+        publisher.publish_image("https://x/1.jpg", "hi")

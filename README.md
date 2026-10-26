@@ -186,7 +186,7 @@ GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under **Var
 | --- | --- |
 | `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. |
 | `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
-| `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). |
+| `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). Set it under the **Variables** tab, Repository variables (a secret of the same name works too; an Environment variable doesn't). Each run's log says which it used, for example "Multi-photo posts are off (MULTI_PHOTO=false)". |
 
 Before the first post, do two things:
 1. Switch your Instagram account to **Creator** or **Business** in Settings → Account type and tools.

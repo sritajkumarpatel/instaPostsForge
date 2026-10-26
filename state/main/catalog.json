@@ -40,6 +40,47 @@
     "fingerprint": "5c1c7d9f9face41f",
     "name": "IMG20261011112054.jpg"
   },
+  "h:112b0cfbe2b682831612c8cd5e588aa7": {
+    "analysed_at": "2026-10-26T18:50:34+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "grey",
+        "green",
+        "dark green",
+        "yellow"
+      ],
+      "description": "Mist drifts over a forested hill, softening the treeline into a pale grey sky. Dark green trees fill the foreground, with small clusters of yellow flowers at the bottom edge and a leafy branch on the right.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "misty hill",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": "monsoon",
+      "setting": "forested hillside on a misty morning",
+      "shows_private_home": false,
+      "subject": "Misty forested hillside",
+      "taken_at": "Monday 28 September 2026, 07:48",
+      "themes": [
+        "misty hills",
+        "forest layers",
+        "Karnataka hills",
+        "morning fog",
+        "monsoon mood",
+        "nature photography",
+        "mobile photography",
+        "landscape lovers"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "0506180681894d4d",
+    "name": "IMG20260928074828.jpg"
+  },
   "h:11642df364dcb41bde847fdca892757d": {
     "analysed_at": "2026-10-26T13:57:30+00:00",
     "analysis": {
@@ -248,6 +289,46 @@
     "fingerprint": "8280130f4d4d5d55",
     "name": "IMG20260926213206.jpg"
   },
+  "h:19b7632863960b11316e2851bf531067": {
+    "analysed_at": "2026-10-26T18:50:38+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "terracotta",
+        "white",
+        "black",
+        "brown",
+        "green"
+      ],
+      "description": "A black and white cat with green eyes lies on red earth between thin tree trunks, looking off to the side. A terracotta-coloured wall and a white pipe sit softly behind it, and bare branches cross the frame in front.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cat",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "shaded garden corner beside a textured red wall",
+      "shows_private_home": false,
+      "subject": "Black and white cat resting under shrubs",
+      "taken_at": "Sunday 27 September 2026, 17:20",
+      "themes": [
+        "street cats",
+        "cat lovers",
+        "pet photography",
+        "animal portraits",
+        "mobile photography",
+        "Bengaluru life"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "cedab5f19486062d",
+    "name": "IMG20260927172032.jpg"
+  },
   "h:1d26afe438b931f7a648d70879ac203c": {
     "analysed_at": "2026-10-26T13:51:20+00:00",
     "analysis": {
@@ -289,6 +370,48 @@
     },
     "fingerprint": "30e86133e3327169",
     "name": "IMG20261024190135.jpg"
+  },
+  "h:1ef315480b7f19313b95c862f69ebd38": {
+    "analysed_at": "2026-10-26T18:51:10+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "green",
+        "white",
+        "grey",
+        "soft blue"
+      ],
+      "description": "A wide view from a hill road looks down over a hazy plain of fields and distant hills, under a sky full of soft white clouds. Thin vertical wires of a tall fence run across the whole frame, with one grey post on the left. Green grass, trees and a rocky green hillock fill the lower half.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "hill view",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 5,
+      "season": "monsoon",
+      "setting": "hill road with a view over the plains",
+      "shows_private_home": false,
+      "subject": "hilltop view through a wire fence",
+      "taken_at": "Monday 28 September 2026, 12:14",
+      "themes": [
+        "Karnataka hills",
+        "viewpoint",
+        "cloudy sky",
+        "green landscape",
+        "fence and wires",
+        "road trip",
+        "Bengaluru weekend getaways",
+        "mobile photography",
+        "nature lovers"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "edb745271f0f7120",
+    "name": "IMG20260928121434.jpg"
   },
   "h:21beefd42c5b5e836189cb8329968146": {
     "analysed_at": "2026-10-26T13:56:49+00:00",
@@ -374,6 +497,47 @@
     },
     "fingerprint": "58c2a68e09796161",
     "name": "IMG20261025190625.jpg"
+  },
+  "h:3161d045efb565d8822a026953983790": {
+    "analysed_at": "2026-10-26T18:50:13+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "orange",
+        "black",
+        "green",
+        "brick red",
+        "warm brown"
+      ],
+      "description": "A tall, multi-storey café seen from an upper balcony, with a dark corrugated ceiling, steel staircases and big glass windows. Orange pendant lamps glow against the black beams, and potted plants climb the railings with a leafy tree visible outside. Wooden tables and pink chairs sit empty below, with a projector screen on the right.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "café",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "industrial-style café with glass walls and indoor plants",
+      "shows_private_home": false,
+      "subject": "multi-level café interior",
+      "taken_at": "Sunday 20 September 2026, 16:33",
+      "themes": [
+        "café interiors",
+        "industrial design",
+        "indoor plants",
+        "Bengaluru cafés",
+        "cozy spots",
+        "architecture and interiors",
+        "mobile photography"
+      ],
+      "time_of_day": "afternoon"
+    },
+    "fingerprint": "4e986353876f2e79",
+    "name": "IMG20260920163348.jpg"
   },
   "h:33309d3cff0f4e47284bde45df7516b0": {
     "analysed_at": "2026-10-26T13:50:13+00:00",
@@ -541,6 +705,49 @@
     "fingerprint": "3471654df9f1b07a",
     "name": "IMG20260928083159.jpg"
   },
+  "h:40bb2b2066288e407bf91a966d71463c": {
+    "analysed_at": "2026-10-26T18:51:03+00:00",
+    "analysis": {
+      "category": "night",
+      "colors": [
+        "black",
+        "pink",
+        "blue",
+        "green",
+        "orange",
+        "white"
+      ],
+      "description": "A large Ferris wheel glows against a black night sky, its spokes traced in zigzag neon lines of pink, blue, green, orange and white. Small gondolas ring the rim and string lights twinkle near the base of the fair ground.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "ferris wheel",
+      "mood": "joyful",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "fairground at night",
+      "shows_private_home": false,
+      "subject": "Illuminated Ferris wheel at night",
+      "taken_at": "Tuesday 20 October 2026, 20:48",
+      "themes": [
+        "Ferris wheel",
+        "fair lights",
+        "night photography",
+        "festival fun",
+        "neon colours",
+        "Karnataka fairs",
+        "mobile photography",
+        "Bengaluru nights"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "e48723474764119f",
+    "name": "IMG20261020204840.jpg"
+  },
   "h:5608f48e2363ad1910018644972a29d6": {
     "analysed_at": "2026-10-26T13:57:47+00:00",
     "analysis": {
@@ -625,6 +832,128 @@
     "fingerprint": "2f6521a9ceaab6aa",
     "name": "IMG20260926171812.jpg"
   },
+  "h:5ef9a865bfc04a1ca97fdfb1aaddb15c": {
+    "analysed_at": "2026-10-26T18:50:24+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "blue",
+        "white",
+        "grey"
+      ],
+      "description": "A large, puffy white cumulus cloud rises from the bottom of the frame against a deep blue sky. The cloud's edges are soft and sculpted, with grey shading in the folds giving it depth. The upper sky is a clean, smooth blue with plenty of empty space.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cloud",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "open sky on a clear afternoon",
+      "shows_private_home": false,
+      "subject": "Billowing white cumulus cloud",
+      "taken_at": "Tuesday 20 October 2026, 17:04",
+      "themes": [
+        "cloud photography",
+        "cumulus clouds",
+        "blue sky",
+        "sky watching",
+        "minimal sky",
+        "Karnataka skies",
+        "Bengaluru skies",
+        "mobile photography",
+        "nature lovers"
+      ],
+      "time_of_day": "afternoon"
+    },
+    "fingerprint": "030f67998e0703c7",
+    "name": "IMG20261020170457.jpg"
+  },
+  "h:5f593cfc74dd1d097e5fecb4fa0239ca": {
+    "analysed_at": "2026-10-26T18:51:39+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "pale blue",
+        "white",
+        "soft pink",
+        "dark green",
+        "golden brown"
+      ],
+      "description": "A tall bank of white cumulus clouds lit warm by low evening light rises behind a dark, tree-covered hill. The pale blue sky fills the upper half of the frame, and dry golden patches of foliage dot the hillside below.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "clouds",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "post-monsoon",
+      "setting": "forested hillside at late afternoon",
+      "shows_private_home": false,
+      "subject": "Cumulus clouds over a forested hill",
+      "taken_at": "Sunday 27 September 2026, 17:52",
+      "themes": [
+        "cloud photography",
+        "evening sky",
+        "hill and forest",
+        "Karnataka landscapes",
+        "mobile photography",
+        "sky lovers",
+        "nature photography"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "bf39eec3137ff884",
+    "name": "IMG20260927175204.jpg"
+  },
+  "h:6937fba14e8b797a1fe41c488f37ddd2": {
+    "analysed_at": "2026-10-26T18:51:34+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "slate grey",
+        "charcoal",
+        "soft cream",
+        "leaf green"
+      ],
+      "description": "A single bright cloud lit from below by city light rises behind the leafy branches of a tree. The rest of the night sky is dark and grey with faint wisps of cloud. The green leaves stand out against the pale cloud.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "cloud",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "roadside tree under a night sky in the city",
+      "shows_private_home": false,
+      "subject": "Glowing cloud behind a tree",
+      "taken_at": "Wednesday 21 October 2026, 20:39",
+      "themes": [
+        "night sky",
+        "clouds",
+        "tree silhouette",
+        "urban nature",
+        "mobile night photography",
+        "Bengaluru evenings",
+        "sky lovers"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "76030d0e1b39a191",
+    "name": "IMG20261021203914.jpg"
+  },
   "h:710653f785575727726083363effc972": {
     "analysed_at": "2026-10-26T13:49:44+00:00",
     "analysis": {
@@ -664,6 +993,48 @@
     },
     "fingerprint": "37094e8697232e2e",
     "name": "IMG20260726191849.jpg"
+  },
+  "h:761969127cbde04d5165acdd02246548": {
+    "analysed_at": "2026-10-26T18:50:49+00:00",
+    "analysis": {
+      "category": "travel",
+      "colors": [
+        "black",
+        "gold",
+        "soft blue",
+        "peach",
+        "grey"
+      ],
+      "description": "A large black Nandi statue seen from behind faces a giant Shivalinga as the sun sets behind a dark cloud, sending soft rays across the sky. A few visitors walk along the temple courtyard in the distance, behind a steel railing.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": true,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "temple",
+      "mood": "awe",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open-air temple courtyard at sunset",
+      "shows_private_home": false,
+      "subject": "Nandi statue and Shivalinga at sunset",
+      "taken_at": "Saturday 26 September 2026, 17:31",
+      "themes": [
+        "temple photography",
+        "Karnataka temples",
+        "sunset rays",
+        "silhouette",
+        "Nandi and Shivalinga",
+        "heritage and devotion",
+        "Karnataka travel",
+        "Bengaluru weekend trips"
+      ],
+      "time_of_day": "golden hour evening"
+    },
+    "fingerprint": "634c2c579636764d",
+    "name": "IMG20260926173149.jpg"
   },
   "h:7c38b08c58c704eee1f0acd68e2f5050": {
     "analysed_at": "2026-10-26T13:50:06+00:00",
@@ -747,6 +1118,46 @@
     },
     "fingerprint": "92f83821c9819181",
     "name": "IMG20260920163820.jpg"
+  },
+  "h:7f92c2904b10a7e7f63851428be3cb64": {
+    "analysed_at": "2026-10-26T18:51:16+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "deep red",
+        "warm yellow",
+        "cream",
+        "black"
+      ],
+      "description": "Red onion-shaped domes and carved stone towers of a grand palace glow against a dark night sky. Warm yellow light spills from the arched windows, and a bright lamp on the left throws soft starburst rays. Tiny birds dot the facade, adding a small living detail to the heritage stonework.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "palace",
+      "mood": "awe",
+      "orientation": "landscape",
+      "place_name": "Mysore Palace",
+      "quality_score": 8,
+      "season": null,
+      "setting": "heritage palace facade at night",
+      "shows_private_home": false,
+      "subject": "Illuminated palace domes at night",
+      "taken_at": "Monday 28 September 2026, 21:15",
+      "themes": [
+        "Mysuru heritage",
+        "palace architecture",
+        "night photography",
+        "Karnataka travel",
+        "Indo-Saracenic design",
+        "mobile photography",
+        "architecture lovers"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "4848119919596b69",
+    "name": "IMG20260928211517.jpg"
   },
   "h:863a037450547828279e0e7c34224d7a": {
     "analysed_at": "2026-10-26T13:50:48+00:00",
@@ -832,6 +1243,47 @@
     },
     "fingerprint": "7e7c7a6dd8d9cc8c",
     "name": "IMG20261025182940.jpg"
+  },
+  "h:8adb7a2cbae42ae14112e8bb824c215d": {
+    "analysed_at": "2026-10-26T18:50:54+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "bronze",
+        "gold",
+        "grey",
+        "brown",
+        "charcoal"
+      ],
+      "description": "A bronze-toned relief of a reclining Buddha rests his head on one hand, eyes softly closed, surrounded by carved lotus flowers and leaves. Carved wooden pillars frame the top of the scene against a dark wall. The textures of the metal, drapery and petals fill the frame.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "buddha statue",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "carved relief in a temple or monastery interior",
+      "shows_private_home": false,
+      "subject": "Reclining Buddha relief",
+      "taken_at": "Sunday 11 October 2026, 11:49",
+      "themes": [
+        "buddha relief",
+        "temple art",
+        "sculpture detail",
+        "lotus carving",
+        "Karnataka heritage",
+        "mobile photography",
+        "travel and culture"
+      ],
+      "time_of_day": null
+    },
+    "fingerprint": "90c1111145090901",
+    "name": "IMG20261011114952.jpg"
   },
   "h:8adbbe98f068363413a69c422f5ded49": {
     "analysed_at": "2026-10-26T13:50:25+00:00",
@@ -958,6 +1410,47 @@
     "fingerprint": "317135e4ce921700",
     "name": "IMG20260726193405.jpg"
   },
+  "h:9a49b89716c21f1417fe79d2fbd66d31": {
+    "analysed_at": "2026-10-26T18:51:25+00:00",
+    "analysis": {
+      "category": "night",
+      "colors": [
+        "black",
+        "warm grey",
+        "cream",
+        "charcoal"
+      ],
+      "description": "A near-full moon sits in the centre of a deep black sky, its grey craters and bright highlands clearly visible. Faint wisps of cloud drift around it, softening the darkness. The framing is simple and quiet, with plenty of empty space around the moon.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "moon",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open night sky",
+      "shows_private_home": false,
+      "subject": "Full moon in a dark sky",
+      "taken_at": "Saturday 26 September 2026, 19:42",
+      "themes": [
+        "moon photography",
+        "full moon",
+        "night sky",
+        "mobile astrophotography",
+        "lunar details",
+        "minimal composition",
+        "Bengaluru nights",
+        "photography enthusiasts"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "ecb30d4d0f378fcc",
+    "name": "IMG20260926194239.jpg"
+  },
   "h:9acac2ec8e1bb568abd47f0e91bede14": {
     "analysed_at": "2026-10-26T13:49:07+00:00",
     "analysis": {
@@ -997,6 +1490,88 @@
     },
     "fingerprint": "48f6d88cc6647865",
     "name": "IMG20261020170330.jpg"
+  },
+  "h:9dab290653869202e8474a646f9c9efe": {
+    "analysed_at": "2026-10-26T18:51:30+00:00",
+    "analysis": {
+      "category": "night",
+      "colors": [
+        "black",
+        "charcoal grey",
+        "soft white",
+        "warm grey"
+      ],
+      "description": "A nearly full moon sits in the middle of a dark, cloudy sky, with its craters and grey seas clearly visible. Soft clouds drift around it, and one upper edge is dimmed by shadow. The black frame around it makes the moon feel small and quiet.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "moon",
+      "mood": "dramatic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "night sky with thin clouds",
+      "shows_private_home": false,
+      "subject": "Moon behind thin clouds",
+      "taken_at": "Saturday 26 September 2026, 19:42",
+      "themes": [
+        "moon photography",
+        "mobile astrophotography",
+        "night sky",
+        "moody monochrome",
+        "cloudy night",
+        "Bengaluru skies",
+        "photography enthusiasts"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "3174724d0d334ec2",
+    "name": "IMG20260926194248.jpg"
+  },
+  "h:a07610e80c8fbc44ed0ace3c4d8b9a4b": {
+    "analysed_at": "2026-10-26T18:50:19+00:00",
+    "analysis": {
+      "category": "macro",
+      "colors": [
+        "green",
+        "lavender",
+        "purple",
+        "white",
+        "beige",
+        "tan"
+      ],
+      "description": "A slender green stem rises through the frame, lined with tiny pale purple and white flowers and round green buds. The background is a soft, creamy blur of warm browns and beiges, so the delicate petals stand out sharply. A second blurred plant sits at the lower left edge.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "wildflower",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "scrubby patch of ground outdoors in dappled daylight",
+      "shows_private_home": false,
+      "subject": "Small purple flower spike",
+      "taken_at": "Sunday 11 October 2026, 12:57",
+      "themes": [
+        "macro flowers",
+        "wildflowers",
+        "Karnataka nature",
+        "mobile macro photography",
+        "bokeh",
+        "botanical details",
+        "nature photography"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "d91d3e96dcc90b91",
+    "name": "IMG20261011125703.jpg"
   },
   "h:a154608b21706cfd1f7f0f5f461b9983": {
     "analysed_at": "2026-10-26T13:56:38+00:00",
@@ -1082,6 +1657,47 @@
     },
     "fingerprint": "f2e44cad31b69ccf",
     "name": "IMG20260928065254.jpg"
+  },
+  "h:ae67901204d45e5680251ea12ff7b71d": {
+    "analysed_at": "2026-10-26T18:50:58+00:00",
+    "analysis": {
+      "category": "landscape",
+      "colors": [
+        "green",
+        "blue",
+        "white",
+        "olive"
+      ],
+      "description": "A grassy hillside slopes down toward a darker green ridge, with hazy plains stretching far into the distance. Big white clouds fill a blue sky. Thin wire fence lines run across the frame, adding a gentle grid over the view.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "hills",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 5,
+      "season": "monsoon",
+      "setting": "open grassy hilltop viewpoint",
+      "shows_private_home": false,
+      "subject": "green hills behind a wire fence",
+      "taken_at": "Monday 28 September 2026, 12:07",
+      "themes": [
+        "Karnataka hills",
+        "hill viewpoint",
+        "green landscapes",
+        "cloudy skies",
+        "monsoon greenery",
+        "mobile photography",
+        "weekend getaway from Bengaluru",
+        "nature lovers"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "6f6f7961fc86fc9e",
+    "name": "IMG20260928120717.jpg"
   },
   "h:b1355c0cdd8b79363623f7ab1e7a01e2": {
     "analysed_at": "2026-10-26T13:56:31+00:00",
@@ -1248,6 +1864,91 @@
     "fingerprint": "1d19199f1f1f3919",
     "name": "IMG20260803105732.jpg"
   },
+  "h:b99bda13d39c9bc398bfda9e66605c18": {
+    "analysed_at": "2026-10-26T18:51:21+00:00",
+    "analysis": {
+      "category": "city",
+      "colors": [
+        "black",
+        "pale blue",
+        "soft grey",
+        "green",
+        "white"
+      ],
+      "description": "A dark stone Nandi bull statue rises against a pale blue evening sky, its horns, beaded necklace and bell carved in fine detail. Two small green parakeets perch on one horn and on the hump, adding a tiny touch of life and colour. A white sacred mark sits on the forehead.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "nandi statue",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open-air temple statue against a clear sky",
+      "shows_private_home": false,
+      "subject": "Black Nandi bull statue with parakeets",
+      "taken_at": "Saturday 26 September 2026, 17:30",
+      "themes": [
+        "Nandi statue",
+        "temple sculpture",
+        "parakeets",
+        "Karnataka heritage",
+        "Indian temple art",
+        "silhouette against sky",
+        "mobile photography",
+        "Bengaluru and Karnataka lovers",
+        "travel"
+      ],
+      "time_of_day": "evening"
+    },
+    "fingerprint": "0f117261e1616960",
+    "name": "IMG20260926173002.jpg"
+  },
+  "h:c359b900f6c9da6a25a816ad34c85701": {
+    "analysed_at": "2026-10-26T18:50:44+00:00",
+    "analysis": {
+      "category": "animals",
+      "colors": [
+        "tan",
+        "brown",
+        "olive green",
+        "terracotta red",
+        "white"
+      ],
+      "description": "Two spotted deer graze on a patch of dry grass scattered with fallen leaves and small stones, one in front with its head lowered and the other behind it. Tall trees fill the background, and a blurred red post in the left foreground frames the scene like a peek from behind a corner.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "deer",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "summer",
+      "setting": "forest clearing near a park or reserve",
+      "shows_private_home": false,
+      "subject": "Two spotted deer grazing",
+      "taken_at": "Sunday 27 September 2026, 17:23",
+      "themes": [
+        "spotted deer",
+        "chital",
+        "wildlife photography",
+        "Karnataka wildlife",
+        "mobile wildlife photography",
+        "forest animals",
+        "nature lovers",
+        "animals"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "9080863427c1c12d",
+    "name": "IMG20260927172351.jpg"
+  },
   "h:c735cde78e07c300b6e1b320d3384bd5": {
     "analysed_at": "2026-10-26T13:58:03+00:00",
     "analysis": {
@@ -1411,6 +2112,48 @@
     },
     "fingerprint": "0f37f392d286cc9a",
     "name": "IMG20260927172334.jpg"
+  },
+  "h:d73fc70c8452455d468908418e71360c": {
+    "analysed_at": "2026-10-26T18:50:30+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "black",
+        "golden",
+        "soft blue",
+        "peach",
+        "grey"
+      ],
+      "description": "A large dark Nandi statue faces a giant black shivalinga while sunbeams fan out from behind a cloud. A golden trident rises in the middle of the frame against the soft evening sky. A few small figures are visible far off near the railings.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": true,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "nandi statue",
+      "mood": "awe",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "open temple courtyard with large statues at sunset",
+      "shows_private_home": false,
+      "subject": "Nandi statue and shivalinga at sunset",
+      "taken_at": "Saturday 26 September 2026, 17:32",
+      "themes": [
+        "temple photography",
+        "sunset rays",
+        "Karnataka temples",
+        "silhouette",
+        "Nandi",
+        "heritage and faith",
+        "mobile photography",
+        "travel in Karnataka"
+      ],
+      "time_of_day": "late afternoon"
+    },
+    "fingerprint": "0408d387151c0c4d",
+    "name": "IMG20260926173251.jpg"
   },
   "h:dafaf5fa19880c00f71eb1570f23ceaa": {
     "analysed_at": "2026-10-26T13:49:52+00:00",
@@ -1619,6 +2362,47 @@
     },
     "fingerprint": "b595d9f3313190d8",
     "name": "IMG20261018104837.jpg"
+  },
+  "h:f504050102b11121536ccaa17a3f1cc2": {
+    "analysed_at": "2026-10-26T18:51:43+00:00",
+    "analysis": {
+      "category": "sky",
+      "colors": [
+        "lavender",
+        "dusty purple",
+        "pink",
+        "salmon",
+        "slate grey"
+      ],
+      "description": "Heavy grey-purple clouds drift across a soft lavender sky, with a warm pink and salmon glow along the bottom edge. The frame is filled entirely with sky, and the cloud edges catch faint light as the day fades.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_screenshot_or_meme": false,
+      "main_subject": "clouds",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "monsoon",
+      "setting": "open sky at dusk",
+      "shows_private_home": false,
+      "subject": "dusky clouds at sunset",
+      "taken_at": "Monday 28 September 2026, 18:42",
+      "themes": [
+        "cloudscape",
+        "sunset sky",
+        "dusk colours",
+        "monsoon clouds",
+        "Bengaluru skies",
+        "sky photography",
+        "mobile photography"
+      ],
+      "time_of_day": "dusk"
+    },
+    "fingerprint": "29f3e6f5dffff8ff",
+    "name": "IMG20260928184256.jpg"
   },
   "h:f724a8b6f205c22d3d16f00c677c0095": {
     "analysed_at": "2026-10-26T13:57:23+00:00",

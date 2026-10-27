@@ -11,9 +11,10 @@ defaults:
     # Default model, effort and output limit for every AI step. Each step can override
     # them under "agents" below. Effort: low | medium | high | xhigh | max (more effort
     # means more thinking, better judgement and more tokens).
-    # Sonnet keeps quality high at half Opus's price; lower effort means less thinking and
-    # fewer output tokens. For the best captions, set caption_writer to claude-opus-5-5.
-    model: claude-sonnet-5-5
+    # Haiku is the cheapest current model (about a twentieth of Sonnet's price) and handles
+    # these short tasks; lower effort means less thinking and fewer output tokens. For richer
+    # captions, set caption_writer to claude-sonnet-5-5 or claude-opus-5-5.
+    model: claude-haiku-5-5
     effort: low
     max_tokens: 8000
     agents:

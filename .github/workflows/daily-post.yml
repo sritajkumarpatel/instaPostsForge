@@ -75,6 +75,15 @@ jobs:
           git commit -m "Update state for $PROFILE ($MODE)"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
+      - name: Keep the token audit report
+        # Tokens and estimated cost per phase, per agent and per call, for every run, scheduled or manual.
+        if: always() && env.MODE != 'check'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: token-audit-${{ env.PROFILE }}-${{ env.MODE }}-${{ github.run_number }}
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 90
       - name: Keep the preview
         if: env.MODE == 'preview'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

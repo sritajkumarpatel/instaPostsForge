@@ -32,3 +32,29 @@ def test_forge_usage_command_reads_the_month(tmp_path, monkeypatch, capsys):
     assert cli.main(["usage", "-p", "main", "--month", month]) == 0
     out = capsys.readouterr().out
     assert "1 runs, 1 calls, 0 failed" in out and "caption_writer" in out
+
+
+def test_audit_report_shows_each_phase_and_call(tmp_path):
+    import json
+
+    from instapostsforge.usage import write_report
+
+    log = UsageLog("main", pricing={"m": {"input": 1, "output": 2}}, command="post", state_dir=tmp_path / "state")
+    log.record(agent="analyst", model="m", usage=usage(1000, 100))
+    log.record(agent="caption_writer", model="m", usage=usage(2000, 300))
+    log.record(agent="caption_writer", model="m", ok=False, error="overloaded")
+    log.record(agent="reviewer", model="m", usage=usage(500, 50))
+    path = write_report(log, tmp_path / "reports")
+    text = path.read_text()
+    assert "| Photo scanning | analyst | 1 |" in text
+    assert "| Caption, quote and alt text | caption_writer | 2 (1 failed) |" in text
+    assert "failed: overloaded" in text and "1 runs" in text
+    data = json.loads(path.with_suffix(".json").read_text())
+    assert [r["agent"] for r in data["phases"]] == ["analyst", "caption_writer", "reviewer"]
+    assert data["phases"][1]["input_tokens"] == 2000
+
+
+def test_no_report_without_ai_calls(tmp_path):
+    from instapostsforge.usage import write_report
+
+    assert write_report(UsageLog("main", state_dir=tmp_path), tmp_path / "reports") is None

@@ -66,7 +66,7 @@ Double-bordered boxes are Claude calls. Each one is logged to `state/<profile>/u
 flowchart LR
     CLI["cli.py<br/>forge commands"] --> Pipeline["pipeline.py<br/>the workflow"]
     Pipeline --> Sources["sources/<br/>google_drive · local_folder"]
-    Pipeline --> Agents["agents/<br/>AIWorkflow interface<br/>claude.py"]
+    Pipeline --> Agents["agents/<br/>AIWorkflow interface<br/>workflow.py + clients/"]
     Agents --> Prompts["prompts/*.md"]
     Agents --> Usage["usage.py<br/>token audit log"]
     Pipeline --> Rules["captions/validator.py<br/>Instagram rules"]

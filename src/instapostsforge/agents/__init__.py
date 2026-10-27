@@ -1,21 +1,19 @@
-"""The AI side of the workflow: five agents, each one Claude call with its own prompt.
+"""The AI side of the workflow: five agents, each one model call with its own prompt.
 
-Swap in another provider by implementing AIWorkflow and registering it in build_workflow.
+The prompts, schemas and checks are shared (workflow.py); each provider only supplies a small
+ModelClient (clients/). Add a provider by writing a client and registering it in build_client.
 """
 
 from __future__ import annotations
 
-from ..config import ConfigError
 from .base import AIWorkflow, PlanItem, Review, SetPhoto
 
 
 def build_workflow(settings: dict, usage_log=None) -> AIWorkflow:
-    provider = settings.get("provider", "claude")
-    if provider == "claude":
-        from .claude import ClaudeWorkflow
+    from .clients import build_client
+    from .workflow import AgentWorkflow
 
-        return ClaudeWorkflow(settings, usage_log=usage_log)
-    raise ConfigError(f"Unknown AI provider '{provider}'.")
+    return AgentWorkflow(settings, client=build_client(settings.get("provider", "claude")), usage_log=usage_log)
 
 
 __all__ = ["AIWorkflow", "PlanItem", "Review", "SetPhoto", "build_workflow"]

@@ -26,23 +26,24 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 | What | Where |
 | --- | --- |
 | Model, effort and max tokens, per agent | `ai.model` / `ai.effort` / `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
-| What each agent is asked to do | `src/instapostsforge/prompts/<agent>.md` (`$placeholders` are filled by `agents/claude.py`) |
+| What each agent is asked to do | `src/instapostsforge/prompts/<agent>.md` (`$placeholders` are filled by `agents/workflow.py`) |
 | Account-wide voice and rules for every agent | `config/ai-instructions.md` (path set by `ai.instructions_file`) |
 | What the account is about (niche, audience, location, voice) | `ai.account` in `config/profiles.yaml`, rendered into every prompt as `$account_notes` |
 | Rules per photo category and mood | `config/playbooks/categories.md` and `moods.md`, one `## key` section each; only the photo's sections reach the caption writer, hashtag strategist and reviewer as `$playbook` |
 | Content rules enforced in code | `selection.min_quality`, `skip_screenshots`, `allow_children`, `near_duplicate_days`, and `ai.planning` (main-subject and mood variety, plus category variety when `no_repeat_category` is on), applied in `Run.eligible` and `Run.keep_variety` |
-| Structured output schemas | Pydantic models in `src/instapostsforge/agents/claude.py` |
+| Structured output schemas | Pydantic models in `src/instapostsforge/agents/schemas.py` |
 | Interface the pipeline depends on | `AIWorkflow` in `src/instapostsforge/agents/base.py` |
+| Provider calls | One `ModelClient` per provider in `src/instapostsforge/agents/clients/`; `AgentWorkflow` in `agents/workflow.py` holds everything shared |
 
-The categories and moods are fixed lists in `agents/playbooks.py` and must match the `Category` and `Mood` types in `agents/claude.py` and the headings in the playbooks; a test checks this. To add a category, change all three.
+The categories and moods are fixed lists in `agents/playbooks.py` and must match the `Category` and `Mood` types in `agents/schemas.py` and the headings in the playbooks; a test checks this. To add a category, change all three.
 
 The agent names are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`. Use these names for config keys, usage-log rows and prompt files.
 
-To change behaviour, prefer this order: `config/ai-instructions.md` for account-wide tone, then the agent's prompt file, then its schema, and code last. When you change a schema field, update the fake in `tests/fakes.py` and the tests in `tests/test_claude_agents.py`.
+To change behaviour, prefer this order: `config/ai-instructions.md` for account-wide tone, then the agent's prompt file, then its schema, and code last. When you change a schema field, update the fake in `tests/fakes.py` and the tests in `tests/test_agents.py`.
 
 ## Token audit log
 
-Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. After each post, preview or plan run, `write_report` in `usage.py` writes `reports/<profile>-<run_id>.md` and `.json` (tokens and cost per phase, per call, and month to date), even when the run fails, and the workflow uploads `reports/` as the `token-audit-*` artifact. `reports/` is not committed. When you add a new AI call, route it through `ClaudeWorkflow._ask` so it gets logged.
+Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. After each post, preview or plan run, `write_report` in `usage.py` writes `reports/<profile>-<run_id>.md` and `.json` (tokens and cost per phase, per call, and month to date), even when the run fails, and the workflow uploads `reports/` as the `token-audit-*` artifact. `reports/` is not committed. When you add a new AI call, route it through `AgentWorkflow._ask` so it gets logged.
 
 ## Rules that must not be broken
 

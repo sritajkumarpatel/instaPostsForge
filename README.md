@@ -26,7 +26,7 @@ One photo a day to Instagram, straight from a Google Drive folder, picked and ca
 
 Most photographers have a drive full of shots worth sharing and no time to share them. Posting well every day is a chore: pick a photo, avoid repeating last week, write something good, choose hashtags, remember to do it at the right time. instaPostsForge does that for you.
 
-Drop your handpicked photos into a Google Drive folder. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude, checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
+Drop your handpicked photos into a Google Drive folder. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude (or OpenAI or Gemini, if you prefer), checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
 
 The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-android), which runs the same workflow on Android.
 
@@ -35,13 +35,13 @@ The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-and
 | | |
 | --- | --- |
 | 📁 **Your Drive folder** | Put handpicked photos in one Google Drive folder. Each new photo is described once and remembered. |
-| 🤖 **Claude picks and writes** | Five Claude agents describe each photo, choose today's, write the caption and hashtags, and review the post. |
+| 🤖 **AI picks and writes** | Five AI agents describe each photo, choose today's, write the caption and hashtags, and review the post. Claude by default; OpenAI or Gemini with one variable. |
 | 🖼️ **Multi-photo posts** | Some days it posts 2 to 5 photos from one outing or place as a carousel, all of one shape. |
 | 🛡️ **Code has the last word** | Every AI answer is checked by plain code against Instagram's limits and your content rules before anything is posted. |
 | 🙏 **Writes with care** | Short captions (at most 150 characters), playbooks per category and mood, and reverent captions for deities and festivals. |
 | ⏰ **Posts on a schedule** | Every day at your time on GitHub Actions, with check, plan and preview modes to look first. |
 | ✅ **Never twice** | Posted photos are recorded by their Drive file ID and a visual fingerprint, and are never posted again. |
-| 💸 **Know the cost** | Every Claude call is logged with its tokens and estimated cost, and each run saves a token audit report. |
+| 💸 **Know the cost** | Every AI call is logged with its tokens and estimated cost, and each run saves a token audit report. |
 | 🔒 **Safe in a public repo** | Secrets live only in GitHub secrets, GPS is never saved, and published JPEGs carry no EXIF. |
 
 ---
@@ -104,7 +104,7 @@ flowchart TB
     Drive[("Google Drive folder<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
-    Claude["Claude API<br/>analyst · planner · caption writer · hashtags · reviewer"]
+    Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
     State[("state/#lt;profile#gt;/ in the repo<br/>posts · catalog · insights · usage")]
     Media[("media branch<br/>today's JPEG for about a minute")]
     IG["Instagram API<br/>official, token based"]
@@ -144,19 +144,31 @@ ai:
 
 Check the effect in the run's token audit report or with `forge usage -p main`.
 
+### Choosing the AI provider
+
+Claude is the default, but the same five agents, prompts and checks also run on OpenAI or Gemini. Pick one with the repository variable `AI_PROVIDER` (or `ai.provider` in `config/profiles.yaml`) and add that provider's key. Only the chosen key is needed, and a run stops before doing anything if it is missing.
+
+| `AI_PROVIDER` | Secret it needs | Default model | USD per million tokens (input / output) |
+| --- | --- | --- | --- |
+| `claude` (or unset) | `ANTHROPIC_API_KEY` | `claude-haiku-5-5` | 0.10 / 0.50 |
+| `openai` | `OPENAI_API_KEY` | `gpt-5.6-luna` | 0.20 / 1.20 |
+| `gemini` | `GEMINI_API_KEY` | `gemini-3.1-flash-lite` | 0.25 / 1.50 |
+
+Each default is that provider's cheap model that can read photos, set under `ai.models`. Any step's model can be changed under `ai.agents`, as long as it belongs to the chosen provider. Gemini's thinking tops out at `high`, so `xhigh` and `max` act as `high` there. The prompts were tuned on Claude, so run **preview** a few times after switching and compare the drafts. Photos analysed earlier keep their notes, whichever provider wrote them.
+
 ### Tools and tech stack
 
 | Area | What |
 | --- | --- |
 | Language | Python 3.10+ (3.12 on GitHub Actions) |
-| AI | Claude through the official [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python), structured output with Pydantic schemas. Claude Haiku 5.5 by default; Sonnet, Opus and Fable selectable per agent |
+| AI | Claude through the official [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python) by default (Haiku 5.5; Sonnet, Opus and Fable selectable per agent), or OpenAI ([openai](https://github.com/openai/openai-python)) or Gemini ([google-genai](https://github.com/googleapis/python-genai)). Structured output, checked against Pydantic schemas whatever the provider |
 | Photos | Google Drive API (link-shared folder and an API key), or a local folder |
 | Imaging | Pillow: JPEG at 1080 wide, quality 95, 4:4:4 chroma, ICC profile kept, EXIF removed |
 | Hosting | This repo's `media` branch, only while Instagram fetches the photo |
 | Publishing | Instagram API with Instagram Login (official, token based) |
 | Scheduling and CI | GitHub Actions: daily post, monthly token refresh, tests; actions pinned to commit SHAs |
 | Memory | JSON files in `state/<profile>/`, committed after every run |
-| Tests | pytest with fakes for Claude, Drive, GitHub and Instagram; no test calls a real API |
+| Tests | pytest with fakes for the AI providers, Drive, GitHub and Instagram; no test calls a real API |
 
 ---
 
@@ -176,6 +188,8 @@ Add these under the repo's **Settings → Secrets and variables → Actions → 
 | Secret | Where it comes from |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys → Create key. Add about $5 of credit under Billing. |
+| `OPENAI_API_KEY` (only with `AI_PROVIDER=openai`) | [OpenAI platform](https://platform.openai.com/api-keys) → Create new secret key. Add credit under Billing. |
+| `GEMINI_API_KEY` (only with `AI_PROVIDER=gemini`) | [Google AI Studio](https://aistudio.google.com/apikey) → Create API key. Set up billing for the paid tier. |
 | `IG_MAIN_ACCESS_TOKEN` | [developers.facebook.com](https://developers.facebook.com/) → your app → Instagram → API setup with Instagram login → Generate token next to your account, with `instagram_business_content_publish` and `instagram_business_manage_insights`. Valid for about 60 days. |
 | `IG_MAIN_USER_ID` | The numeric ID shown next to your account on the same API setup page |
 | `DRIVE_FOLDER_MAIN` | Google Drive → right-click the folder → Share → General access: "Anyone with the link", Viewer → Copy link |
@@ -188,6 +202,7 @@ GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under the *
 | --- | --- |
 | `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. It must be a **variable**: the check that lets the schedule run happens before any step, and GitHub doesn't let it read secrets, so an `AUTO_POST` secret is ignored. |
 | `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
+| `AI_PROVIDER` | `claude`, `openai` or `gemini`. Unset, `ai.provider` in the config decides (`claude`). A manual run can override it with the **provider** choice on Run workflow, and the run name shows which was used. |
 | `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). Set it under the **Variables** tab, Repository variables (a secret of the same name works too; an Environment variable doesn't). Each run's log says which it used, for example "Multi-photo posts are off (MULTI_PHOTO=false)". |
 
 Before the first post, do two things:
@@ -199,7 +214,7 @@ Before the first post, do two things:
 1. Under Settings → Actions → General, allow actions and set Workflow permissions to **Read and write**, so runs can commit `state/` and use the `media` branch.
 2. Add the secrets above.
 3. Go to Actions → Daily post → Run workflow and run these modes in order:
-    1. **check**: verifies the Instagram token, the posting quota and the Drive folder, without calling Claude.
+    1. **check**: verifies the AI key and model, the Instagram token, the posting quota and the Drive folder, without spending any AI tokens.
     2. **plan**: shows the next 7 days of photos and why each was picked.
     3. **preview**: download the `preview-main` artifact to see the exact image and caption.
     4. **post**: posts once. Check your feed.
@@ -224,7 +239,7 @@ cp .env.example .env             # then fill it in
 forge profiles                   # list profiles
 forge plan -p main --days 7      # what the planner would post this week, with reasons
 forge preview -p main            # full workflow, saved to drafts/, nothing posted
-forge check -p main              # verify the token, quota and Drive folder
+forge check -p main              # verify the AI key, the token, quota and Drive folder
 forge post -p main               # post today's photo (needs GITHUB_TOKEN in .env)
 forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
@@ -318,11 +333,11 @@ forge usage -p main                  # this month
 forge usage -p main --month 2026-11
 ```
 
-Costs are estimates from the per-model prices in `ai.pricing`. Update those if Anthropic's prices change.
+Costs are estimates from the per-model prices in `ai.pricing`. Update those if a provider's prices change; a model without a price is logged with no cost estimate.
 
 ### Cost
 
-With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
+With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. OpenAI's and Gemini's defaults cost two to three times as much per token, still cents a month. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
 
 ### Adding another account or Drive folder
 
@@ -373,6 +388,8 @@ After a new token, run the workflow in **check** mode before posting.
 
 **Start the posting history over.** Run **Actions → Start fresh** with **keep_catalog** ticked, or `forge reset -p <profile> --keep-catalog` and commit. By hand: replace `state/<profile>/posts.json` and `insights.json` with `{}` and commit. Every photo becomes unposted, and the subject, mood and repeat rules start fresh. Keep `catalog.json`, so no photo is analysed (and paid for) again.
 
+**"The AI provider is openai, but OPENAI_API_KEY is empty".** `AI_PROVIDER` (or the provider chosen on Run workflow) names a provider whose key isn't saved. Add that secret, or change `AI_PROVIDER`. A message like "ai.agents.caption_writer.model is claude-sonnet-5-5, a Claude (Anthropic) model, but the AI provider is openai" means that step's model belongs to another provider: remove it or change it.
+
 **Two posts on one day.** Scheduled runs post once a day, but every manual run in **post** mode posts again. Use **check**, **plan** or **preview** to look without posting.
 
 ---
@@ -393,6 +410,7 @@ src/instapostsforge/
   pipeline.py               the daily workflow
   grouping.py               finds photos that could go out together as one multi-photo post
   agents/                   AI agents: analyst, planner, caption writer, hashtag strategist, reviewer
+  agents/clients/           one small client per AI provider (Claude, OpenAI, Gemini)
   prompts/                  one prompt file per agent
   captions/                 Instagram's caption and hashtag rules
   sources/                  where photos come from (google_drive, local_folder)

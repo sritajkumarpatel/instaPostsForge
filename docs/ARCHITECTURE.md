@@ -1,6 +1,6 @@
 # Architecture
 
-instaPostsForge is an **AI workflow**: plain code runs a fixed sequence of steps every day, and calls Claude at five of them. The AI never decides which steps run or touches Instagram directly. Code validates everything the AI produces before it can be posted.
+instaPostsForge is an **AI workflow**: plain code runs a fixed sequence of steps every day, and calls an AI model (Claude by default, or OpenAI or Gemini) at five of them. The AI never decides which steps run or touches Instagram directly. Code validates everything the AI produces before it can be posted.
 
 ## System overview
 
@@ -9,7 +9,7 @@ flowchart TB
     Drive[("Google Drive folder<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
-    Claude["Claude API<br/>analyst · planner · caption writer · hashtags · reviewer"]
+    Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
     State[("state/#lt;profile#gt;/ in the repo<br/>posts · catalog · insights · usage")]
     Media[("media branch<br/>today's JPEG for about a minute")]
     IG["Instagram API<br/>official, token based"]
@@ -58,7 +58,7 @@ flowchart TD
     Record --> Commit([Commit state/ to the repo])
 ```
 
-Double-bordered boxes are Claude calls. Each one is logged to `state/<profile>/usage/` with its tokens and estimated cost, and every run's calls are summarised by phase in a token audit report uploaded as a run artifact.
+Double-bordered boxes are AI calls. Each one is logged to `state/<profile>/usage/` with its tokens and estimated cost, and every run's calls are summarised by phase in a token audit report uploaded as a run artifact.
 
 ## Code layout
 
@@ -86,7 +86,7 @@ It combines these building blocks and patterns:
 
 | Pattern | Where it appears |
 | --- | --- |
-| **Augmented LLM** (the building block) | Each Claude call gets structured outputs (Pydantic schemas) and memory: the photo catalog, post history and insights in `state/`. No tools are exposed to the model. |
+| **Augmented LLM** (the building block) | Each model call gets structured outputs (Pydantic schemas) and memory: the photo catalog, post history and insights in `state/`. No tools are exposed to the model. |
 | **Prompt chaining** | Analyst → planner → caption writer → hashtag strategist → reviewer. Each step's output is the next step's input, with programmatic **gates** in between: the planner's photo IDs must exist (and a set's extra photos must come from the cover's set), and captions and tags must pass `captions/validator.py`. |
 | **Evaluator-optimizer** | The reviewer (evaluator) approves a post or returns feedback. The caption writer and hashtag strategist (optimizers) then revise. The loop is bounded by `ai.max_revisions` (2), only the part that failed is redone, and a rule failure also feeds back as feedback. Anything code can measure stays out of the loop: code holds the caption to `ai.max_caption_text_chars` (150) before review, so the reviewer never sends a post back for length alone. After the first round the reviewer can't move the goalposts: only its first concerns and the hard checks (accuracy, quote, safety) still count, and only a hard check left failing skips the day. The capture date from EXIF or the file name is passed in as `taken_at`, so the evaluator can verify dates the writer uses. |
 | **Routing** (light) | The analyst classifies each photo into one of 12 categories and 8 moods. Code then routes only that category's and mood's playbook (`config/playbooks/`) to the caption writer, hashtag strategist and reviewer. The path stays the same; the instructions change per photo. |

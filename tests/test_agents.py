@@ -1,37 +1,36 @@
-"""Checks the Claude agents build sensible requests, using a fake client (no API calls)."""
+"""Checks the agents build sensible requests, using a fake model client (no API calls)."""
 
 from datetime import date
-from types import SimpleNamespace
 
-from instapostsforge.agents.claude import (
-    CaptionDraft,
-    ChosenTag,
-    ClaudeWorkflow,
-    HashtagSet,
-    Plan,
-    PlannedPhoto,
-    ReviewResult,
-    load_prompt,
-)
+from instapostsforge.agents.clients import Image, ModelClient, ModelReply, Text
+from instapostsforge.agents.schemas import CaptionDraft, ChosenTag, HashtagSet, Plan, PlannedPhoto, ReviewResult
+from instapostsforge.agents.workflow import AgentWorkflow, load_prompt
 from instapostsforge.models import Caption
 
 
-class FakeMessages:
+class FakeClient(ModelClient):
+    """Returns canned replies in order and keeps every request."""
+
+    provider = "fake"
+    key_env = "FAKE_API_KEY"
+
     def __init__(self, outputs):
         self.outputs, self.calls = list(outputs), []
 
-    def parse(self, **kwargs):
+    def ask(self, **kwargs):
         self.calls.append(kwargs)
         output = self.outputs.pop(0)
         if isinstance(output, Exception):
             raise output
-        usage = SimpleNamespace(input_tokens=1000, output_tokens=200, cache_creation_input_tokens=0, cache_read_input_tokens=500)
-        return SimpleNamespace(stop_reason="end_turn", parsed_output=output, usage=usage)
+        if isinstance(output, ModelReply):
+            return output
+        tokens = {"input_tokens": 1000, "output_tokens": 200, "cache_read_input_tokens": 500}
+        return ModelReply(parsed=output, tokens=tokens)
 
 
 def workflow(*outputs, usage_log=None, **settings):
-    messages = FakeMessages(outputs)
-    return ClaudeWorkflow(settings, client=SimpleNamespace(messages=messages), usage_log=usage_log), messages
+    client = FakeClient(outputs)
+    return AgentWorkflow(settings, client=client, usage_log=usage_log), client
 
 
 def test_every_prompt_file_loads():
@@ -77,8 +76,8 @@ def test_per_agent_model_effort_and_tokens():
     wf.choose_hashtags(analysis={}, caption_text="c", recent_tag_sets=[], tag_stats={})
     wf.review(b"jpg", caption=Caption(text="c", hashtags=["#rain"], alt_text="a"))
     tags_call, review_call = msgs.calls
-    assert (tags_call["model"], tags_call["max_tokens"], tags_call["output_config"]) == ("claude-sonnet-5-5", 4000, {"effort": "low"})
-    assert (review_call["model"], review_call["max_tokens"], review_call["output_config"]) == ("claude-opus-5-5", 16000, {"effort": "medium"})
+    assert (tags_call["model"], tags_call["max_tokens"], tags_call["effort"]) == ("claude-sonnet-5-5", 4000, "low")
+    assert (review_call["model"], review_call["max_tokens"], review_call["effort"]) == ("claude-opus-5-5", 16000, "medium")
 
 
 def test_standing_instructions_reach_every_agent(tmp_path):
@@ -100,7 +99,7 @@ def test_every_call_is_written_to_the_usage_log(tmp_path):
     except RuntimeError:
         pass
     ok, failed = log.entries
-    assert ok["agent"] == "reviewer" and ok["input_tokens"] == 1000 and ok["cache_read_input_tokens"] == 500
+    assert ok["agent"] == "reviewer" and ok["provider"] == "fake" and ok["input_tokens"] == 1000 and ok["cache_read_input_tokens"] == 500
     assert ok["estimated_usd"] == round(1000 * 4e-6 + 500 * 4e-7 + 200 * 20e-6, 6)
     assert failed["ok"] is False and "overloaded" in failed["error"]
     month = ok["at"][:7]
@@ -112,7 +111,7 @@ def test_categories_and_moods_match_the_schema_and_playbooks():
     from pathlib import Path
     from typing import get_args
 
-    from instapostsforge.agents.claude import Category, Mood
+    from instapostsforge.agents.schemas import Category, Mood
     from instapostsforge.agents.playbooks import CATEGORIES, MOODS, Playbooks
 
     assert get_args(Category) == CATEGORIES and get_args(Mood) == MOODS
@@ -130,7 +129,7 @@ def test_only_the_photos_playbook_reaches_the_writer(tmp_path):
 
 
 def test_failed_check_means_revise_even_if_verdict_approves():
-    from instapostsforge.agents.claude import ReviewCheck
+    from instapostsforge.agents.schemas import ReviewCheck
 
     wf, _ = workflow(ReviewResult(checks=[ReviewCheck(item="hook", passed=False, note="112 characters")], verdict="approve"))
     review = wf.review(b"jpg", caption=Caption(text="c", hashtags=["#a"], alt_text="a"))
@@ -161,10 +160,43 @@ def test_multi_photo_requests_show_every_photo_in_order():
     more = [SetPhoto(b"jpg2", {"main_subject": "deer"}), SetPhoto(b"jpg3", {"main_subject": "lake"})]
     caption = wf.write_caption(b"jpg1", analysis={"main_subject": "tiger"}, angle="a", recent_captions=[], top_captions=[], more_photos=more)
     assert caption.more_alt_texts == ["second", ""]  # a missing alt text is left empty, never made up
-    content = msgs.calls[0]["messages"][0]["content"]
-    assert [b["type"] for b in content].count("image") == 3
-    assert "multi-photo post of 3 photos" in content[-1]["text"] and "deer" in content[-1]["text"]
+    parts = msgs.calls[0]["parts"]
+    assert [p.jpeg for p in parts if isinstance(p, Image)] == [b"jpg1", b"jpg2", b"jpg3"]
+    assert "multi-photo post of 3 photos" in parts[-1].text and "deer" in parts[-1].text
     assert wf.review(b"jpg1", caption=caption, analysis={}, more_photos=more).approved
-    assert [b["type"] for b in msgs.calls[1]["messages"][0]["content"]].count("image") == 3
+    assert sum(isinstance(p, Image) for p in msgs.calls[1]["parts"]) == 3
     item = wf.plan([{"photo_id": "a"}], [], today=date(2026, 10, 25), horizon=1, photo_sets={"sets": []})[0]
-    assert item.extra_ids == ["b", "c"] and "photo_sets" in msgs.calls[2]["messages"][0]["content"][0]["text"]
+    assert item.extra_ids == ["b", "c"] and "photo_sets" in msgs.calls[2]["parts"][0].text
+
+
+def test_refusal_and_truncation_raise_and_are_logged_as_failed(tmp_path):
+    import pytest
+
+    from instapostsforge.usage import UsageLog
+
+    log = UsageLog("p", state_dir=tmp_path)
+    wf, _ = workflow(
+        ModelReply(parsed=None, stop="refused", detail="stop_reason=refusal"),
+        ModelReply(parsed=None, stop="too_long", detail="stop_reason=max_tokens"),
+        usage_log=log,
+    )
+    with pytest.raises(RuntimeError, match="declined"):
+        wf.analyze(b"jpg", photo_name="a.jpg")
+    with pytest.raises(RuntimeError, match="No usable PhotoAnalysis"):
+        wf.analyze(b"jpg", photo_name="a.jpg")
+    assert [e["ok"] for e in log.entries] == [False, False] and log.entries[1]["error"] == "stop_reason=max_tokens"
+
+
+def test_analyst_sends_the_photo_then_the_file_name():
+    from instapostsforge.agents.schemas import PhotoAnalysis
+
+    analysis = PhotoAnalysis(
+        category="sky", mood="calm", subject="moon", main_subject="moon", description="d", setting="s", colors=[],
+        quality_score=7, has_people=False, has_children=False, has_identifiable_strangers=False, has_text_or_logo=False,
+        is_screenshot_or_meme=False, shows_private_home=False, themes=[],
+    )
+    wf, msgs = workflow(analysis)
+    assert wf.analyze(b"jpg", photo_name="moon.jpg")["main_subject"] == "moon"
+    first, second = msgs.calls[0]["parts"]
+    assert first == Image(b"jpg") and isinstance(second, Text) and "moon.jpg" in second.text
+    assert msgs.calls[0]["schema"] is PhotoAnalysis

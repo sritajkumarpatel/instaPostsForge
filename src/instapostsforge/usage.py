@@ -28,15 +28,17 @@ PHASES = {
 
 
 def estimate_cost(model: str, tokens: dict, pricing: dict) -> float | None:
-    """USD estimate. Cache writes bill at 1.25x input and cache reads at 0.1x input."""
+    """USD estimate. A model's cache_write and cache_read prices default to 1.25x and 0.1x its input price."""
     price = pricing.get(model)
     if not price:
         return None
     per_in, per_out = float(price["input"]) / 1e6, float(price["output"]) / 1e6
+    per_write = float(price.get("cache_write", float(price["input"]) * 1.25)) / 1e6
+    per_read = float(price.get("cache_read", float(price["input"]) * 0.1)) / 1e6
     cost = (
         tokens.get("input_tokens", 0) * per_in
-        + tokens.get("cache_creation_input_tokens", 0) * per_in * 1.25
-        + tokens.get("cache_read_input_tokens", 0) * per_in * 0.1
+        + tokens.get("cache_creation_input_tokens", 0) * per_write
+        + tokens.get("cache_read_input_tokens", 0) * per_read
         + tokens.get("output_tokens", 0) * per_out
     )
     return round(cost, 6)
@@ -52,14 +54,18 @@ class UsageLog:
         self.run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
         self.entries: list[dict] = []
 
-    def record(self, *, agent: str, model: str, usage=None, seconds: float = 0.0, ok: bool = True, error: str = "") -> dict:
-        tokens = {f: int(getattr(usage, f, 0) or 0) for f in TOKEN_FIELDS} if usage is not None else {f: 0 for f in TOKEN_FIELDS}
+    def record(
+        self, *, agent: str, model: str, provider: str = "claude", tokens: dict | None = None,
+        seconds: float = 0.0, ok: bool = True, error: str = "",
+    ) -> dict:
+        tokens = {f: int((tokens or {}).get(f, 0) or 0) for f in TOKEN_FIELDS}
         now = datetime.now(timezone.utc)
         entry = {
             "at": now.isoformat(timespec="seconds"),
             "run_id": self.run_id,
             "command": self.command,
             "agent": agent,
+            "provider": provider,
             "model": model,
             **tokens,
             "estimated_usd": estimate_cost(model, tokens, self.pricing),

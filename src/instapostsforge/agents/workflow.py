@@ -1,8 +1,7 @@
-"""The five agents, backed by Claude. Prompts live in instapostsforge/prompts/*.md."""
+"""The five agents. Prompts live in instapostsforge/prompts/*.md; a ModelClient sends them to the provider."""
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
 import time
@@ -10,24 +9,21 @@ from datetime import date
 from pathlib import Path
 from importlib import resources
 from string import Template
-from typing import Literal, TypeVar
+from typing import TypeVar
 
-import anthropic
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from ..models import Caption
 from ..usage import UsageLog
 from .base import AIWorkflow, PlanItem, Review, SetPhoto
+from .clients import Image, ModelClient, Part, Text
 from .playbooks import Playbooks
+from .schemas import CaptionDraft, HashtagSet, PhotoAnalysis, Plan, ReviewResult
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 AGENTS = ("analyst", "planner", "caption_writer", "hashtags", "reviewer")
-
-Category = Literal["landscape", "sky", "city", "street", "people", "food", "animals", "macro", "night", "travel", "event", "abstract"]
-Mood = Literal["calm", "joyful", "energetic", "nostalgic", "dramatic", "romantic", "playful", "awe"]
-CheckName = Literal["accuracy", "hook", "tone", "length", "quote", "hashtags", "alt_text", "safety"]
 
 ACCOUNT_FIELDS = (
     ("niche", "What the account is about"),
@@ -45,93 +41,15 @@ QUOTE_RULES = {
 }
 
 
-class PhotoAnalysis(BaseModel):
-    category: Category
-    mood: Mood
-    subject: str = Field(description="The main subject in a few words.")
-    main_subject: str = Field(
-        description="The main subject as one or two lowercase words, the same wording every time, e.g. moon, dog, sunset, dosa, temple."
-    )
-    description: str = Field(description="Two or three sentences on what is in the frame.")
-    setting: str = Field(description="The kind of place, e.g. hill road, old market, beach at dusk.")
-    place_name: str | None = Field(default=None, description="Only when clearly recognisable; never a guess.")
-    colors: list[str]
-    time_of_day: str | None = None
-    season: str | None = None
-    quality_score: int = Field(ge=1, le=10)
-    has_people: bool
-    has_children: bool
-    has_identifiable_strangers: bool
-    has_text_or_logo: bool
-    is_screenshot_or_meme: bool
-    shows_private_home: bool
-    is_explicit: bool = Field(default=False, description="Nudity, sexual content or graphic gore; such photos are never posted.")
-    themes: list[str] = Field(description="Themes and audiences, specific to broad.")
-
-
-class PlannedPhoto(BaseModel):
-    photo_id: str = Field(description="The photo to post, or the cover (first photo) of a multi-photo post.")
-    extra_photo_ids: list[str] = Field(
-        default_factory=list,
-        description="For a multi-photo post only: the other photos, in the order to show them, all from the cover's set. Empty for a single photo.",
-    )
-    reason: str
-    angle: str
-
-
-class Plan(BaseModel):
-    order: list[PlannedPhoto]
-
-
-class CaptionDraft(BaseModel):
-    caption: str = Field(description="Caption text without hashtags; opens with a short hook line.")
-    quote: str | None = None
-    quote_author: str | None = None
-    quote_is_attributed: bool = Field(default=False, description="True only if certain who said the quote.")
-    alt_text: str = Field(description="Alt text for the photo, or for the cover of a multi-photo post.")
-    more_alt_texts: list[str] = Field(
-        default_factory=list, description="Multi-photo posts only: one alt text for each other photo, in order."
-    )
-
-
-class ChosenTag(BaseModel):
-    tag: str
-    role: Literal["specific", "place", "niche", "community"]
-    reason: str
-
-
-class HashtagSet(BaseModel):
-    hashtags: list[ChosenTag]
-
-
-class ReviewCheck(BaseModel):
-    item: CheckName
-    passed: bool
-    note: str = ""
-
-
-class ReviewResult(BaseModel):
-    checks: list[ReviewCheck]
-    verdict: Literal["approve", "revise"]
-    feedback: str = Field(default="", description="Names each failed item and what to change.")
-
-
 def load_prompt(name: str) -> str:
     return resources.files("instapostsforge.prompts").joinpath(f"{name}.md").read_text(encoding="utf-8")
 
 
-def image_block(image_jpeg: bytes) -> dict:
-    return {
-        "type": "image",
-        "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.standard_b64encode(image_jpeg).decode("ascii")},
-    }
-
-
-class ClaudeWorkflow(AIWorkflow):
-    def __init__(self, settings: dict, client: anthropic.Anthropic | None = None, usage_log: UsageLog | None = None):
+class AgentWorkflow(AIWorkflow):
+    def __init__(self, settings: dict, client: ModelClient, usage_log: UsageLog | None = None):
         self.settings = settings
         self.model = settings.get("model", "claude-haiku-5-5")
-        self.client = client or anthropic.Anthropic()
+        self.client = client
         self.usage_log = usage_log
         self.account_notes = self._account_notes(settings)
         self.standing_instructions = self._load_instructions(settings.get("instructions_file"))
@@ -172,46 +90,43 @@ class ClaudeWorkflow(AIWorkflow):
             "max_tokens": int(own.get("max_tokens", self.settings.get("max_tokens", 16000))),
         }
 
-    def _ask(self, agent: str, system: str, content: list[dict], schema: type[T]) -> T:
+    def _ask(self, agent: str, system: str, parts: list[Part], schema: type[T]) -> T:
         cfg = self.agent_settings(agent)
         if self.standing_instructions:
             system += "\n\n# Standing instructions from the account owner\n\n" + self.standing_instructions
-        kwargs = dict(
-            model=cfg["model"],
-            max_tokens=cfg["max_tokens"],
-            system=system,
-            messages=[{"role": "user", "content": content}],
-            output_format=schema,
-        )
-        if cfg["effort"]:
-            kwargs["output_config"] = {"effort": cfg["effort"]}
         started = time.monotonic()
         try:
-            response = self.client.messages.parse(**kwargs)
+            reply = self.client.ask(
+                model=cfg["model"], effort=cfg["effort"], max_tokens=cfg["max_tokens"], system=system, parts=parts, schema=schema
+            )
         except Exception as err:
             if self.usage_log:
-                self.usage_log.record(agent=agent, model=cfg["model"], seconds=time.monotonic() - started, ok=False, error=str(err))
+                self.usage_log.record(
+                    agent=agent, provider=self.client.provider, model=cfg["model"],
+                    seconds=time.monotonic() - started, ok=False, error=str(err),
+                )
             raise
         if self.usage_log:
             self.usage_log.record(
                 agent=agent,
+                provider=self.client.provider,
                 model=cfg["model"],
-                usage=getattr(response, "usage", None),
+                tokens=reply.tokens,
                 seconds=time.monotonic() - started,
-                ok=response.stop_reason not in ("refusal", "max_tokens"),
-                error="" if response.stop_reason not in ("refusal", "max_tokens") else f"stop_reason={response.stop_reason}",
+                ok=reply.stop == "done",
+                error="" if reply.stop == "done" else reply.detail or reply.stop,
             )
-        if response.stop_reason == "refusal":
+        if reply.stop == "refused":
             raise RuntimeError(f"The model declined the {agent} request.")
-        if response.parsed_output is None:
-            raise RuntimeError(f"No usable {schema.__name__} returned (stop reason: {response.stop_reason}).")
-        return response.parsed_output
+        if reply.parsed is None:
+            raise RuntimeError(f"No usable {schema.__name__} returned ({reply.detail or reply.stop}).")
+        return reply.parsed
 
     def analyze(self, image_jpeg: bytes, *, photo_name: str) -> dict:
         result = self._ask(
             "analyst",
             self._prompt("analyst"),
-            [image_block(image_jpeg), {"type": "text", "text": f"File name: {photo_name}\n\nAnalyse this photo."}],
+            [Image(image_jpeg), Text(f"File name: {photo_name}\n\nAnalyse this photo.")],
             PhotoAnalysis,
         )
         return result.model_dump()
@@ -238,19 +153,19 @@ class ClaudeWorkflow(AIWorkflow):
                 max_same_mood=planning.get("max_same_mood_per_7_days", 2),
                 subject_days=planning.get("no_repeat_subject_days", 3),
             ),
-            [{"type": "text", "text": json.dumps(brief, ensure_ascii=False, indent=1)}],
+            [Text(json.dumps(brief, ensure_ascii=False, indent=1))],
             Plan,
         )
         return [PlanItem(p.photo_id, p.reason, p.angle, list(p.extra_photo_ids)) for p in result.order]
 
     @staticmethod
-    def _photos_content(image_jpeg: bytes, analysis: dict, more_photos: list[SetPhoto] | None) -> tuple[list[dict], str]:
+    def _photos_content(image_jpeg: bytes, analysis: dict, more_photos: list[SetPhoto] | None) -> tuple[list[Part], str]:
         """The image blocks and the analyst's notes, for one photo or every photo of a multi-photo post."""
         if not more_photos:
-            return [image_block(image_jpeg)], f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}"
+            return [Image(image_jpeg)], f"Analyst's notes:\n{json.dumps(analysis, ensure_ascii=False)}"
         blocks, notes = [], []
         for n, (jpeg, notes_for) in enumerate([(image_jpeg, analysis), *((p.image_jpeg, p.analysis) for p in more_photos)], 1):
-            blocks += [{"type": "text", "text": f"Photo {n}{' (cover)' if n == 1 else ''}:"}, image_block(jpeg)]
+            blocks += [Text(f"Photo {n}{' (cover)' if n == 1 else ''}:"), Image(jpeg)]
             notes.append(f"Photo {n}: {json.dumps(notes_for, ensure_ascii=False)}")
         intro = f"This is a multi-photo post of {len(blocks) // 2} photos, shown in this order; photo 1 is the cover."
         return blocks, intro + "\n\nAnalyst's notes:\n" + "\n".join(notes)
@@ -271,7 +186,7 @@ class ClaudeWorkflow(AIWorkflow):
         )
         if feedback:
             text += f"\n\nThe reviewer sent the previous draft back with this feedback:\n{feedback}"
-        draft = self._ask("caption_writer", system, [*blocks, {"type": "text", "text": text}], CaptionDraft)
+        draft = self._ask("caption_writer", system, [*blocks, Text(text)], CaptionDraft)
         more_alts = list(draft.more_alt_texts[: len(more_photos or [])])
         more_alts += [""] * (len(more_photos or []) - len(more_alts))  # a missing alt text is left out, never invented
         return Caption(
@@ -298,7 +213,7 @@ class ClaudeWorkflow(AIWorkflow):
         text = json.dumps(brief, ensure_ascii=False, indent=1)
         if feedback:
             text += f"\n\nThe reviewer's feedback on the previous set:\n{feedback}"
-        result = self._ask("hashtags", system, [{"type": "text", "text": text}], HashtagSet)
+        result = self._ask("hashtags", system, [Text(text)], HashtagSet)
         for t in result.hashtags:
             log.info("Hashtag %s (%s): %s", t.tag, t.role, t.reason)
         return [t.tag for t in result.hashtags]
@@ -316,7 +231,7 @@ class ClaudeWorkflow(AIWorkflow):
             f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {alt}"
         )
         system = self._prompt("reviewer", playbook=self.playbooks.for_photo(analysis))
-        result = self._ask("reviewer", system, [*blocks, {"type": "text", "text": text}], ReviewResult)
+        result = self._ask("reviewer", system, [*blocks, Text(text)], ReviewResult)
         failed = [c for c in result.checks if not c.passed]
         # A failed checklist item means revise, even if the model's verdict said approve.
         if result.verdict == "approve" and not failed:

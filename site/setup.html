@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>instaPostsForge Setup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Set up your own copy of instaPostsForge: copy the repo, add your keys, describe your account, test, and switch on daily posting.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2315110d'/%3E%3Cpath d='M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5' fill='none' stroke='%23F2C14E' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z' fill='%23F2C14E'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the setup guide is a darkroom checklist. Each step is one frame of a contact
+   sheet, numbered like a film roll, because the order matters. Same film look as index.html. */
+:root {
+  color-scheme: dark;
+  --base: #15110d;
+  --base-2: #1f1913;
+  --emulsion: #f3ead9;
+  --muted: #b3a690;
+  --amber: #f2c14e;
+  --edge: #f2a33a;
+  --hole: #0b0907;
+  --line: #3a3027;
+  --display: "Sora", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.86rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --step-1: clamp(1.2rem, 1.1rem + 0.5vw, 1.45rem);
+  --step-2: clamp(1.6rem, 1.35rem + 1.2vw, 2.3rem);
+  --step-3: clamp(2rem, 1.6rem + 2.2vw, 3.2rem);
+}
+* { box-sizing: border-box; }
+html { background: var(--base); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--base); color: var(--emulsion); font: 400 var(--step-0)/1.6 var(--body); -webkit-font-smoothing: antialiased; }
+a { color: var(--amber); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+p { margin: 0; }
+code { font: 500 0.88em var(--mono); color: var(--emulsion); background: var(--base-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.label { font: 500 var(--step--1)/1.3 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--edge); }
+.lede { color: var(--muted); max-width: 62ch; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font: 600 1.1rem/1 var(--display); color: var(--emulsion); text-decoration: none; }
+.brand svg { width: 30px; height: 30px; }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.top nav a { color: var(--muted); text-decoration: none; font-size: var(--step--1); font-weight: 600; }
+.top nav a:hover { color: var(--emulsion); }
+
+.hero { padding-block: 28px 36px; display: grid; gap: 18px; }
+.hero h1 { font-size: var(--step-3); max-width: 20ch; }
+.hero h1 em { font-style: normal; color: var(--amber); }
+
+/* the kit: what to have ready */
+.kit { position: relative; background: var(--base-2); border-block: 1px solid var(--line); padding-block: 40px; }
+.kit::before, .kit::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 14px;
+  background-image: linear-gradient(90deg, transparent 6px, var(--hole) 6px, var(--hole) 20px, transparent 20px);
+  background-size: 28px 14px;
+}
+.kit::before { top: 10px; }
+.kit::after { bottom: 10px; }
+.kit-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr)); }
+.kit-item { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; background: var(--base); display: grid; gap: 6px; align-content: start; }
+.kit-item h3 { font-size: var(--step-0); }
+.kit-item p { color: var(--muted); font-size: var(--step--1); line-height: 1.5; }
+.kit-foot { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-top: 16px; }
+.kit-foot span { font: 500 var(--step--1)/1.3 var(--mono); color: var(--muted); }
+.kit-foot b { color: var(--amber); font-weight: 500; }
+
+/* steps */
+.steps { list-style: none; margin: 0; padding: 48px 0 24px; display: grid; gap: 0; counter-reset: frame; }
+.step { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 20px; padding-block: 26px; border-top: 1px solid var(--line); }
+.step:last-child { border-bottom: 1px solid var(--line); }
+.step .no { font: 600 var(--step-2)/1 var(--display); color: var(--amber); font-variant-numeric: tabular-nums; }
+.step .no small { display: block; margin-top: 8px; font: 500 10px/1 var(--mono); letter-spacing: 0.15em; color: var(--edge); }
+.step .body { display: grid; gap: 12px; min-width: 0; }
+.step h2 { font-size: var(--step-1); }
+.step p, .step li { color: var(--muted); }
+.step p strong, .step li strong { color: var(--emulsion); font-weight: 600; }
+.step ol, .step ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.step li::marker { color: var(--edge); font-family: var(--mono); font-size: 0.85em; }
+.tag { justify-self: start; font: 500 10px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; }
+.tag.opt { color: var(--edge); border-color: var(--edge); }
+@media (max-width: 560px) { .step { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+
+/* secrets table with copy buttons */
+.secrets { overflow-x: auto; }
+.secrets table { width: 100%; border-collapse: collapse; font-size: var(--step--1); min-width: 520px; }
+.secrets th, .secrets td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.secrets th { font: 500 10px/1.2 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--edge); }
+.secrets td { color: var(--muted); }
+.copy { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; color: var(--emulsion); font: 500 0.8rem/1.2 var(--mono); cursor: pointer; white-space: nowrap; }
+.copy:hover { border-color: var(--amber); }
+.copy[data-done] { border-color: var(--amber); color: var(--amber); }
+
+pre { margin: 0; background: #0d0b09; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font: 400 0.82rem/1.55 var(--mono); color: var(--emulsion); }
+pre .c { color: var(--muted); }
+
+.done { padding-block: 40px 8px; display: grid; gap: 14px; }
+.done h2 { font-size: var(--step-2); }
+.links { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; font: 600 var(--step--1)/1 var(--body); text-decoration: none; border: 1px solid var(--amber); color: var(--amber); }
+.btn.primary { background: var(--amber); color: #1a1405; }
+
+footer { padding-block: 48px 64px; display: grid; gap: 14px; text-align: center; justify-items: center; }
+footer .mark svg { width: 40px; height: 40px; }
+footer p { color: var(--muted); font-size: var(--step--1); }
+footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--display); max-width: 30ch; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="s-mark" viewBox="0 0 24 24">
+      <path d="M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5" fill="none" stroke="#F2C14E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z" fill="#F2C14E"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="wrap top">
+  <a class="brand" href="./"><svg aria-hidden="true"><use href="#s-mark"/></svg>instaPostsForge</a>
+  <nav aria-label="Sections">
+    <a href="./">About</a>
+    <a href="#kit">What you need</a>
+    <a href="#steps">Steps</a>
+    <a href="https://github.com/sritajkumarpatel/instaPostsForge#troubleshooting">Troubleshooting</a>
+    <a href="https://github.com/sritajkumarpatel/instaPostsForge">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <span class="label">Use it yourself · about 45 minutes, once</span>
+    <h1>Your own daily poster, <em>on your own account.</em></h1>
+    <p class="lede">Copy the repo, add your keys as GitHub secrets, describe your account, and run it once by hand. After that it posts every day on its own. Nothing runs on your computer, and your keys never leave GitHub.</p>
+  </div>
+
+  <section id="kit" class="kit" aria-labelledby="kit-title">
+    <div class="wrap" style="display:grid;gap:18px">
+      <span class="label" id="kit-title">What you need</span>
+      <div class="kit-grid">
+        <div class="kit-item"><h3>A GitHub account</h3><p>Free. Your copy must be a <strong style="color:var(--emulsion)">public</strong> repo: Instagram downloads each photo from a public link to it, and Actions minutes are free for public repos.</p></div>
+        <div class="kit-item"><h3>An Instagram Professional account</h3><p>Creator or Business, switched in the Instagram app under Account type and tools. Free.</p></div>
+        <div class="kit-item"><h3>A Meta developer app</h3><p>At developers.facebook.com, to create the access token. It stays in development mode; no app review.</p></div>
+        <div class="kit-item"><h3>A Google account</h3><p>For the Drive folder of photos and a free Google Cloud API key to read it.</p></div>
+        <div class="kit-item"><h3>A Claude API key</h3><p>From the Claude Console, with about $5 of credit. That lasts a long time.</p></div>
+      </div>
+      <div class="kit-foot"><span>Typical cost: <b>under a cent a post</b> on Claude Haiku 5.5</span><span>Instagram API, Drive API, GitHub Actions: <b>free</b></span></div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <ol id="steps" class="steps">
+      <li class="step">
+        <span class="no">01<small>COPY</small></span>
+        <div class="body">
+          <h2>Copy the repo</h2>
+          <p>Open <a href="https://github.com/sritajkumarpatel/instaPostsForge">instaPostsForge on GitHub</a> and click <strong>Use this template → Create a new repository</strong> (or <strong>Fork</strong>). Keep it <strong>Public</strong>.</p>
+          <p>Then in your copy, open <strong>Settings → Actions → General</strong>, allow all actions, and set Workflow permissions to <strong>Read and write</strong>. On a fork, also open the <strong>Actions</strong> tab once and enable workflows.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">02<small>CLEAN</small></span>
+        <div class="body">
+          <h2>Start fresh</h2>
+          <p>Your copy came with the original account's posting history and photo notes in <code>state/main/</code>. Clear them: <strong>Actions → Start fresh → Run workflow</strong>, leave the profile as <code>main</code>, and type <code>main</code> again in the confirm box.</p>
+          <p>It commits an empty history, so your first post starts clean.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">03<small>PHOTOS</small></span>
+        <div class="body">
+          <h2>Make the photo folder</h2>
+          <ol>
+            <li>In Google Drive, create a folder and put in the photos you'd be happy to post. Everything in it is fair game, so handpick.</li>
+            <li>Right-click the folder → <strong>Share</strong> → General access: <strong>Anyone with the link</strong>, Viewer → <strong>Copy link</strong>. That link is the secret <code>DRIVE_FOLDER_MAIN</code>.</li>
+            <li>In the <a href="https://console.cloud.google.com/">Google Cloud console</a>: create a project → APIs and services → enable <strong>Google Drive API</strong> → Credentials → Create credentials → <strong>API key</strong>, restricted to the Drive API. That is <code>GOOGLE_DRIVE_API_KEY</code>.</li>
+          </ol>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">04<small>INSTAGRAM</small></span>
+        <div class="body">
+          <h2>Get an Instagram token</h2>
+          <ol>
+            <li>At <a href="https://developers.facebook.com/">developers.facebook.com</a>, create an app and add the <strong>Instagram</strong> product.</li>
+            <li>Under <strong>Instagram → API setup with Instagram login</strong>, add your account as a tester and accept the invite in the Instagram app.</li>
+            <li>Click <strong>Generate token</strong> next to your account, with <code>instagram_business_content_publish</code> and <code>instagram_business_manage_insights</code>. That is <code>IG_MAIN_ACCESS_TOKEN</code>.</li>
+            <li>The number next to your account on the same page is <code>IG_MAIN_USER_ID</code>.</li>
+          </ol>
+          <p>It never needs your Instagram password, and you can revoke the token at any time.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">05<small>CLAUDE</small></span>
+        <div class="body">
+          <h2>Get a Claude API key</h2>
+          <p>In the <a href="https://console.anthropic.com/">Claude Console</a>: <strong>API keys → Create key</strong>, and add about $5 of credit under Billing. That is <code>ANTHROPIC_API_KEY</code>.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">06<small>SECRETS</small></span>
+        <div class="body">
+          <h2>Add the secrets</h2>
+          <p>In your copy: <strong>Settings → Secrets and variables → Actions → New repository secret</strong>, once per row. Nobody can read a secret back after it's saved.</p>
+          <div class="secrets">
+            <table>
+              <thead><tr><th scope="col">Name</th><th scope="col">Value</th></tr></thead>
+              <tbody>
+                <tr><td><button class="copy" type="button" data-copy="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</button></td><td>Claude API key (step 05)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="IG_MAIN_ACCESS_TOKEN">IG_MAIN_ACCESS_TOKEN</button></td><td>Instagram token (step 04)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="IG_MAIN_USER_ID">IG_MAIN_USER_ID</button></td><td>Instagram user ID (step 04)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="DRIVE_FOLDER_MAIN">DRIVE_FOLDER_MAIN</button></td><td>Drive folder link (step 03)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="GOOGLE_DRIVE_API_KEY">GOOGLE_DRIVE_API_KEY</button></td><td>Google API key (step 03)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="GH_SECRETS_TOKEN">GH_SECRETS_TOKEN</button></td><td><em>Optional.</em> A fine-grained GitHub token for this repo only, with <strong>Secrets: Read and write</strong>, so the token renews itself every month.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">07<small>VOICE</small></span>
+        <div class="body">
+          <h2>Describe your account</h2>
+          <p>Open <code>config/profiles.yaml</code> on GitHub (the pencil icon edits it in the browser). Under <code>profiles → main → ai</code>, the blocks marked <strong>✏️ YOURS TO EDIT</strong> still describe the original account. Replace them, because captions follow them closely:</p>
+<pre>account:
+  niche: <span class="c">"street and travel photography in Lisbon"</span>
+  audience: <span class="c">"people who love slow travel"</span>
+  location: <span class="c">"Lisbon, Portugal"</span>
+  voice: <span class="c">"warm, observant, a little dry humour"</span>
+  avoid: <span class="c">"the word 'wanderlust'"</span>
+  ending_style: <span class="c">"a question about the reader's own city"</span></pre>
+          <p>Delete <code>extra_instructions</code> (it's about the original author's camera watermark), or write notes about your own photos there.</p>
+          <p><code>config/ai-instructions.md</code> holds the voice rules for every step. Its "Deities, temples and festivals" section writes reverent captions for Hindu festivals; keep it, adapt it to your own traditions, or delete it.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">08<small>TEST</small></span>
+        <div class="body">
+          <h2>Try it by hand</h2>
+          <p><strong>Actions → Daily post → Run workflow</strong>, in these modes, in order:</p>
+          <ol>
+            <li><strong>check</strong>: verifies the Instagram token, the posting quota and the Drive folder. No Claude call.</li>
+            <li><strong>plan</strong>: shows which photos it would post over the next 7 days, and why.</li>
+            <li><strong>preview</strong>: download the <code>preview-main</code> artifact to see the exact image and caption.</li>
+            <li><strong>post</strong>: posts once. Check your feed.</li>
+          </ol>
+          <p>Each run's page has a summary and a <code>token-audit-…</code> artifact showing what it cost. If something fails, the <a href="https://github.com/sritajkumarpatel/instaPostsForge#troubleshooting">troubleshooting guide</a> explains each error.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">09<small>DAILY</small></span>
+        <div class="body">
+          <h2>Switch on daily posting</h2>
+          <p><strong>Settings → Secrets and variables → Actions → Variables tab → New repository variable</strong>: name <button class="copy" type="button" data-copy="AUTO_POST">AUTO_POST</button>, value <code>true</code>. It must be a <strong>variable</strong>, not a secret.</p>
+          <p>It posts at 13:30 UTC (7:00 pm in India). To change the time, edit the <code>cron</code> line in <code>.github/workflows/daily-post.yml</code>; it's in UTC.</p>
+          <p>Optional: a variable <button class="copy" type="button" data-copy="MULTI_PHOTO">MULTI_PHOTO</button> set to <code>false</code> posts single photos only.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="no">10<small>EXTRA</small></span>
+        <div class="body">
+          <span class="tag opt">Optional</span>
+          <h2>Your own project page</h2>
+          <p>To publish this site for your copy, set <strong>Settings → Pages → Source</strong> to <strong>GitHub Actions</strong>. It republishes after every merge to main. The pages live in <code>site/</code>.</p>
+          <p>To run it on your computer instead, or add a second account, see <a href="https://github.com/sritajkumarpatel/instaPostsForge#running-it-locally">Running it locally</a> and <a href="https://github.com/sritajkumarpatel/instaPostsForge#adding-another-account-or-drive-folder">Adding another account</a>.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="done">
+      <span class="label">That's it</span>
+      <h2>Keep adding photos to the folder.</h2>
+      <p class="lede">Each new photo is looked at once, and none is ever posted twice. When the folder runs out, the run says "add more photos" and posts nothing.</p>
+      <div class="links">
+        <a class="btn primary" href="https://github.com/sritajkumarpatel/instaPostsForge">Open the repo</a>
+        <a class="btn" href="./">How it works</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">
+  <span class="mark"><svg aria-hidden="true"><use href="#s-mark"/></svg></span>
+  <p class="tagline">Built for photographers whose best shots stay stuck in the gallery.</p>
+  <p>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with and powered by Claude</p>
+  <p><a href="https://github.com/sritajkumarpatel/instaPostsForge">Source on GitHub</a> · <a href="https://github.com/sritajkumarpatel/postaday-android">Postaday for Android</a></p>
+</footer>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var text = button.getAttribute("data-copy");
+      var label = button.textContent;
+      function done() {
+        button.setAttribute("data-done", "");
+        button.textContent = "Copied";
+        setTimeout(function () { button.removeAttribute("data-done"); button.textContent = label; }, 1400);
+      }
+      function select() {
+        var range = document.createRange();
+        range.selectNodeContents(button);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, select);
+      } else {
+        select();
+      }
+    });
+  });
+</script>
+</body>
+</html>

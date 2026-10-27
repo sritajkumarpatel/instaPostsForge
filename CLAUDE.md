@@ -64,7 +64,7 @@ forge plan -p main        # needs keys in .env; posts nothing
 forge preview -p main     # full workflow into drafts/, posts nothing
 ```
 
-- **Deleted posts:** to make a deleted post's photos eligible again, remove its entry from `state/<profile>/posts.json`; its `more_photos` are freed with it. To start over, set `posts.json` and `insights.json` to `{}` and keep `catalog.json`.
+- **Deleted posts:** to make a deleted post's photos eligible again, remove its entry from `state/<profile>/posts.json`; its `more_photos` are freed with it. To start over, run `forge reset -p <profile> --keep-catalog` (or the Start fresh workflow); without `--keep-catalog` it also clears `catalog.json`, which a new copy of the repo should do.
 - **Switches:** `AUTO_POST` must be a repository variable (a job-level `if` can't read secrets); `MULTI_PHOTO` is read from `vars` or `secrets`.
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.

@@ -114,6 +114,15 @@ def cmd_usage(args) -> int:
     return 0
 
 
+def cmd_reset(args) -> int:
+    from .state import reset_state
+
+    cleared = reset_state(args.profile, keep_catalog=args.keep_catalog)
+    kept = " Photo analyses were kept." if args.keep_catalog else ""
+    print(f"Cleared state/{args.profile}/: {', '.join(cleared)}. Every photo is unposted again.{kept}")
+    return 0
+
+
 def cmd_check(args) -> int:
     from .publishers import InstagramPublisher
     from .sources import build_source
@@ -176,6 +185,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("check", cmd_check, "Verify the Instagram token, quota and photo source"),
         ("refresh-token", cmd_refresh_token, "Extend the Instagram access token by 60 days"),
         ("usage", cmd_usage, "Show AI token usage and estimated cost for a month"),
+        ("reset", cmd_reset, "Forget a profile's posting history, insights, usage and photo analyses"),
     ):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--profile", "-p", default="main")
@@ -185,6 +195,8 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--token-file", help="Write the new token to this file instead of printing it")
         if name == "usage":
             p.add_argument("--month", help="YYYY-MM, default this month")
+        if name == "reset":
+            p.add_argument("--keep-catalog", action="store_true", help="Keep the photo analyses, so no photo is analysed again")
         p.set_defaults(func=func)
     return parser
 

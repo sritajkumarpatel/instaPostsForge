@@ -109,7 +109,9 @@ profiles:
       api_key_env: GOOGLE_DRIVE_API_KEY
       service_account_file_env: GOOGLE_SERVICE_ACCOUNT_FILE
     ai:
-      # Filled in from the current Instagram grid. Edit freely as the account evolves.
+      # ✏️ YOURS TO EDIT. This describes the original author's account (a Bengaluru mobile
+      # photographer). If you copied this repo, replace every line with your own account:
+      # captions follow it closely. See the setup guide, step "Describe your account".
       account:
         niche: >-
           Mobile photography from Bengaluru and around Karnataka: macro flowers and nature,
@@ -128,6 +130,8 @@ profiles:
         ending_style: >-
           A short question about the reader's own spots, pets or memories in
           Bengaluru or Karnataka
+      # ✏️ YOURS TO EDIT. Specific to the original author's camera watermark. Delete this
+      # entry, or replace it with notes about your own photos.
       extra_instructions: >-
         Every photo carries a small "OPPO Find X9 Ultra | Hasselblad" camera watermark,
         sometimes with focal length, date or place. It is the photographer's own

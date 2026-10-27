@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -195,3 +196,20 @@ class ProfileState:
     def save_insights(self, media_id: str, metrics: dict) -> None:
         self.insights[media_id] = {"metrics": metrics, "fetched_at": _now()}
         self._save("insights.json", self.insights)
+
+
+def reset_state(profile: str, *, keep_catalog: bool = False, state_dir: Path = DEFAULT_STATE_DIR) -> list[str]:
+    """Forget a profile's posts, insights and usage log (and its photo analyses unless keep_catalog).
+
+    For a fresh copy of the repo, or to start the posting history over. Returns what was cleared.
+    """
+    folder = state_dir / profile
+    folder.mkdir(parents=True, exist_ok=True)
+    names = ["posts.json", "insights.json"] + ([] if keep_catalog else ["catalog.json"])
+    for name in names:
+        (folder / name).write_text("{}\n", encoding="utf-8")
+    cleared = list(names)
+    if (folder / "usage").exists():
+        shutil.rmtree(folder / "usage")
+        cleared.append("usage/")
+    return cleared

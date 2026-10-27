@@ -58,3 +58,18 @@ def test_no_report_without_ai_calls(tmp_path):
     from instapostsforge.usage import write_report
 
     assert write_report(UsageLog("main", state_dir=tmp_path), tmp_path / "reports") is None
+
+
+def test_forge_reset_clears_a_profile(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    folder = tmp_path / "state" / "main"
+    (folder / "usage").mkdir(parents=True)
+    (folder / "usage" / "2026-10.jsonl").write_text("{}\n")
+    for name in ("posts.json", "insights.json", "catalog.json"):
+        (folder / name).write_text('{"h:1": {}}')
+    assert cli.main(["reset", "-p", "main", "--keep-catalog"]) == 0
+    assert (folder / "posts.json").read_text() == "{}\n" and (folder / "insights.json").read_text() == "{}\n"
+    assert (folder / "catalog.json").read_text() == '{"h:1": {}}' and not (folder / "usage").exists()
+    assert "Photo analyses were kept" in capsys.readouterr().out
+    assert cli.main(["reset", "-p", "main"]) == 0
+    assert (folder / "catalog.json").read_text() == "{}\n"

@@ -8,7 +8,7 @@
 
 One photo a day to Instagram, straight from a Google Drive folder, picked and captioned by Claude, posted by GitHub Actions.
 
-**[See the project page →](https://sritajkumarpatel.github.io/instaPostsForge/)**
+**[See the project page →](https://sritajkumarpatel.github.io/instaPostsForge/)** · **[Use it yourself: setup guide →](https://sritajkumarpatel.github.io/instaPostsForge/setup.html)**
 
 [![Daily post](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/daily-post.yml/badge.svg)](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/daily-post.yml)
 [![Tests](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml/badge.svg)](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml)
@@ -162,6 +162,13 @@ Check the effect in the run's token audit report or with `forge usage -p main`.
 
 ## Get started
 
+**Want your own copy?** The [setup guide](https://sritajkumarpatel.github.io/instaPostsForge/setup.html) walks through it step by step, in about 45 minutes. In short:
+
+1. Click **Use this template** (or **Fork**) and keep the copy public.
+2. Run **Actions → Start fresh** with profile `main`, so your copy has none of the original account's posting history or photo notes.
+3. Add the secrets below, then replace the blocks marked **✏️ YOURS TO EDIT** in `config/profiles.yaml` with your own account.
+4. Run the Daily post workflow in check, plan, preview and post mode, then set `AUTO_POST` to `true`.
+
 ### What you need
 
 Add these under the repo's **Settings → Secrets and variables → Actions → Repository secrets**. Nobody can read a secret back after it is saved, and GitHub hides secrets in logs.
@@ -221,6 +228,7 @@ forge check -p main              # verify the token, quota and Drive folder
 forge post -p main               # post today's photo (needs GITHUB_TOKEN in .env)
 forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
+forge reset -p main              # forget posts, insights, usage and photo analyses (--keep-catalog keeps analyses)
 ```
 
 Instagram tokens last about 60 days. On GitHub, the Refresh Instagram token workflow renews them on the 1st of every month if `GH_SECRETS_TOKEN` is set. Otherwise run `forge refresh-token` at least every 50 days and update `.env` and the GitHub secret.
@@ -234,6 +242,7 @@ Everything runs on GitHub Actions, so your laptop isn't needed.
 | Daily post | `daily-post.yml` | Every day at 13:30 UTC (7:00 pm IST), or by hand | Runs the whole workflow for each profile. By hand you pick a mode: **check**, **plan**, **preview** or **post**. Scheduled runs always post, but only once the `AUTO_POST` variable is `true`. Commits `state/` afterwards. Runs one at a time, so two runs can never post together. |
 | Refresh Instagram token | `refresh-token.yml` | 03:00 UTC on the 1st of each month, or by hand | Renews each profile's Instagram token and saves it back to its secret with `GH_SECRETS_TOKEN`. Without that secret it only warns. |
 | Tests | `tests.yml` | Every push and pull request | Runs the test suite. It uses no keys and calls no real services. |
+| Start fresh | `start-fresh.yml` | By hand only | Clears a profile's posting history, insights, usage log and photo analyses (`forge reset`) and commits the result. Run it once in a new copy of the repo. You must type the profile name to confirm; tick **keep_catalog** to keep the photo analyses. |
 | Publish site | `pages.yml` | After the tests pass on a merge to `main`, or by hand | Publishes the project page in `site/` to [GitHub Pages](https://sritajkumarpatel.github.io/instaPostsForge/). One-time setup: Settings → Pages → Source: **GitHub Actions**. |
 
 The run name shows the mode, for example "Daily post: preview". A preview's summary says plainly that nothing was posted.
@@ -362,7 +371,7 @@ After a new token, run the workflow in **check** mode before posting.
 
 **You deleted a post from Instagram and want its photos posted again.** Remove that post's entry from `state/<profile>/posts.json` and commit. Each entry is keyed by a hash and shows the photo's `name`; a multi-photo post lists its other photos under `more_photos`, and they are freed with it. The photos' analyses stay in `catalog.json`, so nothing is analysed again. Do this between runs, since every run commits `state/`.
 
-**Start the posting history over.** Replace `state/<profile>/posts.json` and `insights.json` with `{}` and commit. Every photo becomes unposted, and the subject, mood and repeat rules start fresh. Keep `catalog.json`, so no photo is analysed (and paid for) again.
+**Start the posting history over.** Run **Actions → Start fresh** with **keep_catalog** ticked, or `forge reset -p <profile> --keep-catalog` and commit. By hand: replace `state/<profile>/posts.json` and `insights.json` with `{}` and commit. Every photo becomes unposted, and the subject, mood and repeat rules start fresh. Keep `catalog.json`, so no photo is analysed (and paid for) again.
 
 **Two posts on one day.** Scheduled runs post once a day, but every manual run in **post** mode posts again. Use **check**, **plan** or **preview** to look without posting.
 
@@ -376,7 +385,7 @@ config/ai-instructions.md   standing instructions every AI step follows
 config/playbooks/           rules per photo category and per mood
 CLAUDE.md                   guidance for Claude working on this repo
 docs/ARCHITECTURE.md        diagrams and the agentic pattern
-site/index.html             the project page, published to GitHub Pages
+site/                       the project page and setup guide, published to GitHub Pages
 .env                        your secrets, local only (copy from .env.example)
 state/<profile>/            posts.json, catalog.json, insights.json, usage/ (committed after each run)
 reports/                    per-run token audit reports (uploaded as run artifacts, not committed)

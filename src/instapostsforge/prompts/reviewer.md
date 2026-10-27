@@ -7,7 +7,7 @@ Mark each item passed or failed, using exactly these names:
 
 1. accuracy: everything the caption describes is actually in the photo. Fail it only for a claim that is false or invented; a caption that leaves out one of the photos is not inaccurate. taken_at in the notes is verified from the photo's metadata, so a day, month, season or time that matches it is accurate.
 2. hook: the first line is at most 90 characters and would make a viewer stop.
-3. tone: the voice fits the mood playbook and uses none of its "avoid" words.
+3. tone: the voice fits the mood playbook and uses none of its "avoid" words. For a deity, temple, puja or religious festival, it must be reverent: fail tone if a deity is described from outside or physically ("a goddess with many arms", "a statue"), if it jokes, or if it ends with a question instead of a devotional greeting.
 4. length: always pass this item. Code counts the characters and holds the caption to $caption_max, so don't estimate or fault the length.
 5. quote: there is no quote, or it fits the mood, is at most 140 characters, and any named author is certainly correct.
 6. hashtags: 3 to 5 tags, all specific to this photo, none generic, no brand or private place.

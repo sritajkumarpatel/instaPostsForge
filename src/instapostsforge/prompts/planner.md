@@ -16,7 +16,7 @@ Code enforces rules 3 and 4 as well, so a plan that breaks them will be reordere
 
 For each photo in your order, give:
 - reason: one sentence naming the rule or result that put it there.
-- angle: the one idea the caption should be built around, specific to this photo (for example "the four minutes the fog lifted", not "nature's beauty").
+- angle: the one idea the caption should be built around, specific to this photo (for example "the four minutes the fog lifted", not "nature's beauty"). For a deity, temple or religious festival, make the angle devotional ("Maa's darshan on Ashtami evening"), never a description of the idol.
 
 ## Multi-photo posts
 

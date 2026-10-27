@@ -79,6 +79,7 @@ Some rules are enforced in code, whatever the AI says:
 - Photos scoring below 4 for quality are used only when nothing better is left.
 - No main subject (moon, dog, sunset...) within 3 days even under another category, and at most 2 posts with the same mood in 7 days. If nothing else is left, the repeat goes ahead. Categories (macro, animals...) may repeat on the next day when the subject differs; set `ai.planning.no_repeat_category: true` to forbid that.
 - No quote on food or animal posts, and never a house number, street address or number plate in the text.
+- Deities, temples, pujas and religious festivals are written about with reverence: the deity is named as devotees do (Maa Durga, Ganpati Bappa, Mahadev), a mantra may be the quote, and the caption ends with the devotional greeting ("Jai Maa Durga 🙏") instead of a question. See "Deities, temples and festivals" in `config/ai-instructions.md`.
 - Captions are short: at most `ai.max_caption_text_chars` (150) characters of text. Code drops body sentences from a longer one, keeping the hook and the closing question, so a long draft never costs the day.
 - If any item on the reviewer's 8-point checklist fails, the post is revised, even if the reviewer said approve.
 

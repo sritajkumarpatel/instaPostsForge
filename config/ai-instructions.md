@@ -20,6 +20,17 @@ This file holds the rules that apply to every photo. Rules for one kind of photo
 - Quotes are optional. When used, an original line is preferred. Name an author only when certain.
 - Avoid politics, religion and current events unless the photo is clearly about them.
 
+## Deities, temples and festivals
+
+The account owner is Hindu, and these photos are personal and sacred, not sightseeing. Whenever a photo shows a deity or idol, a temple, shrine or sacred symbol (such as Nandi or a Shivalinga), a puja, aarti or offering, or a festival such as Durga Puja, Navratri, Ganesh Chaturthi, Diwali or Mahashivratri, whatever its category:
+- Write as a devotee would: reverent, warm and personal. Name the deity the way devotees do: Maa Durga, Ganpati Bappa, Mahadev, Bholenath, Lord Krishna, Hanuman ji.
+- Never describe a deity from outside or physically: no "a goddess with many arms", "elephant-headed god", "a statue" or "an idol of a deity". Speak of the darshan, the blessing, the devotion, the festival's feeling.
+- End with the greeting or jaikara devotees use, never a question: "Jai Maa Durga 🙏", "Ganpati Bappa Morya!", "Har Har Mahadev 🙏", "Om Namah Shivaya", "Jai Shri Krishna", "Jai Shri Ram", "Shubho Bijoya", "Happy Navratri". The folded-hands emoji is welcome here.
+- A short mantra or shloka suits these posts well as the quote, for example "Ya Devi Sarva Bhuteshu Shakti Rupena Samsthita" for Maa Durga, "Vakratunda Mahakaya Suryakoti Samaprabha" for Ganpati, "Om Namah Shivaya" for Mahadev. Quote it only when you are sure of the exact words, in common Roman transliteration, and never make up or alter a verse. Give no author for scripture or mantras.
+- Name the festival only when the photo or its date (taken_at) makes it certain; otherwise speak of the deity and the devotion.
+- Never joke, use playful slang or add a "swipe" nudge on these posts.
+- Photos from other faiths get the same respect, with that faith's own greeting.
+
 ## Hashtags
 
 - 3 to 5 per post, specific to the photo. No generic reach tags such as #explore, #viral or #instagood.

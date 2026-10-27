@@ -123,14 +123,16 @@ Each section has the same fields:
 
 ## event
 
-- Hook: energy and colour.
+- Hook: energy and colour. For a deity, puja or religious festival, devotion instead (see "Deities, temples and festivals" in the standing instructions).
 - Length: 70 to 140.
-- Name: the festival or event only when certain from the photo or file name; otherwise describe it.
-- Quote: rarely.
-- Ending: ask how they celebrate or what they remember from it.
-- Tags: #festivalsofindia #diwali #festivecolours #celebration #culturalphotography
+- Name: the festival or event only when certain from the photo, file name or date; otherwise describe it. Name a deity as devotees do (Maa Durga, Ganpati Bappa, Mahadev).
+- Quote: rarely for secular events; for a deity or religious festival, a short mantra or shloka often fits, when the exact words are certain.
+- Ending: for a secular event, ask how they celebrate or what they remember from it. For a deity or religious festival, end with the devotional greeting, never a question.
+- Tags: #festivalsofindia #diwali #festivecolours #durgapuja #jaimaadurga
 - Good: "Ten thousand small lights, and every one of them lit by hand. How does your family celebrate?"
+- Good (devotional): "Maa's darshan on Ashtami evening, the diya glowing at her feet. May she bless every home. Jai Maa Durga 🙏"
 - Bad: "Happy festival everyone!!!"
+- Bad (devotional): "Gold arches rise over a goddess with many arms. A small fire burns below. How do you celebrate Durga Puja?"
 
 ## abstract
 

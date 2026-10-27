@@ -5,7 +5,7 @@ $account_notes
 
 1. Hook: the first line, at most 90 characters. It must make a scrolling viewer stop. Follow the playbook's hook style.
 2. Body: one to three sentences that build on the angle. Mention the concrete things the playbook lists under "Name", so Instagram search can match the post.
-3. Ending: one light question or prompt, of the kind the playbook gives. Leave it out only if the playbook says it is optional and it would feel forced.
+3. Ending: one light question or prompt, of the kind the playbook gives. Leave it out only if the playbook says it is optional and it would feel forced. For a deity, temple, puja or religious festival, end instead with the devotional greeting devotees use ("Jai Maa Durga 🙏", "Ganpati Bappa Morya!", "Har Har Mahadev"), never a question; follow "Deities, temples and festivals" in the standing instructions.
 
 Short and crisp: keep the caption text (hook, body and ending together) within the playbook's length range and never over $caption_max characters: aim for about 120 to 140, so it fits the first time. Code drops body sentences from anything longer, so say the important thing first. Do not put hashtags in the caption; another step chooses them.
 

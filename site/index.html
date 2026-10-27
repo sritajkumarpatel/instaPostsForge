@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>instaPostsForge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="instaPostsForge posts one photo a day to Instagram from a Google Drive folder. Claude picks the photo and writes the caption; code checks every word, and every token is audited.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2315110d'/%3E%3Cpath d='M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5' fill='none' stroke='%23F2C14E' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z' fill='%23F2C14E'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the page is a roll of 35mm film, like its sister app Postaday. The forge's twist:
+   the strips carry the workflow's own log lines as edge print, and the audit reads like a
+   darkroom ledger. Deliberately one dark look, shared with Postaday. */
+:root {
+  color-scheme: dark;
+  --base: #15110d;        /* film base, warm black */
+  --base-2: #1f1913;      /* the strip itself */
+  --emulsion: #f3ead9;    /* paper white for text */
+  --muted: #b3a690;       /* faded caption ink */
+  --amber: #f2c14e;       /* safelight amber, the shared mark colour */
+  --grease: #e4572e;      /* grease pencil, used only to mark the pick */
+  --edge: #f2a33a;        /* edge print orange */
+  --hole: #0b0907;
+  --line: #3a3027;
+  --ok: #8fbf7a;          /* a passing check */
+  --display: "Sora", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.86rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.35rem + 1.2vw, 2.3rem);
+  --step-3: clamp(2.1rem, 1.6rem + 2.6vw, 3.6rem);
+}
+* { box-sizing: border-box; }
+html { background: var(--base); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--base);
+  color: var(--emulsion);
+  font: 400 var(--step-0)/1.6 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--amber); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+p { margin: 0; }
+code { font: 500 0.9em var(--mono); color: var(--emulsion); }
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.label {
+  font: 500 var(--step--1)/1.3 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--edge);
+}
+.lede { color: var(--muted); max-width: 62ch; }
+
+/* ---------- the film strip ---------- */
+.strip { position: relative; background: var(--base-2); padding-block: 34px; border-block: 1px solid var(--line); }
+.strip::before, .strip::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 14px;
+  background-image: linear-gradient(90deg, transparent 6px, var(--hole) 6px, var(--hole) 20px, transparent 20px);
+  background-size: 28px 14px; opacity: 0.95;
+}
+.strip::before { top: 10px; }
+.strip::after { bottom: 10px; }
+.edge-print {
+  position: absolute; left: 0; right: 0;
+  font: 500 10px/1 var(--mono); letter-spacing: 0.2em; color: var(--edge); opacity: 0.8;
+  white-space: nowrap; overflow: hidden; pointer-events: none;
+}
+.edge-print.top { top: 26px; }
+.edge-print.bottom { bottom: 26px; }
+.frames {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding-block: 18px; margin: 0 auto; list-style: none;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+.frame { flex: 0 0 auto; scroll-snap-align: start; position: relative; border-radius: 6px; overflow: hidden; background: #000; }
+.frame svg { display: block; width: 100%; height: 100%; }
+.frame-no { font: 500 10px/1 var(--mono); color: var(--edge); letter-spacing: 0.15em; }
+
+/* ---------- header ---------- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font: 600 1.1rem/1 var(--display); color: var(--emulsion); text-decoration: none; }
+.brand svg { width: 30px; height: 30px; }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.top nav a { color: var(--muted); text-decoration: none; font-size: var(--step--1); font-weight: 600; }
+.top nav a:hover { color: var(--emulsion); }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 28px 40px; display: grid; gap: 22px; }
+.hero h1 { font-size: var(--step-3); max-width: 18ch; }
+.hero h1 em { font-style: normal; color: var(--amber); }
+.hero .lede { font-size: var(--step-1); line-height: 1.45; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; border-radius: 999px;
+  font: 600 var(--step-0)/1 var(--body); text-decoration: none; border: 1px solid var(--amber);
+}
+.btn.primary { background: var(--amber); color: #1a1405; }
+.btn.primary:hover { background: #ffd36b; }
+.btn.ghost { color: var(--amber); }
+.btn.ghost:hover { background: rgba(242, 193, 78, 0.1); }
+.note { font: 400 var(--step--1)/1.4 var(--mono); color: var(--muted); }
+
+.hero-strip .frames { overflow: hidden; }
+.hero-strip .roll { display: flex; gap: 14px; width: max-content; animation: advance 52s linear infinite; }
+.hero-strip .frame { width: 220px; aspect-ratio: 4 / 5; }
+.hero-strip .frame.posted svg { filter: blur(6px) brightness(0.7); }
+.posted-tag {
+  position: absolute; inset: auto 0 0 0; padding: 10px;
+  font: 600 0.8rem/1.3 var(--body); background: linear-gradient(transparent, rgba(0,0,0,0.75)); color: var(--emulsion);
+}
+.posted-tag small { display: block; font: 400 0.7rem/1.3 var(--mono); color: var(--muted); }
+.pick-ring {
+  position: absolute; inset: 8px; border: 3px solid var(--grease);
+  border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%; transform: rotate(-4deg); pointer-events: none;
+}
+.pick-word { position: absolute; top: 10px; right: 12px; font: 700 1rem/1 var(--display); color: var(--grease); transform: rotate(6deg); }
+.set-tag {
+  position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: 999px;
+  background: rgba(21, 17, 13, 0.8); color: var(--amber); font: 600 0.7rem/1 var(--mono); letter-spacing: 0.08em;
+}
+@keyframes advance { to { transform: translateX(calc(-50% - 7px)); } }
+@media (prefers-reduced-motion: reduce) { .hero-strip .roll { animation: none; } }
+
+/* ---------- sections ---------- */
+section { padding-block: 64px; }
+.section-head { display: grid; gap: 12px; margin-bottom: 30px; }
+.section-head h2 { font-size: var(--step-2); max-width: 24ch; }
+
+/* why: a contact sheet */
+.why { display: grid; gap: 36px; grid-template-columns: minmax(0, 1fr); align-items: center; }
+@media (min-width: 860px) { .why { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.why-text { display: grid; gap: 16px; min-width: 0; }
+.why-text p { max-width: 58ch; color: var(--muted); }
+.why-text p strong { color: var(--emulsion); font-weight: 600; }
+.sheet {
+  margin: 0; background: var(--base-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 100%;
+}
+.sheet .frame { aspect-ratio: 1; border-radius: 3px; max-width: 100%; }
+.sheet .frame.chosen { overflow: visible; }
+.sheet .frame.chosen .pick-ring { inset: -6px; }
+.sheet-caption { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 6px; }
+
+/* a day: timeline frames */
+.day .frame { width: min(270px, 78vw); background: var(--base); border: 1px solid var(--line); padding: 18px; display: grid; gap: 10px; align-content: start; }
+.day .time { font: 600 var(--step-2)/1 var(--display); color: var(--amber); font-variant-numeric: tabular-nums; }
+.day h3 { font-size: var(--step-0); font-family: var(--body); font-weight: 600; }
+.day p { color: var(--muted); font-size: var(--step--1); line-height: 1.55; }
+.day .frame-no { display: flex; justify-content: space-between; }
+
+/* what: windows onto the real surfaces (Drive, the Actions run page, the audit report) */
+.features { display: grid; gap: 28px 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.feature { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.feature h3 { font-size: var(--step-1); }
+.feature p { color: var(--muted); font-size: 0.97rem; }
+.window {
+  background: #0d0b09; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 30px 60px -34px rgba(242, 193, 78, 0.25); min-width: 0;
+}
+.window .chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--line); font: 500 10px/1 var(--mono); color: var(--muted); }
+.window .chrome i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.window .chrome span { margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.window .pane { padding: 12px; display: grid; gap: 8px; }
+.drive { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.drive .cell { position: relative; aspect-ratio: 1; border-radius: 4px; overflow: hidden; }
+.drive .cell svg { width: 100%; height: 100%; display: block; }
+.drive .cell.posted svg { filter: blur(3px) brightness(0.55); }
+.drive .cell.posted::after { content: "Posted"; position: absolute; inset: auto 0 4px; text-align: center; font: 600 8px/1 var(--body); color: #fff; }
+.drive .cell.next::after { content: "Today"; position: absolute; top: 4px; left: 4px; padding: 2px 5px; border-radius: 3px; background: var(--amber); color: #1a1405; font: 700 8px/1 var(--body); }
+.fname { font: 400 9px/1.3 var(--mono); color: var(--muted); }
+.run { display: grid; gap: 6px; font: 400 11px/1.45 var(--mono); color: var(--muted); }
+.run .step { display: flex; gap: 8px; align-items: baseline; }
+.run .step b { color: var(--ok); font-weight: 500; }
+.run .step em { font-style: normal; color: var(--emulsion); }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; font: 600 10px/1 var(--body); color: var(--muted); }
+.chip.on { border-color: var(--amber); color: var(--amber); }
+.carousel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.carousel .cell { position: relative; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; }
+.carousel .cell svg { width: 100%; height: 100%; display: block; }
+.carousel .cell span { position: absolute; top: 5px; right: 6px; font: 600 9px/1 var(--mono); color: var(--emulsion); background: rgba(0,0,0,0.55); padding: 3px 5px; border-radius: 3px; }
+.caption-card { background: #1b1612; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; }
+.caption-card .k { font: 500 9px/1 var(--mono); color: var(--edge); letter-spacing: 0.12em; text-transform: uppercase; }
+.caption-card .v { font: 500 13px/1.5 var(--body); color: var(--emulsion); }
+.caption-card .count { font: 400 10px/1 var(--mono); color: var(--muted); }
+.caption-card s { color: var(--muted); text-decoration-color: var(--grease); text-decoration-thickness: 2px; }
+
+/* how: agents on a strip */
+.how .frame { width: min(210px, 70vw); background: var(--base); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; }
+.how .frame.gate { width: min(190px, 64vw); background: transparent; border: 1px dashed var(--edge); }
+.how .agent { font: 500 0.95rem/1.2 var(--mono); color: var(--amber); }
+.how .frame p { color: var(--muted); font-size: var(--step--1); line-height: 1.5; }
+.how .gate .agent { color: var(--edge); }
+.principle { margin-top: 30px; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.principle div { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px; }
+.principle h3 { font-size: var(--step-0); }
+.principle p { color: var(--muted); font-size: 0.95rem; }
+
+/* audit: a darkroom ledger */
+.audit { display: grid; gap: 30px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) { .audit { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; } }
+.audit-text { display: grid; gap: 14px; min-width: 0; }
+.audit-text p { color: var(--muted); max-width: 54ch; }
+.audit-text ul { margin: 0; padding-left: 1.1em; color: var(--muted); display: grid; gap: 6px; }
+.audit-text li::marker { color: var(--edge); }
+.ledger { min-width: 0; }
+.ledger .scroll { overflow-x: auto; }
+.ledger table { width: 100%; border-collapse: collapse; font: 400 0.82rem/1.4 var(--mono); font-variant-numeric: tabular-nums; min-width: 560px; }
+.ledger th, .ledger td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ledger th { font-weight: 500; color: var(--edge); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.ledger th:first-child, .ledger td:first-child { text-align: left; }
+.ledger td:first-child { color: var(--emulsion); font-family: var(--body); font-weight: 600; }
+.ledger td small { display: block; font: 400 0.72rem/1.2 var(--mono); color: var(--muted); }
+.ledger td { color: var(--muted); }
+.ledger tr.total td { color: var(--amber); border-bottom: 0; font-weight: 600; }
+.ledger tr.total td:first-child { color: var(--amber); }
+.bar { display: block; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--amber); opacity: 0.8; }
+.ledger .foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; }
+
+/* privacy */
+.promises { display: grid; border-top: 1px solid var(--line); }
+.promise { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 18px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+.promise .label { padding-top: 4px; }
+.promise p { color: var(--muted); }
+.promise p strong { color: var(--emulsion); font-weight: 600; }
+@media (max-width: 560px) { .promise { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+/* stack */
+.stack { display: flex; flex-wrap: wrap; gap: 10px; }
+.stack span { border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: 500 var(--step--1)/1 var(--mono); color: var(--emulsion); background: var(--base-2); }
+
+/* footer */
+footer { padding-block: 48px 64px; display: grid; gap: 14px; text-align: center; justify-items: center; }
+footer .mark svg { width: 40px; height: 40px; }
+footer p { color: var(--muted); font-size: var(--step--1); }
+footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--display); max-width: 30ch; }
+</style>
+</head>
+<body>
+
+<!-- Photo scenes drawn once and reused in every frame. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2a5c"/><stop offset="0.55" stop-color="#e0774a"/><stop offset="1" stop-color="#f4c06a"/></linearGradient>
+    <linearGradient id="g-night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1730"/><stop offset="1" stop-color="#2a3a66"/></linearGradient>
+    <linearGradient id="g-sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd0e6"/><stop offset="0.5" stop-color="#d9eef5"/><stop offset="0.52" stop-color="#2f6f8f"/><stop offset="1" stop-color="#173f57"/></linearGradient>
+    <linearGradient id="g-forest" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9dcb8"/><stop offset="1" stop-color="#6f8f5c"/></linearGradient>
+    <linearGradient id="g-bloom" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6d6dc"/><stop offset="1" stop-color="#c46a86"/></linearGradient>
+    <linearGradient id="g-diya" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a0f0a"/><stop offset="1" stop-color="#5a1f12"/></linearGradient>
+    <radialGradient id="g-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd27a" stop-opacity="0.9"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+    <symbol id="s-dusk" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-dusk)"/>
+      <circle cx="64" cy="56" r="11" fill="#ffe2a0"/>
+      <path d="M0 74 L22 52 L38 66 L58 44 L78 64 L100 50 L100 100 L0 100Z" fill="#2a1d33"/>
+      <path d="M0 84 L30 70 L52 82 L76 72 L100 80 L100 100 L0 100Z" fill="#171020"/>
+    </symbol>
+    <symbol id="s-city" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-night)"/>
+      <circle cx="78" cy="20" r="6" fill="#f3ead9"/>
+      <rect x="6" y="46" width="18" height="54" fill="#0a0f1f"/><rect x="28" y="30" width="20" height="70" fill="#111a33"/>
+      <rect x="52" y="52" width="16" height="48" fill="#0a0f1f"/><rect x="72" y="38" width="22" height="62" fill="#111a33"/>
+      <g fill="#f2c14e"><rect x="32" y="36" width="3" height="4"/><rect x="40" y="44" width="3" height="4"/><rect x="32" y="58" width="3" height="4"/><rect x="76" y="46" width="3" height="4"/><rect x="86" y="58" width="3" height="4"/><rect x="10" y="54" width="3" height="4"/><rect x="56" y="62" width="3" height="4"/></g>
+    </symbol>
+    <symbol id="s-sea" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-sea)"/>
+      <path d="M40 48 L52 26 L52 48Z" fill="#f3ead9"/><path d="M36 50 L60 50 L56 55 L40 55Z" fill="#3b2a20"/>
+      <path d="M0 70 Q12 66 25 70 T50 70 T75 70 T100 70" stroke="#9fd0e6" stroke-width="1.2" fill="none" opacity="0.6"/>
+    </symbol>
+    <symbol id="s-forest" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-forest)"/>
+      <g fill="#2f4a2a"><path d="M14 90 L26 40 L38 90Z"/><path d="M40 92 L56 26 L72 92Z"/><path d="M70 90 L82 46 L94 90Z"/></g>
+      <rect x="0" y="88" width="100" height="12" fill="#3f5b33"/>
+    </symbol>
+    <symbol id="s-bloom" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-bloom)"/>
+      <g fill="#fbeef0"><circle cx="50" cy="34" r="12"/><circle cx="64" cy="46" r="12"/><circle cx="58" cy="62" r="12"/><circle cx="42" cy="62" r="12"/><circle cx="36" cy="46" r="12"/></g>
+      <circle cx="50" cy="50" r="7" fill="#f2c14e"/>
+      <path d="M50 74 Q48 88 52 100" stroke="#4f6b3a" stroke-width="3" fill="none"/>
+    </symbol>
+    <symbol id="s-diya" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="url(#g-diya)"/>
+      <circle cx="50" cy="52" r="30" fill="url(#g-glow)"/>
+      <path d="M50 34 Q58 46 50 56 Q42 46 50 34Z" fill="#ffd27a"/>
+      <path d="M50 42 Q54 48 50 54 Q46 48 50 42Z" fill="#fff4d6"/>
+      <path d="M28 60 Q50 80 72 60 Q66 70 50 72 Q34 70 28 60Z" fill="#c4682a"/>
+      <path d="M28 60 H72" stroke="#e89a4a" stroke-width="2"/>
+    </symbol>
+    <symbol id="s-mark" viewBox="0 0 24 24">
+      <path d="M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5" fill="none" stroke="#F2C14E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z" fill="#F2C14E"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="wrap top">
+  <a class="brand" href="#top" aria-label="instaPostsForge home"><svg aria-hidden="true"><use href="#s-mark"/></svg>instaPostsForge</a>
+  <nav aria-label="Sections">
+    <a href="#why">Why</a>
+    <a href="#day">A day</a>
+    <a href="#what">What it does</a>
+    <a href="#how">How it works</a>
+    <a href="#audit">Token audit</a>
+    <a href="https://github.com/sritajkumarpatel/instaPostsForge">GitHub</a>
+  </nav>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <span class="label">Google Drive · GitHub Actions · powered by Claude</span>
+    <h1>Built for photographers whose best shots stay <em>stuck in the gallery.</em></h1>
+    <p class="lede">Drop your handpicked photos in a Google Drive folder. Every evening instaPostsForge has Claude choose one, write its caption and hashtags, and post it to Instagram. Plain code checks every word, and every token is accounted for.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/sritajkumarpatel/instaPostsForge#get-started">Set it up</a>
+      <a class="btn ghost" href="https://github.com/sritajkumarpatel/instaPostsForge">Read the code</a>
+    </div>
+    <p class="note">Runs free on GitHub Actions in a public repo · Python 3.10+ · official Instagram API, no password</p>
+  </div>
+
+  <div class="strip hero-strip" aria-label="A film strip of photos, some already posted">
+    <div class="edge-print top" aria-hidden="true">FORGE 400 &nbsp;▸ 1 &nbsp;&nbsp;&nbsp; 1A &nbsp;&nbsp;&nbsp; ▸ 2 &nbsp;&nbsp;&nbsp; 2A &nbsp;&nbsp;&nbsp; ▸ 3 &nbsp;&nbsp;&nbsp; 3A &nbsp;&nbsp;&nbsp; FORGE 400 &nbsp;▸ 4 &nbsp;&nbsp;&nbsp; 4A &nbsp;&nbsp;&nbsp; ▸ 5 &nbsp;&nbsp;&nbsp; 5A &nbsp;&nbsp;&nbsp; ▸ 6 &nbsp;&nbsp;&nbsp; 6A &nbsp;&nbsp;&nbsp; FORGE 400 &nbsp;▸ 7 &nbsp;&nbsp;&nbsp; 7A &nbsp;&nbsp;&nbsp; ▸ 8 &nbsp;&nbsp;&nbsp; 8A &nbsp;&nbsp;&nbsp; ▸ 9 &nbsp;&nbsp;&nbsp; 9A &nbsp;&nbsp;&nbsp; FORGE 400 &nbsp;▸ 10</div>
+    <div class="frames wrap">
+      <div class="roll">
+        <!-- the roll repeats once so the advance loops without a jump -->
+        <div class="frame posted"><svg role="img" aria-label="A dusk landscape, posted"><use href="#s-dusk"/></svg><div class="posted-tag">Posted<small>Sun 25 Oct · 19:00 IST</small></div></div>
+        <div class="frame posted"><svg role="img" aria-label="A diya at a puja, posted"><use href="#s-diya"/></svg><div class="posted-tag">Posted<small>Mon 26 Oct · 19:00 IST</small></div></div>
+        <div class="frame"><svg role="img" aria-label="A sailboat at sea, today's pick"><use href="#s-sea"/></svg><span class="pick-ring"></span><span class="pick-word">Today</span></div>
+        <div class="frame"><svg role="img" aria-label="A pine forest, part of a set"><use href="#s-forest"/></svg><span class="set-tag">SET 1/3</span></div>
+        <div class="frame"><svg role="img" aria-label="A city at night"><use href="#s-city"/></svg></div>
+        <div class="frame"><svg role="img" aria-label="A pink flower"><use href="#s-bloom"/></svg></div>
+        <div class="frame posted" aria-hidden="true"><svg><use href="#s-dusk"/></svg><div class="posted-tag">Posted<small>Sun 25 Oct · 19:00 IST</small></div></div>
+        <div class="frame posted" aria-hidden="true"><svg><use href="#s-diya"/></svg><div class="posted-tag">Posted<small>Mon 26 Oct · 19:00 IST</small></div></div>
+        <div class="frame" aria-hidden="true"><svg><use href="#s-sea"/></svg><span class="pick-ring"></span><span class="pick-word">Today</span></div>
+        <div class="frame" aria-hidden="true"><svg><use href="#s-forest"/></svg><span class="set-tag">SET 1/3</span></div>
+        <div class="frame" aria-hidden="true"><svg><use href="#s-city"/></svg></div>
+        <div class="frame" aria-hidden="true"><svg><use href="#s-bloom"/></svg></div>
+      </div>
+    </div>
+    <div class="edge-print bottom" aria-hidden="true">KEEP SHOOTING · LET IT POST &nbsp;&nbsp;&nbsp; ▸ 11 &nbsp;&nbsp;&nbsp; 11A &nbsp;&nbsp;&nbsp; ▸ 12 &nbsp;&nbsp;&nbsp; 12A &nbsp;&nbsp;&nbsp; KEEP SHOOTING · LET IT POST &nbsp;&nbsp;&nbsp; ▸ 13 &nbsp;&nbsp;&nbsp; 13A &nbsp;&nbsp;&nbsp; ▸ 14 &nbsp;&nbsp;&nbsp; 14A &nbsp;&nbsp;&nbsp; KEEP SHOOTING · LET IT POST</div>
+  </div>
+
+  <section id="why" class="wrap">
+    <div class="why">
+      <div class="why-text">
+        <span class="label">Why</span>
+        <h2>Good photos don't post themselves.</h2>
+        <p>You come back from a walk with forty frames and three keepers. Then the keepers sit in a folder, because posting well every day is its own job: <strong>pick one, don't repeat last week, write something true, choose the hashtags, remember to do it at all.</strong></p>
+        <p>instaPostsForge does that job the way you would at a contact sheet. It looks at every frame in your Drive folder once, circles the one for today, and writes the caption. It runs on GitHub Actions, so no server and no laptop need to stay on.</p>
+        <p>Prefer your phone? <a href="https://github.com/sritajkumarpatel/postaday-android">Postaday</a> is its Android sibling and runs the same workflow with your own keys.</p>
+      </div>
+      <figure class="sheet" aria-label="A contact sheet with one frame circled in grease pencil">
+        <div class="frame"><svg><use href="#s-forest"/></svg></div>
+        <div class="frame"><svg><use href="#s-diya"/></svg></div>
+        <div class="frame"><svg><use href="#s-dusk"/></svg></div>
+        <div class="frame"><svg><use href="#s-bloom"/></svg></div>
+        <div class="frame"><svg><use href="#s-city"/></svg></div>
+        <div class="frame chosen"><svg><use href="#s-sea"/></svg><span class="pick-ring"></span></div>
+        <div class="frame"><svg><use href="#s-forest"/></svg></div>
+        <div class="frame"><svg><use href="#s-bloom"/></svg></div>
+        <figcaption class="sheet-caption"><span class="frame-no">DRIVE FOLDER · 8 FRAMES</span><span class="frame-no" style="color:var(--grease)">PICK: FRAME 6 · TRAVEL · CALM</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="day" class="day" style="padding-bottom:0">
+    <div class="wrap section-head">
+      <span class="label">A day with instaPostsForge</span>
+      <h2>One scheduled run, a few minutes, one post.</h2>
+      <p class="lede">The Daily post workflow starts at 13:30 UTC (7:00 pm IST) once the <code>AUTO_POST</code> variable is on. Change the time in one cron line. The minutes below are typical, not fixed.</p>
+    </div>
+    <div class="strip">
+      <div class="edge-print top" aria-hidden="true">forge post --profile main &nbsp;&nbsp;&nbsp; ▸ 1 &nbsp;&nbsp;&nbsp; 1A &nbsp;&nbsp;&nbsp; ▸ 2 &nbsp;&nbsp;&nbsp; 2A &nbsp;&nbsp;&nbsp; ▸ 3 &nbsp;&nbsp;&nbsp; 3A &nbsp;&nbsp;&nbsp; ▸ 4 &nbsp;&nbsp;&nbsp; 4A &nbsp;&nbsp;&nbsp; ▸ 5 &nbsp;&nbsp;&nbsp; 5A &nbsp;&nbsp;&nbsp; forge post --profile main</div>
+      <ol class="frames wrap">
+        <li class="frame"><span class="frame-no"><span>▸ 1</span><span>FETCH</span></span><span class="time">19:00</span><h3>Learn from past posts</h3><p>Reads reach, likes, comments, saves and shares for the last 30 days of posts.</p></li>
+        <li class="frame"><span class="frame-no"><span>▸ 2</span><span>PICK</span></span><span class="time">19:01</span><h3>Look, then choose</h3><p>New photos in the folder are described once. The planner picks today's photo, or a set of 2 to 5 from one outing.</p></li>
+        <li class="frame"><span class="frame-no"><span>▸ 3</span><span>WRITE</span></span><span class="time">19:02</span><h3>Caption, tags, review</h3><p>A short caption, 3 to 5 hashtags, then a reviewer that can send back only the part it faults.</p></li>
+        <li class="frame"><span class="frame-no"><span>▸ 4</span><span>POST</span></span><span class="time">19:03</span><h3>It goes out</h3><p>A 1080-wide JPEG is staged on the repo's media branch for about a minute, published through the official API, then deleted.</p></li>
+        <li class="frame"><span class="frame-no"><span>▸ 5</span><span>RECORD</span></span><span class="time">19:04</span><h3>Remember and account</h3><p>The post is committed to <code>state/</code> so it never goes out twice, and the run's token audit report is saved.</p></li>
+      </ol>
+      <div class="edge-print bottom" aria-hidden="true">SCROLL THE STRIP ▸ &nbsp;&nbsp;&nbsp; check · plan · preview · post &nbsp;&nbsp;&nbsp; ▸ 6 &nbsp;&nbsp;&nbsp; 6A &nbsp;&nbsp;&nbsp; check · plan · preview · post &nbsp;&nbsp;&nbsp; ▸ 7 &nbsp;&nbsp;&nbsp; 7A</div>
+    </div>
+  </section>
+
+  <section id="what" class="wrap">
+    <div class="section-head">
+      <span class="label">What it does</span>
+      <h2>A folder in, a post out, and a receipt for every run.</h2>
+    </div>
+    <div class="features">
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>Google Drive · Instagram picks</span></div>
+          <div class="pane">
+            <div class="drive">
+              <div class="cell posted"><svg><use href="#s-dusk"/></svg></div>
+              <div class="cell posted"><svg><use href="#s-diya"/></svg></div>
+              <div class="cell next"><svg><use href="#s-sea"/></svg></div>
+              <div class="cell"><svg><use href="#s-forest"/></svg></div>
+              <div class="cell"><svg><use href="#s-city"/></svg></div>
+              <div class="cell"><svg><use href="#s-bloom"/></svg></div>
+              <div class="cell"><svg><use href="#s-forest"/></svg></div>
+              <div class="cell"><svg><use href="#s-bloom"/></svg></div>
+            </div>
+            <span class="fname">IMG20261018104837.jpg · taken 18 Oct, 10:48</span>
+          </div>
+        </div>
+        <h3>Your Drive folder is the library</h3>
+        <p>Put handpicked photos in one link-shared folder. Each is analysed once and remembered by its file ID, so a rename never makes it new again, and a near-identical copy waits 30 days.</p>
+      </article>
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>Actions · Daily post: preview (main)</span></div>
+          <div class="pane">
+            <div class="modes"><span class="chip">check</span><span class="chip">plan</span><span class="chip on">preview</span><span class="chip">post</span></div>
+            <div class="run">
+              <div class="step"><b>✓</b><span>Multi-photo posts are <em>off</em> (MULTI_PHOTO=false)</span></div>
+              <div class="step"><b>✓</b><span>Planner picked <em>IMG_2214.jpg</em> · travel · calm</span></div>
+              <div class="step"><b>✓</b><span>Caption 128 of 150 characters</span></div>
+              <div class="step"><b>✓</b><span>Review approved in round 1</span></div>
+              <div class="step"><b>✓</b><span>Preview only, nothing posted</span></div>
+            </div>
+          </div>
+        </div>
+        <h3>Look before it posts</h3>
+        <p>Run it by hand in four modes: check the keys and folder, plan the next 7 days with reasons, preview the exact image and caption, or post. The schedule waits until you turn on <code>AUTO_POST</code>.</p>
+      </article>
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>Multi-photo post · one outing</span></div>
+          <div class="pane">
+            <div class="carousel">
+              <div class="cell"><svg><use href="#s-forest"/></svg><span>1/3</span></div>
+              <div class="cell"><svg><use href="#s-dusk"/></svg><span>2/3</span></div>
+              <div class="cell"><svg><use href="#s-sea"/></svg><span>3/3</span></div>
+            </div>
+            <span class="fname">same shape · within 3 hours · within 2 km</span>
+          </div>
+        </div>
+        <h3>Sometimes a set</h3>
+        <p>Code finds photos from one outing or place. The planner decides whether a set beats any single photo. Every photo in a set has the same shape, so none gets a border.</p>
+      </article>
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>Caption · event · devotional</span></div>
+          <div class="pane">
+            <div class="caption-card">
+              <span class="k">Before</span>
+              <span class="v"><s>Gold arches rise over a goddess with many arms. How do you celebrate Durga Puja?</s></span>
+            </div>
+            <div class="caption-card">
+              <span class="k">Now</span>
+              <span class="v">Maa arrives in gold and lamplight, and the whole pandal goes quiet. Jai Maa Durga 🙏</span>
+              <span class="count">83 of 150 characters</span>
+            </div>
+          </div>
+        </div>
+        <h3>Short, and written with care</h3>
+        <p>Captions stay under 150 characters, follow a playbook for each category and mood, and speak of deities and festivals as devotees do, ending with a greeting instead of a question.</p>
+      </article>
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>token-audit-main-post-142 · report.md</span></div>
+          <div class="pane">
+            <div class="run">
+              <div class="step"><b>■</b><span>Photo scanning <em>2,250</em> tokens</span></div>
+              <div class="step"><b>■</b><span>Choosing the photo <em>3,720</em></span></div>
+              <div class="step"><b>■</b><span>Caption, quote, alt text <em>5,080</em></span></div>
+              <div class="step"><b>■</b><span>Hashtags <em>1,310</em> · Review <em>2,900</em></span></div>
+              <div class="step"><b>$</b><span>Run total <em>$0.0025</em> (example)</span></div>
+            </div>
+          </div>
+        </div>
+        <h3>A receipt for every run</h3>
+        <p>Every Claude call is logged with its tokens and estimated cost, and each run saves a token audit report you can download from the run page.</p>
+      </article>
+      <article class="feature">
+        <div class="window" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i><span>Settings · Secrets and variables</span></div>
+          <div class="pane">
+            <div class="run">
+              <div class="step"><b>🔒</b><span><em>ANTHROPIC_API_KEY</em> · secret</span></div>
+              <div class="step"><b>🔒</b><span><em>IG_MAIN_ACCESS_TOKEN</em> · secret</span></div>
+              <div class="step"><b>🔒</b><span><em>DRIVE_FOLDER_MAIN</em> · secret</span></div>
+              <div class="step"><b>✓</b><span><em>AUTO_POST</em> = true · variable</span></div>
+              <div class="step"><b>↻</b><span>Token renewed on the 1st of each month</span></div>
+            </div>
+          </div>
+        </div>
+        <h3>Safe in a public repo</h3>
+        <p>Keys, tokens and even the folder link live in GitHub secrets. The repo only names them. The Instagram token renews itself every month.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="how" class="how" style="padding-bottom:0">
+    <div class="wrap section-head">
+      <span class="label">How it works</span>
+      <h2>Five Claude agents, with code at every gate.</h2>
+      <p class="lede">The AI decides what to post and what to say. Plain code does everything with a side effect (fetching, image preparation, hosting, publishing, records) and validates every answer before it can reach Instagram. Every agent runs on Claude Haiku 5.5 by default.</p>
+    </div>
+    <div class="strip">
+      <div class="edge-print top" aria-hidden="true">ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER ▸ HASHTAGS ▸ REVIEWER ▸ CHECKS ▸ INSTAGRAM &nbsp;&nbsp;&nbsp; ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER</div>
+      <ol class="frames wrap">
+        <li class="frame"><span class="agent">analyst</span><p>Describes each new photo once: category, mood, main subject, quality from 1 to 10, anything unsafe.</p></li>
+        <li class="frame"><span class="agent">planner</span><p>Picks today's photo or set, balancing strong photos with variety and what has performed well.</p></li>
+        <li class="frame gate"><span class="agent">code: rules</span><p>No explicit photos, screenshots or children. No near-duplicates, no subject twice in 3 days, no mood more than twice a week.</p></li>
+        <li class="frame"><span class="agent">caption_writer</span><p>Writes the caption, a quote when one fits, and alt text. Code holds the text to 150 characters.</p></li>
+        <li class="frame"><span class="agent">hashtags</span><p>Chooses 3 to 5 specific tags, rotating away from recent sets.</p></li>
+        <li class="frame"><span class="agent">reviewer</span><p>Approves, or sends back only the part it faults, up to two times.</p></li>
+        <li class="frame gate"><span class="agent">code: checks</span><p>At most 5 hashtags and 2,200 characters, JPEG, 4:5 to 1.91:1. A false claim or a doubtful quote author skips the day.</p></li>
+      </ol>
+      <div class="edge-print bottom" aria-hidden="true">AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS</div>
+    </div>
+    <div class="wrap principle">
+      <div><h3>A workflow, not an agent</h3><p>Prompt chaining with gates and an evaluator-optimizer review loop. Claude gets no tools and chooses no steps.</p></div>
+      <div><h3>It fails safe</h3><p>If the planner fails, a random eligible photo is used. If the review still finds a real problem, the day is skipped. A broken post never goes out.</p></div>
+      <div><h3>Never twice</h3><p>A photo is recorded only after Instagram returns a media ID, keyed by a hash of its Drive file ID, together with every photo of a set.</p></div>
+    </div>
+  </section>
+
+  <section id="audit" class="wrap">
+    <div class="audit">
+      <div class="audit-text">
+        <span class="label">Token audit</span>
+        <h2>Know exactly where the tokens go.</h2>
+        <p>Every Claude call is written to <code>state/&lt;profile&gt;/usage/</code> as it happens, whether it succeeds or fails, with its model, input, output and cache tokens, time taken and estimated cost.</p>
+        <p>After every post, preview or plan run, scheduled or manual, the workflow saves a <strong>token audit report</strong> as a run artifact, kept for 90 days. It shows:</p>
+        <ul>
+          <li>tokens, cache use, seconds, failures and cost per phase and per agent;</li>
+          <li>every call in order, so a revision or a shortening pass gets its own row;</li>
+          <li>the month so far, by phase.</li>
+        </ul>
+        <p><code>forge usage -p main</code> totals any month from the command line.</p>
+      </div>
+      <figure class="ledger" style="margin:0">
+        <div class="scroll">
+          <table>
+            <caption class="label" style="text-align:left;padding-bottom:10px">This run, by phase · example figures</caption>
+            <thead><tr><th scope="col">Phase</th><th scope="col">Calls</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Est. USD</th></tr></thead>
+            <tbody>
+              <tr><td>Photo scanning<small>analyst</small></td><td>1</td><td>1,840</td><td>410</td><td>$0.0004<span class="bar" style="width:43%"></span></td></tr>
+              <tr><td>Choosing the photo<small>planner</small></td><td>1</td><td>3,200</td><td>520</td><td>$0.0006<span class="bar" style="width:64%"></span></td></tr>
+              <tr><td>Caption, quote and alt text<small>caption_writer</small></td><td>2</td><td>4,100</td><td>980</td><td>$0.0009<span class="bar" style="width:100%"></span></td></tr>
+              <tr><td>Hashtags<small>hashtags</small></td><td>1</td><td>1,150</td><td>160</td><td>$0.0002<span class="bar" style="width:22%"></span></td></tr>
+              <tr><td>Review<small>reviewer</small></td><td>1</td><td>2,600</td><td>300</td><td>$0.0004<span class="bar" style="width:45%"></span></td></tr>
+              <tr class="total"><td>Total</td><td>6</td><td>12,890</td><td>2,370</td><td>$0.0025</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption class="foot"><span class="frame-no">CLAUDE HAIKU 5.5 · $0.10 IN / $0.50 OUT PER MILLION</span><span class="frame-no">QUOTE IS PART OF THE CAPTION CALL</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="privacy" class="wrap" style="padding-top:0">
+    <div class="section-head">
+      <span class="label">Privacy and safety</span>
+      <h2>A public repo that holds nothing private.</h2>
+    </div>
+    <div class="promises">
+      <div class="promise"><span class="label">Instagram</span><p><strong>Official API only.</strong> It uses an access token you create and can revoke. It never asks for your Instagram password.</p></div>
+      <div class="promise"><span class="label">Secrets</span><p><strong>Only in GitHub secrets.</strong> Keys, tokens and the Drive folder link are passed only to the step that runs <code>forge</code>, never to installs or third-party actions.</p></div>
+      <div class="promise"><span class="label">Photos</span><p><strong>No EXIF, no GPS.</strong> Published JPEGs carry only the colour profile. GPS is compared in memory to group outings and never saved. Photos are recorded by a one-way hash of their file ID.</p></div>
+      <div class="promise"><span class="label">Content</span><p><strong>Rules in code.</strong> Explicit photos, screenshots and photos with children are skipped, and addresses and number plates stay out of the text.</p></div>
+    </div>
+  </section>
+
+  <section id="stack" class="wrap" style="padding-top:0">
+    <div class="section-head"><span class="label">Built with</span></div>
+    <div class="stack">
+      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span class="mark"><svg aria-hidden="true"><use href="#s-mark"/></svg></span>
+  <p class="tagline">Built for photographers whose best shots stay stuck in the gallery.</p>
+  <p>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with and powered by Claude · forged by ZenitsuClicks</p>
+  <p><a href="https://github.com/sritajkumarpatel/instaPostsForge">Source on GitHub</a> · <a href="https://github.com/sritajkumarpatel/postaday-android">Postaday for Android</a></p>
+</footer>
+
+</body>
+</html>

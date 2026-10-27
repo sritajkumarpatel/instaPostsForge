@@ -87,32 +87,39 @@ The agents are `analyst`, `planner`, `caption_writer`, `hashtags` and `reviewer`
 
 ## Choosing the model
 
-Every AI step runs on **Claude Sonnet 5.5**. The first runs used Opus 5.5 at medium to high effort and cost about $0.20 per post, which is too much for a daily job. Sonnet costs half as much per token and handles these tasks well: describing a photo, picking from a short list, writing a few sentences, and checking them against a checklist. Code enforces the hard rules anyway, so the model doesn't need to be the strongest.
+Every AI step runs on **Claude Haiku 5.5**, Anthropic's cheapest current model. The first runs used Opus 5.5 and cost about $0.20 per post; Sonnet 5.5 brought that down to a few cents. Haiku costs about a twentieth of Sonnet per token ($0.10 input and $0.50 output per million) and handles these short tasks: describing a photo, picking from a short list, writing a few sentences, and checking them against a checklist. Code enforces the hard rules anyway, so the model doesn't need to be the strongest.
 
 **Effort** controls how much the model thinks before it answers. Thinking tokens are billed as output, so lower effort costs less.
 
 | Step | Model | Effort | Why |
 | --- | --- | --- | --- |
-| `analyst` | Sonnet 5.5 | low | Labelling a photo is a description task, and it runs only once per photo |
-| `planner` | Sonnet 5.5 | low | Picks from a short list with clear rules; code re-checks variety |
-| `caption_writer` | Sonnet 5.5 | medium | The only text people read, so it gets more thought |
-| `hashtags` | Sonnet 5.5 | low | Chooses 3 to 5 tags from clear roles; code removes banned tags |
-| `reviewer` | Sonnet 5.5 | low | Works through a fixed 8-item checklist |
+| `analyst` | Haiku 5.5 | low | Labelling a photo is a description task, and it runs only once per photo |
+| `planner` | Haiku 5.5 | low | Picks from a short list with clear rules; code re-checks variety |
+| `caption_writer` | Haiku 5.5 | medium | The only text people read, so it gets more thought |
+| `hashtags` | Haiku 5.5 | low | Chooses 3 to 5 tags from clear roles; code removes banned tags |
+| `reviewer` | Haiku 5.5 | low | Works through a fixed 8-item checklist |
 
-Every call is capped at 8,000 output tokens. To trade cost for quality, change one step in `config/profiles.yaml`:
+Every call is capped at 8,000 output tokens. If captions feel flat, move just the caption writer up a model in `config/profiles.yaml`:
 
 ```yaml
 ai:
   agents:
-    caption_writer: { model: claude-opus-5-5, effort: medium }  # best captions, about 2x the cost
-    hashtags:       { model: claude-haiku-5-5 }                 # cheapest, fine for simple steps
+    caption_writer: { model: claude-sonnet-5-5, effort: medium }  # richer captions, still a few cents a post
 ```
 
-Check the effect with `forge usage -p main`, which totals tokens and estimated cost per step from the audit log.
+Check the effect in the run's token audit report or with `forge usage -p main`.
 
-## Token usage audit log
+## Token usage audit
 
-Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run, agent, model, input, output and cache tokens, time taken, and estimated cost. Each run prints a table of its usage, which also appears on the GitHub Actions run page. For a monthly total:
+Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run, agent, model, input, output and cache tokens, time taken, and estimated cost. Each run prints a table of its usage, which also appears on the GitHub Actions run page.
+
+After every run that uses the AI (post, preview or plan, scheduled or manual), the workflow also saves a **token audit report** as a run artifact named `token-audit-<profile>-<mode>-<run number>`. Open the run in the Actions tab and download it from the Artifacts section; it is kept for 90 days. The report (`reports/<profile>-<run id>.md`, plus the same data as `.json`) shows:
+
+- tokens and estimated cost per phase: photo scanning (`analyst`), choosing the photo (`planner`), caption, quote and alt text (`caption_writer`), hashtags and review, with call counts, cache use, seconds and failures;
+- every call in order, so a revision or a shortening pass shows up as its own row;
+- the month so far, by phase.
+
+The quote is written in the same call as the caption, so its tokens are part of the caption phase. Running `forge` locally writes the same report to `reports/`. For a monthly total:
 
 ```bash
 forge usage -p main                  # this month
@@ -152,6 +159,7 @@ CLAUDE.md                   guidance for Claude working on this repo
 docs/ARCHITECTURE.md        diagrams and the agentic pattern
 .env                        your secrets, local only (copy from .env.example)
 state/<profile>/            posts.json, catalog.json, insights.json, usage/ (committed after each run)
+reports/                    per-run token audit reports (uploaded as run artifacts, not committed)
 src/instapostsforge/
   pipeline.py               the daily workflow
   grouping.py               finds photos that could go out together as one multi-photo post
@@ -163,7 +171,7 @@ src/instapostsforge/
   hosting/                  temporary public link for Instagram (GitHub media branch)
   publishers/               Instagram API: publish, insights, token refresh
   state/                    what the workflow remembers per profile
-  usage.py                  token audit log
+  usage.py                  token audit log and per-run audit reports
   cli.py                    the `forge` command
 tests/                      run without any accounts or keys
 .github/workflows/          daily posting job and tests
@@ -289,4 +297,4 @@ In the repo's Settings → Code security, turn on secret scanning, push protecti
 
 ## Cost
 
-With the default Claude Sonnet 5.5 at low effort, expect roughly $0.03 to $0.08 per daily post (about $1 to $2.50 a month), plus about $0.01 the first time each photo is analysed. On Opus 5.5 at higher effort, the first runs cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. To spend even less, move the analyst, hashtags or reviewer to `claude-haiku-5-5`. `forge usage` shows where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
+With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.

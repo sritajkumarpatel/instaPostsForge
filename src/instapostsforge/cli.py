@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from . import pipeline
 from .config import DEFAULT_CONFIG_PATH, ConfigError, env_value, list_profiles, load_profile
-from .usage import format_table, load_month, summarize
+from .usage import format_table, load_month, summarize, write_report
 
 
 def _summary_lines(result) -> list[str]:
@@ -49,6 +49,13 @@ def _report(result) -> None:
             f.write("\n".join(lines) + "\n")
 
 
+def _audit(components) -> None:
+    """Write the run's token audit report, even when the run stopped early."""
+    path = write_report(components.usage) if components.usage is not None else None
+    if path:
+        print(f"Token audit report: {path}")
+
+
 def cmd_profiles(args) -> int:
     for name in list_profiles(args.config):
         print(name)
@@ -57,20 +64,31 @@ def cmd_profiles(args) -> int:
 
 def cmd_preview(args) -> int:
     profile = load_profile(args.profile, args.config)
-    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=False, command="preview"), publish=False))
+    components = pipeline.Components.from_profile(profile, publish=False, command="preview")
+    try:
+        _report(pipeline.run(profile, components, publish=False))
+    finally:
+        _audit(components)
     return 0
 
 
 def cmd_post(args) -> int:
     profile = load_profile(args.profile, args.config)
-    _report(pipeline.run(profile, pipeline.Components.from_profile(profile, publish=True, command="post"), publish=True))
+    components = pipeline.Components.from_profile(profile, publish=True, command="post")
+    try:
+        _report(pipeline.run(profile, components, publish=True))
+    finally:
+        _audit(components)
     return 0
 
 
 def cmd_plan(args) -> int:
     profile = load_profile(args.profile, args.config)
     components = pipeline.Components.from_profile(profile, publish=False, command="plan")
-    plan = pipeline.plan_days(profile, components, args.days)
+    try:
+        plan = pipeline.plan_days(profile, components, args.days)
+    finally:
+        _audit(components)
     names = {p.id: p.name for p in components.source.list_photos()}
     for day, (photo, item) in enumerate(plan, start=1):
         extra = f" + {', '.join(names.get(i, i) for i in item.extra_ids)}" if item.extra_ids else ""

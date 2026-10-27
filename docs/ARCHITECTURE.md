@@ -58,7 +58,7 @@ flowchart TD
     Record --> Commit([Commit state/ to the repo])
 ```
 
-Double-bordered boxes are Claude calls. Each one is logged to `state/<profile>/usage/` with its tokens and estimated cost.
+Double-bordered boxes are Claude calls. Each one is logged to `state/<profile>/usage/` with its tokens and estimated cost, and every run's calls are summarised by phase in a token audit report uploaded as a run artifact.
 
 ## Code layout
 

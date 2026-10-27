@@ -9,6 +9,7 @@ credentials*.json
 
 # Local working files
 drafts/
+reports/
 cache/
 *.log
 

@@ -42,7 +42,7 @@ To change behaviour, prefer this order: `config/ai-instructions.md` for account-
 
 ## Token audit log
 
-Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. When you add a new AI call, route it through `ClaudeWorkflow._ask` so it gets logged.
+Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. After each post, preview or plan run, `write_report` in `usage.py` writes `reports/<profile>-<run_id>.md` and `.json` (tokens and cost per phase, per call, and month to date), even when the run fails, and the workflow uploads `reports/` as the `token-audit-*` artifact. `reports/` is not committed. When you add a new AI call, route it through `ClaudeWorkflow._ask` so it gets logged.
 
 ## Rules that must not be broken
 
@@ -69,4 +69,4 @@ forge preview -p main     # full workflow into drafts/, posts nothing
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.
 - **New accounts:** new accounts are new profiles in `config/profiles.yaml`, not code changes.
-- **Defaults:** use the current Claude models (`claude-sonnet-5-5` by default, set in `config/profiles.yaml`). Don't hard-code a model anywhere except as the config default.
+- **Defaults:** use the current Claude models (`claude-haiku-5-5` by default, set in `config/profiles.yaml`). Don't hard-code a model anywhere except as the config default.

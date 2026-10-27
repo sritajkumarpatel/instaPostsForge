@@ -48,7 +48,7 @@ def load_prompt(name: str) -> str:
 class AgentWorkflow(AIWorkflow):
     def __init__(self, settings: dict, client: ModelClient, usage_log: UsageLog | None = None):
         self.settings = settings
-        self.model = settings.get("model", "claude-haiku-5-5")
+        self.model = settings["model"]  # filled in by providers.resolve
         self.client = client
         self.usage_log = usage_log
         self.account_notes = self._account_notes(settings)

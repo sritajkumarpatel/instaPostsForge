@@ -129,6 +129,7 @@ def cmd_check(args) -> int:
     from .state import ProfileState
 
     profile = load_profile(args.profile, args.config)
+    print(check_ai(profile.ai))
     publisher = InstagramPublisher(profile.instagram)
     account = publisher.account()
     print(f"Instagram account: @{account.get('username')} ({account.get('account_type')})")
@@ -138,6 +139,27 @@ def cmd_check(args) -> int:
     print(f"Photos in source: {len(photos)}, not yet posted: {len([p for p in photos if not state.is_posted(p.id)])}")
     print(metadata_report(photos))
     return 0
+
+
+def check_ai(settings: dict) -> str:
+    """Confirms the AI provider's key works and its models exist, without spending tokens."""
+    from .agents.clients import build_client
+    from .agents.providers import PROVIDERS, resolve
+
+    settings = resolve(settings)
+    provider = PROVIDERS[settings["provider"]]
+    client = build_client(provider.name)
+    models = sorted({settings["model"], *((a or {}).get("model") for a in (settings.get("agents") or {}).values())} - {None})
+    for model in models:
+        try:
+            client.check(model)
+        except Exception as err:  # the SDK's message can echo part of the key, so only its type and status are shown
+            status = getattr(err, "status_code", None) or getattr(err, "code", None) or ""
+            raise ConfigError(
+                f"{provider.label} rejected {provider.key_env} or model {model}: {type(err).__name__} {status}".rstrip()
+                + ". Check the key, its credit and the model name."
+            ) from None
+    return f"AI provider: {provider.label}, {provider.key_env} works, model{'s' if len(models) > 1 else ''} {', '.join(models)}"
 
 
 def metadata_report(photos) -> str:
@@ -182,7 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("preview", cmd_preview, "Run the whole workflow but save the post to drafts/ instead of publishing"),
         ("post", cmd_post, "Run the whole workflow and publish today's post"),
         ("plan", cmd_plan, "Show which photos the planner would post over the next days"),
-        ("check", cmd_check, "Verify the Instagram token, quota and photo source"),
+        ("check", cmd_check, "Verify the AI key, the Instagram token and quota, and the photo source"),
         ("refresh-token", cmd_refresh_token, "Extend the Instagram access token by 60 days"),
         ("usage", cmd_usage, "Show AI token usage and estimated cost for a month"),
         ("reset", cmd_reset, "Forget a profile's posting history, insights, usage and photo analyses"),

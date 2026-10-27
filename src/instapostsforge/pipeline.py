@@ -98,9 +98,10 @@ class Components:
     @classmethod
     def from_profile(cls, profile: Profile, *, publish: bool, command: str = "", with_insights: bool = False) -> "Components":
         usage = UsageLog(profile.name, pricing=profile.ai.get("pricing"), command=command)
+        ai = build_workflow(profile.ai, usage_log=usage)  # first, so a missing AI key stops the run before anything else
         return cls(
             source=build_source(profile.source),
-            ai=build_workflow(profile.ai, usage_log=usage),
+            ai=ai,
             state=ProfileState(profile.name),
             host=build_host(profile.hosting) if publish else None,
             publisher=InstagramPublisher(profile.instagram) if (publish or with_insights) else None,

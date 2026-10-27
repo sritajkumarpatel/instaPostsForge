@@ -1,5 +1,5 @@
 name: Daily post
-run-name: "Daily post: ${{ inputs.mode || 'post' }}${{ inputs.profile && format(' ({0})', inputs.profile) || '' }}"
+run-name: "Daily post: ${{ inputs.mode || 'post' }}${{ inputs.profile && format(' ({0})', inputs.profile) || '' }}${{ ((inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) && format(' · {0}', (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) || '' }}"
 
 on:
   schedule:
@@ -14,6 +14,11 @@ on:
         type: choice
         options: [check, plan, preview, post]
         default: preview
+      provider:
+        description: AI provider for this run (variable = the AI_PROVIDER repository variable, or config if unset)
+        type: choice
+        options: [variable, claude, openai, gemini]
+        default: variable
 
 permissions:
   contents: write  # stage the photo on the media branch and commit state/ after each post
@@ -40,6 +45,9 @@ jobs:
     env:
       PROFILE: ${{ matrix.profile }}
       MODE: ${{ inputs.mode || 'post' }}
+      # claude | openai | gemini. A manual run's choice wins, then the repository variable AI_PROVIDER;
+      # empty means ai.provider in config/profiles.yaml decides. forge stops early if that provider's key is missing.
+      AI_PROVIDER: ${{ (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -54,7 +62,10 @@ jobs:
           # Repository variable: set MULTI_PHOTO to false to post single photos only. Unset, config decides.
           # Saved as a repository secret by mistake, it still works.
           MULTI_PHOTO: ${{ vars.MULTI_PHOTO || secrets.MULTI_PHOTO }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Only the chosen provider's key is handed over (all three when config decides).
+          ANTHROPIC_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'claude') && secrets.ANTHROPIC_API_KEY || '' }}
+          OPENAI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'openai') && secrets.OPENAI_API_KEY || '' }}
+          GEMINI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'gemini') && secrets.GEMINI_API_KEY || '' }}
           GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # One set of three secrets per profile. Add lines here when you add a profile.

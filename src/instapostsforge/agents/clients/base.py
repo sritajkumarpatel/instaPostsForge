@@ -36,10 +36,12 @@ class ModelReply:
 
 class ModelClient(ABC):
     provider: str
-    key_env: str  # the environment variable that holds the API key
 
     @abstractmethod
     def ask(
         self, *, model: str, effort: str | None, max_tokens: int, system: str, parts: list[Part], schema: type[T]
     ) -> ModelReply:
         """One request; the reply is parsed into schema, or parsed is None."""
+
+    def check(self, model: str) -> None:
+        """Confirms the key works and the model exists, without spending tokens. Raises on failure."""

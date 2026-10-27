@@ -6,7 +6,7 @@
 
 **Built for photographers whose best shots stay stuck in the gallery.**
 
-One photo a day to Instagram, straight from a Google Drive folder, picked and captioned by Claude, posted by GitHub Actions.
+One photo a day to Instagram, straight from a Google Drive folder, picked and captioned by AI agents (Claude, OpenAI or Gemini), posted by GitHub Actions.
 
 **[See the project page →](https://sritajkumarpatel.github.io/instaPostsForge/)** · **[Use it yourself: setup guide →](https://sritajkumarpatel.github.io/instaPostsForge/setup.html)**
 
@@ -14,7 +14,7 @@ One photo a day to Instagram, straight from a Google Drive folder, picked and ca
 [![Tests](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml/badge.svg)](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/Runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
-![Powered by Claude](https://img.shields.io/badge/Powered%20by-Claude-D97757)
+![AI: Claude, OpenAI or Gemini](https://img.shields.io/badge/AI-Claude%20%C2%B7%20OpenAI%20%C2%B7%20Gemini-D97757)
 
 <sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with Claude</sub>
 
@@ -86,7 +86,7 @@ Every AI step has a safe fallback. If the planner fails or names a photo that do
 ### Core concepts
 
 - **AI decides, code acts.** The model chooses and writes. Everything with a side effect (fetching, image preparation, hosting, publishing, records) is plain code, and every AI answer is validated before it can reach Instagram.
-- **A workflow, not an agent.** In the terms of Anthropic's [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents), code runs fixed steps and calls Claude at five of them:
+- **A workflow, not an agent.** In the terms of Anthropic's [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents), code runs fixed steps and calls the AI at five of them:
   - **Prompt chaining with gates**: each AI step feeds the next, and code checks the output in between (the photo must exist, captions and tags must pass Instagram's rules).
   - **Evaluator-optimizer**: the reviewer approves or sends feedback, and the writers revise, up to `ai.max_revisions` times.
   - **Augmented LLM**: every call returns a typed schema and gets memory from `state/` (catalog, history, insights).
@@ -432,6 +432,6 @@ Working on the code? Read [CLAUDE.md](CLAUDE.md) for the rules that must not be 
 
 **Built for photographers whose best shots stay stuck in the gallery.**
 
-<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with and powered by <a href="https://claude.com">Claude</a></sub>
+<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with <a href="https://claude.com">Claude</a></sub>
 
 </div>

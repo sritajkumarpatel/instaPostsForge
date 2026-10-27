@@ -25,7 +25,8 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 
 | What | Where |
 | --- | --- |
-| Model, effort and max tokens, per agent | `ai.model` / `ai.effort` / `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
+| Which provider | `ai.provider` (`claude`, `openai` or `gemini`), overridden by the `AI_PROVIDER` env var; resolved and checked in `agents/providers.py` |
+| Model, effort and max tokens, per agent | `ai.models.<provider>` / `ai.effort` / `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` (`ai.model` still overrides `ai.models`); a model from another provider is refused |
 | What each agent is asked to do | `src/instapostsforge/prompts/<agent>.md` (`$placeholders` are filled by `agents/workflow.py`) |
 | Account-wide voice and rules for every agent | `config/ai-instructions.md` (path set by `ai.instructions_file`) |
 | What the account is about (niche, audience, location, voice) | `ai.account` in `config/profiles.yaml`, rendered into every prompt as `$account_notes` |
@@ -43,12 +44,12 @@ To change behaviour, prefer this order: `config/ai-instructions.md` for account-
 
 ## Token audit log
 
-Every Claude call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. After each post, preview or plan run, `write_report` in `usage.py` writes `reports/<profile>-<run_id>.md` and `.json` (tokens and cost per phase, per call, and month to date), even when the run fails, and the workflow uploads `reports/` as the `token-audit-*` artifact. `reports/` is not committed. When you add a new AI call, route it through `AgentWorkflow._ask` so it gets logged.
+Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it succeeds or fails. Each entry records the run ID, command, agent, provider, model, input, output and cache tokens, seconds taken, and an estimated cost from `ai.pricing`. `forge usage -p <profile> [--month YYYY-MM]` totals the log, and every run prints its own table, which also appears on the GitHub Actions summary. After each post, preview or plan run, `write_report` in `usage.py` writes `reports/<profile>-<run_id>.md` and `.json` (tokens and cost per phase, per call, and month to date), even when the run fails, and the workflow uploads `reports/` as the `token-audit-*` artifact. `reports/` is not committed. When you add a new AI call, route it through `AgentWorkflow._ask` so it gets logged.
 
 ## Rules that must not be broken
 
 - **Instagram credentials:** never automate Instagram with a username and password, or with unofficial private APIs. Use only the official Instagram API with an access token.
-- **Secrets:** never commit secrets. They live in `.env` locally and in GitHub Actions secrets. The repo is public, so `config/profiles.yaml` only names environment variables. The Drive folder link is a secret too, `DRIVE_FOLDER_<PROFILE>`.
+- **Secrets:** never commit secrets. They live in `.env` locally and in GitHub Actions secrets. The repo is public, so `config/profiles.yaml` only names environment variables. The Drive folder link is a secret too, `DRIVE_FOLDER_<PROFILE>`. The AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) never reach output: `forge check` shows only a provider error's type and status, because SDK messages can echo part of a key.
 - **GPS stays private:** `Photo.location` is only compared in memory (`grouping.py`). Never write coordinates to `state/`, logs or the summary.
 - **No repeats:** a photo must never be posted twice, including the other photos of a multi-photo post. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
 - **Instagram limits:** at most 5 hashtags, at most 2,200 characters, JPEG only, and an aspect ratio between 4:5 and 1.91:1. These are enforced in `captions/validator.py` and `imaging/processor.py`. Don't loosen them.
@@ -66,8 +67,9 @@ forge preview -p main     # full workflow into drafts/, posts nothing
 ```
 
 - **Deleted posts:** to make a deleted post's photos eligible again, remove its entry from `state/<profile>/posts.json`; its `more_photos` are freed with it. To start over, run `forge reset -p <profile> --keep-catalog` (or the Start fresh workflow); without `--keep-catalog` it also clears `catalog.json`, which a new copy of the repo should do.
-- **Switches:** `AUTO_POST` must be a repository variable (a job-level `if` can't read secrets); `MULTI_PHOTO` is read from `vars` or `secrets`.
+- **Switches:** `AUTO_POST` must be a repository variable (a job-level `if` can't read secrets); `MULTI_PHOTO` is read from `vars` or `secrets`; `AI_PROVIDER` comes from the Run workflow choice or `vars`, and the Run forge step gets only that provider's key.
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.
 - **New accounts:** new accounts are new profiles in `config/profiles.yaml`, not code changes.
-- **Defaults:** use the current Claude models (`claude-haiku-5-5` by default, set in `config/profiles.yaml`). Don't hard-code a model anywhere except as the config default.
+- **Defaults:** each provider's cheap vision model is its default in `ai.models` (`claude-haiku-5-5`, `gpt-5.6-luna`, `gemini-3.1-flash-lite`), with a price row in `ai.pricing`. Claude stays the default provider. Don't hard-code a model anywhere except as the config default.
+- **New AI providers:** add a `ModelClient` in `agents/clients/` (neutral `Text`/`Image` parts in; parsed reply, normalised stop reason and token counts out), its key and model prefixes in `agents/providers.py`, its default model and price in `config/profiles.yaml`, and its key in `daily-post.yml`. Keep prompts and schemas shared; Pydantic validates every reply whatever the provider.

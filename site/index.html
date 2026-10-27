@@ -484,7 +484,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
           </div>
         </div>
         <h3>A receipt for every run</h3>
-        <p>Every Claude call is logged with its tokens and estimated cost, and each run saves a token audit report you can download from the run page.</p>
+        <p>Every AI call is logged with its tokens and estimated cost, and each run saves a token audit report you can download from the run page.</p>
       </article>
       <article class="feature">
         <div class="window" aria-hidden="true">
@@ -495,6 +495,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
               <div class="step"><b>🔒</b><span><em>IG_MAIN_ACCESS_TOKEN</em> · secret</span></div>
               <div class="step"><b>🔒</b><span><em>DRIVE_FOLDER_MAIN</em> · secret</span></div>
               <div class="step"><b>✓</b><span><em>AUTO_POST</em> = true · variable</span></div>
+              <div class="step"><b>✓</b><span><em>AI_PROVIDER</em> = claude · variable</span></div>
               <div class="step"><b>↻</b><span>Token renewed on the 1st of each month</span></div>
             </div>
           </div>
@@ -509,7 +510,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
     <div class="wrap section-head">
       <span class="label">How it works</span>
       <h2>Five Claude agents, with code at every gate.</h2>
-      <p class="lede">The AI decides what to post and what to say. Plain code does everything with a side effect (fetching, image preparation, hosting, publishing, records) and validates every answer before it can reach Instagram. Every agent runs on Claude Haiku 5.5 by default.</p>
+      <p class="lede">The AI decides what to post and what to say. Plain code does everything with a side effect (fetching, image preparation, hosting, publishing, records) and validates every answer before it can reach Instagram. Every agent runs on Claude Haiku 5.5 by default, or on OpenAI or Gemini by setting one variable.</p>
     </div>
     <div class="strip">
       <div class="edge-print top" aria-hidden="true">ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER ▸ HASHTAGS ▸ REVIEWER ▸ CHECKS ▸ INSTAGRAM &nbsp;&nbsp;&nbsp; ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER</div>
@@ -525,7 +526,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
       <div class="edge-print bottom" aria-hidden="true">AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS &nbsp;&nbsp;&nbsp; AI DECIDES · CODE ACTS</div>
     </div>
     <div class="wrap principle">
-      <div><h3>A workflow, not an agent</h3><p>Prompt chaining with gates and an evaluator-optimizer review loop. Claude gets no tools and chooses no steps.</p></div>
+      <div><h3>A workflow, not an agent</h3><p>Prompt chaining with gates and an evaluator-optimizer review loop. The model gets no tools and chooses no steps.</p></div>
       <div><h3>It fails safe</h3><p>If the planner fails, a random eligible photo is used. If the review still finds a real problem, the day is skipped. A broken post never goes out.</p></div>
       <div><h3>Never twice</h3><p>A photo is recorded only after Instagram returns a media ID, keyed by a hash of its Drive file ID, together with every photo of a set.</p></div>
     </div>
@@ -581,7 +582,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
   <section id="stack" class="wrap" style="padding-top:0">
     <div class="section-head"><span class="label">Built with</span></div>
     <div class="stack">
-      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
+      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>OpenAI and Gemini SDKs</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
     </div>
   </section>
 </main>

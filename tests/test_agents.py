@@ -12,7 +12,6 @@ class FakeClient(ModelClient):
     """Returns canned replies in order and keeps every request."""
 
     provider = "fake"
-    key_env = "FAKE_API_KEY"
 
     def __init__(self, outputs):
         self.outputs, self.calls = list(outputs), []
@@ -29,6 +28,7 @@ class FakeClient(ModelClient):
 
 
 def workflow(*outputs, usage_log=None, **settings):
+    settings.setdefault("model", "claude-haiku-5-5")
     client = FakeClient(outputs)
     return AgentWorkflow(settings, client=client, usage_log=usage_log), client
 

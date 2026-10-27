@@ -162,11 +162,13 @@ def write_report(log: UsageLog, out_dir: Path = DEFAULT_REPORT_DIR) -> Path | No
     month_entries = load_month(log.profile, month, log.state_dir)
     month_rows = _phase_rows(month_entries)
     models = sorted({e["model"] for e in log.entries})
+    providers = sorted({e.get("provider", "claude") for e in log.entries})
     lines = [
         f"# Token audit: {log.profile}, {log.command or 'run'}",
         "",
         f"- **Run:** `{log.run_id}`",
         f"- **Started:** {log.entries[0]['at']}",
+        f"- **AI provider:** {', '.join(providers)}",
         f"- **Models:** {', '.join(models)}",
         "",
         "## This run, by phase",
@@ -194,7 +196,7 @@ def write_report(log: UsageLog, out_dir: Path = DEFAULT_REPORT_DIR) -> Path | No
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{log.profile}-{log.run_id}.md"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    data = {"profile": log.profile, "command": log.command, "run_id": log.run_id, "models": models,
+    data = {"profile": log.profile, "command": log.command, "run_id": log.run_id, "providers": providers, "models": models,
             "phases": rows, "calls": log.entries, "month": {"month": month, "runs": runs, "phases": month_rows}}
     path.with_suffix(".json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     return path

@@ -18,10 +18,12 @@ def content_block(part: Part) -> dict:
 
 class AnthropicClient(ModelClient):
     provider = "claude"
-    key_env = "ANTHROPIC_API_KEY"
 
-    def __init__(self, client: anthropic.Anthropic | None = None):
-        self.client = client or anthropic.Anthropic()
+    def __init__(self, client: anthropic.Anthropic | None = None, *, api_key: str | None = None):
+        self.client = client or anthropic.Anthropic(api_key=api_key)
+
+    def check(self, model):
+        self.client.models.retrieve(model)
 
     def ask(self, *, model, effort, max_tokens, system, parts, schema):
         kwargs = dict(

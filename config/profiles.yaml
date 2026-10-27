@@ -7,14 +7,20 @@
 
 defaults:
   ai:
+    # Which AI runs the five steps: claude | openai | gemini. The AI_PROVIDER environment variable
+    # (a repository variable in GitHub Actions) overrides this, so you can switch without a commit.
+    # Each provider needs its own key: ANTHROPIC_API_KEY, OPENAI_API_KEY or GEMINI_API_KEY.
     provider: claude
-    # Default model, effort and output limit for every AI step. Each step can override
-    # them under "agents" below. Effort: low | medium | high | xhigh | max (more effort
-    # means more thinking, better judgement and more tokens).
-    # Haiku is the cheapest current model (about a twentieth of Sonnet's price) and handles
-    # these short tasks; lower effort means less thinking and fewer output tokens. For richer
-    # captions, set caption_writer to claude-sonnet-5-5 or claude-opus-5-5.
-    model: claude-haiku-5-5
+    # The model for each provider, used by every step unless "agents" below says otherwise. These are
+    # each provider's cheap model that can read photos; Haiku is about a twentieth of Sonnet's price.
+    # For richer captions on Claude, set caption_writer's model to claude-sonnet-5-5 or claude-opus-5-5.
+    models:
+      claude: claude-haiku-5-5
+      openai: gpt-5.6-luna
+      gemini: gemini-3.1-flash-lite
+    # Default effort and output limit for every AI step. Each step can override them (and its model,
+    # which must belong to the provider) under "agents" below. Effort: low | medium | high | xhigh | max
+    # (more effort means more thinking, better judgement and more tokens; Gemini tops out at high).
     effort: low
     max_tokens: 8000
     agents:
@@ -41,12 +47,15 @@ defaults:
       no_repeat_category: false       # true: never the same category (macro, animals...) as the last post or yesterday's
       no_repeat_subject_days: 3       # a main subject (moon, dog...) waits this many days before it comes back
       max_same_mood_per_7_days: 2
-    # USD per million tokens, used only to estimate cost in the usage log.
+    # USD per million tokens, used only to estimate cost in the usage log. cache_read and
+    # cache_write default to 0.1x and 1.25x the input price (Claude's rates) when left out.
     pricing:
-      claude-opus-5-5:   { input: 4.00,  output: 20.00 }
-      claude-sonnet-5-5: { input: 2.00,  output: 10.00 }
-      claude-haiku-5-5:  { input: 0.10,  output: 0.50 }
-      claude-fable-5-1:  { input: 10.00, output: 50.00 }
+      claude-opus-5-5:       { input: 4.00,  output: 20.00 }
+      claude-sonnet-5-5:     { input: 2.00,  output: 10.00 }
+      claude-haiku-5-5:      { input: 0.10,  output: 0.50 }
+      claude-fable-5-1:      { input: 10.00, output: 50.00 }
+      gpt-5.6-luna:          { input: 0.20,  output: 1.20, cache_read: 0.02,  cache_write: 0 }
+      gemini-3.1-flash-lite: { input: 0.25,  output: 1.50, cache_read: 0.025, cache_write: 0 }
     language: English
     quote: when_fitting       # always | when_fitting | never
     hashtags:

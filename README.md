@@ -16,7 +16,7 @@ One photo a day to Instagram, straight from a Google Drive folder, picked and ca
 ![GitHub Actions](https://img.shields.io/badge/Runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
 ![Powered by Claude](https://img.shields.io/badge/Powered%20by-Claude-D97757)
 
-<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with Claude · forged by ZenitsuClicks</sub>
+<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with Claude</sub>
 
 </div>
 
@@ -405,6 +405,6 @@ Working on the code? Read [CLAUDE.md](CLAUDE.md) for the rules that must not be 
 
 **Built for photographers whose best shots stay stuck in the gallery.**
 
-<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with and powered by <a href="https://claude.com">Claude</a> · forged by ZenitsuClicks</sub>
+<sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with and powered by <a href="https://claude.com">Claude</a></sub>
 
 </div>

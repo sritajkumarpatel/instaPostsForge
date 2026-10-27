@@ -155,6 +155,8 @@ def check_ai(settings: dict) -> str:
             client.check(model)
         except Exception as err:  # the SDK's message can echo part of the key, so only its type and status are shown
             status = getattr(err, "status_code", None) or getattr(err, "code", None) or ""
+            if not status and any(word in type(err).__name__ for word in ("Connection", "Timeout")):
+                raise ConfigError(f"Could not reach {provider.label} ({type(err).__name__}). Try again later.") from None
             raise ConfigError(
                 f"{provider.label} rejected {provider.key_env} or model {model}: {type(err).__name__} {status}".rstrip()
                 + ". Check the key, its credit and the model name."

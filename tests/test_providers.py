@@ -87,3 +87,14 @@ def test_forge_check_reports_the_provider_without_showing_the_error(monkeypatch)
         cli.check_ai({"models": MODELS})
     assert "OpenAI rejected OPENAI_API_KEY or model gpt-5.6-luna: PermissionError" in str(err.value)
     assert "sk-abc" not in str(err.value)
+
+    class APIConnectionError(Exception):
+        pass
+
+    class Offline(Client):
+        def check(self, model):
+            raise APIConnectionError("Connection error.")
+
+    monkeypatch.setattr(clients, "build_client", lambda provider: Offline(False))
+    with pytest.raises(ConfigError, match="Could not reach OpenAI"):
+        cli.check_ai({"models": MODELS})

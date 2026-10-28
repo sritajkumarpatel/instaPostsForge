@@ -204,3 +204,19 @@ def test_any_spelling_of_false_turns_multi_photo_off(monkeypatch, value):
     monkeypatch.setenv("MULTI_PHOTO", value)
     settings = pipeline.multi_photo_settings(profile)
     assert settings["enabled"] is False and settings["switched_by"].startswith("MULTI_PHOTO=")
+
+
+def test_the_posted_photo_is_trimmed_around_the_subject_the_analyst_saw(tmp_path, files):
+    portrait = Image.new("RGB", (900, 1200), (0, 0, 255))
+    portrait.paste((255, 0, 0), (0, 0, 900, 30))  # the subject is at the very top
+    out = io.BytesIO()
+    portrait.save(out, format="JPEG", quality=95)
+    files["tall.jpg"] = out.getvalue()
+    c = components(tmp_path, files, FakeAI(), publish=False)
+    run = pipeline.Run(make_profile(), c)
+    tall = pipeline.Photo(id="tall.jpg", name="tall.jpg")
+    centred = Image.open(io.BytesIO(run.post_images(tall, [])[0]))
+    assert centred.getpixel((450, 2))[0] < 100  # no notes yet: a centred trim loses the top rows
+    c.state.save_analysis("tall.jpg", "tall.jpg", {"subject_top": 0.0, "subject_bottom": 0.5, "subject_left": 0.2, "subject_right": 0.8})
+    kept = Image.open(io.BytesIO(run.post_images(tall, [])[0]))
+    assert kept.size[1] < 1200 and kept.getpixel((450, 2))[0] > 200

@@ -46,6 +46,14 @@ Score it as a scrolling viewer would: sharpness, exposure, composition, and how 
 
 Name the one thing the photo is of in one or two lowercase words: moon, dog, sunset, dosa, temple, dragonfly. Use the plainest common word and the same word every time, so a later moon photo is also "moon", not "lunar glow" or "night sky". The planner uses this to avoid posting the same subject on nearby days.
 
+## Where the subject is
+
+Instagram can only show a portrait as tall as 4:5, so a taller photo (such as a 3:4 phone portrait) loses a thin strip from the top, the bottom or both, and a very wide photo loses a little from the sides. Code places that trim from your numbers, so give them carefully.
+
+Report subject_top and subject_bottom: where the main subject starts and ends vertically, as fractions of the image height (0 is the top edge, 1 is the bottom edge). Report subject_left and subject_right the same way across the width (0 is the left edge, 1 is the right edge).
+
+Include everything that would spoil the photo if it were cut: faces and the tops of heads, hands, readable signs and text, and the whole of the main object (the full table, the full building, the moon). Leave out what can be lost without harm: empty sky, plain floor or ground, blank walls, and out-of-focus edges. If the subject fills the frame or the composition needs every edge, return 0 and 1.
+
 ## Place
 
 Set place_name only if the place is clearly recognisable (a famous landmark, a readable sign, or the file name says it). Otherwise leave it empty and describe the kind of place in setting. Never guess.

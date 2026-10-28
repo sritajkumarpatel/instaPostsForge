@@ -1,3 +1,3 @@
-from .processor import PreparedImage, fingerprint, fingerprint_distance, name_time, prepare_image
+from .processor import Focus, PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
 
-__all__ = ["PreparedImage", "fingerprint", "fingerprint_distance", "name_time", "prepare_image"]
+__all__ = ["Focus", "PreparedImage", "fingerprint", "fingerprint_distance", "focus_from", "name_time", "prepare_image"]

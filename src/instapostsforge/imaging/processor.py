@@ -2,13 +2,16 @@
 
 The photo keeps its own aspect ratio whenever Instagram allows it. A photo just
 outside the feed range (4:5 portrait to 1.91:1 landscape), such as a 3:4 phone
-portrait, loses a thin centred strip to fit (at most max_crop of its length).
-Only a photo further outside gets a border instead.
+portrait, loses a thin strip to fit (at most max_crop of its length). The strip
+comes from where the main subject isn't: the analyst reports a subject band
+(`Focus`) and the trim is placed to keep it whole, as near the centre as it can
+be. Only a photo further outside gets a border instead.
 """
 
 from __future__ import annotations
 
 import io
+import math
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -58,20 +61,62 @@ def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
 
 
-def crop_to_ratio(image: Image.Image, min_ratio: float, max_ratio: float, max_crop: float) -> Image.Image | None:
-    """Trims a centred strip so the ratio fits the range, or None if that would cut more than
-    max_crop of the photo's height (too tall) or width (too wide)."""
+@dataclass(frozen=True)
+class Focus:
+    """Where the main subject is, as fractions of the photo: top and bottom of the height, left and right
+    of the width. A trim keeps this band whenever the amount to trim allows it."""
+
+    top: float
+    bottom: float
+    left: float
+    right: float
+
+
+def focus_from(analysis: dict | None) -> Focus | None:
+    """The analyst's subject band, or None if any number is missing or they make no sense."""
+    analysis = analysis or {}
+    values = [analysis.get(k) for k in ("subject_top", "subject_bottom", "subject_left", "subject_right")]
+    if any(not isinstance(v, (int, float)) or isinstance(v, bool) or math.isnan(v) or not 0 <= v <= 1 for v in values):
+        return None
+    top, bottom, left, right = (float(v) for v in values)
+    if top >= bottom or left >= right:
+        return None
+    return Focus(top, bottom, left, right)
+
+
+def place(length: int, kept: int, start: float | None, end: float | None) -> int:
+    """Where a window of `kept` pixels starts along a side of `length`. It covers the band start..end
+    (fractions) if it can, and among the places that do, picks the one nearest the centre. A band
+    longer than the window gets the window centred on the band."""
+    spare = length - kept
+    centred = spare // 2
+    if start is None or end is None:
+        return centred
+    first, last = int(start * length), math.ceil(end * length)
+    earliest = max(0, last - kept)  # the window must reach the band's end
+    latest = min(spare, first)  # and begin before the band starts
+    if earliest <= latest:
+        return min(max(centred, earliest), latest)
+    return min(max((first + last - kept) // 2, 0), spare)
+
+
+def crop_to_ratio(
+    image: Image.Image, min_ratio: float, max_ratio: float, max_crop: float, focus: Focus | None = None
+) -> Image.Image | None:
+    """Trims a strip so the ratio fits the range, or None if that would cut more than max_crop of the
+    photo's height (too tall) or width (too wide). Without a focus the strip is centred; with one, it is
+    placed to keep the subject band."""
     w, h = image.size
     if w / h < min_ratio:
         new_h = int(w / min_ratio)
         if 1 - new_h / h > max_crop:
             return None
-        top = (h - new_h) // 2
+        top = place(h, new_h, focus.top if focus else None, focus.bottom if focus else None)
         return image.crop((0, top, w, top + new_h))
     new_w = int(h * max_ratio)
     if 1 - new_w / w > max_crop:
         return None
-    left = (w - new_w) // 2
+    left = place(w, new_w, focus.left if focus else None, focus.right if focus else None)
     return image.crop((left, 0, left + new_w, h))
 
 
@@ -97,7 +142,7 @@ def _to_jpeg(image: Image.Image, quality: int, icc_profile: bytes | None = None,
     return out.getvalue()
 
 
-def prepare_image(original: bytes, settings: dict) -> PreparedImage:
+def prepare_image(original: bytes, settings: dict, focus: Focus | None = None) -> PreparedImage:
     image = Image.open(io.BytesIO(original))
     taken_at = exif_time(image)
     # The colour profile (sRGB or Display P3 on newer phones) has no personal data; without it a wide-gamut
@@ -109,7 +154,7 @@ def prepare_image(original: bytes, settings: dict) -> PreparedImage:
     padded = cropped = False
     min_ratio, max_ratio = float(settings.get("min_ratio", 0.8)), float(settings.get("max_ratio", 1.91))
     if settings.get("keep_aspect_ratio", True) and not min_ratio <= image.width / image.height <= max_ratio:
-        trimmed = crop_to_ratio(image, min_ratio, max_ratio, float(settings.get("max_crop", 0.1)))
+        trimmed = crop_to_ratio(image, min_ratio, max_ratio, float(settings.get("max_crop", 0.1)), focus)
         if trimmed is not None:
             image, cropped = trimmed, True
     if settings.get("keep_aspect_ratio", True):

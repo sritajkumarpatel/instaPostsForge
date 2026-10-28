@@ -94,13 +94,13 @@ TRIM = {**SETTINGS, "max_crop": 0.1}
 
 def test_a_trim_without_notes_is_centred(jpeg_factory):
     # 900 x 1200 keeps 1125 rows; centred, rows 0 to 36 go, so a red band in rows 0 to 29 is lost.
-    prepared = prepare_image(banded_portrait(range(0, 30)), TRIM)
+    prepared = prepare_image(banded_portrait(range(30)), TRIM)
     assert prepared.cropped
     assert not is_red(Image.open(io.BytesIO(prepared.jpeg)).getpixel((450, 2)))
 
 
 def test_the_trim_keeps_a_subject_at_the_top():
-    prepared = prepare_image(banded_portrait(range(0, 30)), TRIM, Focus(0.0, 0.6, 0.1, 0.9))
+    prepared = prepare_image(banded_portrait(range(30)), TRIM, Focus(0.0, 0.6, 0.1, 0.9))
     image = Image.open(io.BytesIO(prepared.jpeg))
     assert image.size == (900, 1125)
     assert is_red(image.getpixel((450, 2)))

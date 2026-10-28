@@ -33,6 +33,12 @@ class PhotoAnalysis(BaseModel):
     shows_private_home: bool
     is_explicit: bool = Field(default=False, description="Nudity, sexual content or graphic gore; such photos are never posted.")
     themes: list[str] = Field(description="Themes and audiences, specific to broad.")
+    # Where the main subject sits, so a trim to Instagram's shape can leave it whole. Code checks the
+    # numbers (imaging.focus_from); no range limits here, so one odd number can't sink the whole analysis.
+    subject_top: float | None = Field(default=None, description="Where the main subject starts, as a fraction of the height: 0 is the top edge.")
+    subject_bottom: float | None = Field(default=None, description="Where the main subject ends, as a fraction of the height: 1 is the bottom edge.")
+    subject_left: float | None = Field(default=None, description="Where the main subject starts, as a fraction of the width: 0 is the left edge.")
+    subject_right: float | None = Field(default=None, description="Where the main subject ends, as a fraction of the width: 1 is the right edge.")
 
 
 class PlannedPhoto(BaseModel):

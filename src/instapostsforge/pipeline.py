@@ -24,7 +24,7 @@ from .captions import CaptionError, CaptionRules, normalize_caption, trim_captio
 from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
-from .imaging import PreparedImage, fingerprint, fingerprint_distance, name_time, prepare_image
+from .imaging import PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
@@ -148,6 +148,15 @@ class Run:
         if photo.id not in self._images:
             self._images[photo.id] = prepare_image(self.c.source.download(photo), self.profile.image)
         return self._images[photo.id]
+
+    def post_image(self, photo: Photo) -> PreparedImage:
+        """The image as it goes out. A trimmed photo is prepared again with the subject band the analyst
+        reported, so the strip comes from where the subject isn't; without one it stays centred."""
+        image = self.image(photo)
+        focus = focus_from(self.c.state.analysis_for(photo.id))
+        if not image.cropped or focus is None:
+            return image
+        return prepare_image(self.c.source.download(photo), self.profile.image, focus)
 
     def taken_at(self, photo: Photo) -> str | None:
         """When the photo was taken, from EXIF or the file name, as the AI steps see it."""
@@ -397,7 +406,7 @@ class Run:
 
     def post_images(self, photo: Photo, more: list[Photo]) -> list[bytes]:
         """The JPEGs to post, cover first. Sets only hold photos of one shape, so each goes out as it is."""
-        images = [self.image(p) for p in [photo, *more]]
+        images = [self.post_image(p) for p in [photo, *more]]
         if any(not same_shape(images[0].shape, i.shape) for i in images[1:]):
             raise RuntimeError("A multi-photo post must have photos of one shape; refusing to crop or add borders.")
         return [i.jpeg for i in images]

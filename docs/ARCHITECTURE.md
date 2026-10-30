@@ -6,7 +6,7 @@ instaPostsForge is an **AI workflow**: plain code runs a fixed sequence of steps
 
 ```mermaid
 flowchart TB
-    Drive[("Google Drive folder<br/>your photos")]
+    Drive[("Google Drive folder or Cloudflare R2 bucket<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
     Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
@@ -30,7 +30,7 @@ Instagram only accepts a public image link and rejects Google Drive links, so th
 ```mermaid
 flowchart TD
     Start([Scheduled or manual run]) --> Insights[Fetch insights for recent posts]
-    Insights --> List[List Drive photos and remove those already posted]
+    Insights --> List[List photos in Drive or R2 and remove those already posted]
     List --> Empty{Any unposted photos?}
     Empty -- no --> Stop([Stop: add more photos])
     Empty -- yes --> Analyst[["AI: Photo analyst<br/>new photos only"]]
@@ -54,7 +54,7 @@ flowchart TD
     Mode -- post --> Stage[Stage JPEG on media branch]
     Stage --> Publish[Publish via Instagram API]
     Publish --> Cleanup[Delete staged JPEG]
-    Cleanup --> Record[Record post by Drive file ID]
+    Cleanup --> Record[Record post by source file ID]
     Record --> Commit([Commit state/ to the repo])
 ```
 
@@ -65,7 +65,7 @@ Double-bordered boxes are AI calls. Each one is logged to `state/<profile>/usage
 ```mermaid
 flowchart LR
     CLI["cli.py<br/>forge commands"] --> Pipeline["pipeline.py<br/>the workflow"]
-    Pipeline --> Sources["sources/<br/>google_drive · local_folder"]
+    Pipeline --> Sources["sources/<br/>google_drive · r2 · local_folder"]
     Pipeline --> Agents["agents/<br/>AIWorkflow interface<br/>workflow.py + clients/"]
     Agents --> Prompts["prompts/*.md"]
     Agents --> Usage["usage.py<br/>token audit log"]

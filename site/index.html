@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>instaPostsForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="instaPostsForge posts one photo a day to Instagram from a Google Drive folder. AI agents (Claude, OpenAI or Gemini) pick the photo and write the caption; code checks every word, and every token is audited.">
+<meta name="description" content="instaPostsForge posts one photo a day to Instagram from a Google Drive folder or a Cloudflare R2 bucket. AI agents (Claude, OpenAI or Gemini) pick the photo and write the caption; code checks every word, and every token is audited.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2315110d'/%3E%3Cpath d='M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5' fill='none' stroke='%23F2C14E' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z' fill='%23F2C14E'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,9 +320,9 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
 
 <main id="top">
   <div class="wrap hero">
-    <span class="label">Google Drive · GitHub Actions · AI agents</span>
+    <span class="label">Google Drive or Cloudflare R2 · GitHub Actions · AI agents</span>
     <h1>Built for photographers whose best shots stay <em>stuck in the gallery.</em></h1>
-    <p class="lede">Drop your handpicked photos in a Google Drive folder. Every evening instaPostsForge has its AI agents (Claude, OpenAI or Gemini) choose one, write its caption and hashtags, and post it to Instagram. Plain code checks every word, and every token is accounted for.</p>
+    <p class="lede">Drop your handpicked photos in a Google Drive folder or a Cloudflare R2 bucket. Every evening instaPostsForge has its AI agents (Claude, OpenAI or Gemini) choose one, write its caption and hashtags, and post it to Instagram. Plain code checks every word, and every token is accounted for.</p>
     <div class="actions">
       <a class="btn primary" href="setup.html">Use it yourself</a>
       <a class="btn ghost" href="https://github.com/sritajkumarpatel/instaPostsForge">Read the code</a>
@@ -358,7 +358,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
         <span class="label">Why</span>
         <h2>Good photos don't post themselves.</h2>
         <p>You come back from a walk with forty frames and three keepers. Then the keepers sit in a folder, because posting well every day is its own job: <strong>pick one, don't repeat last week, write something true, choose the hashtags, remember to do it at all.</strong></p>
-        <p>instaPostsForge does that job the way you would at a contact sheet. It looks at every frame in your Drive folder once, circles the one for today, and writes the caption. It runs on GitHub Actions, so no server and no laptop need to stay on.</p>
+        <p>instaPostsForge does that job the way you would at a contact sheet. It looks at every frame in your photo folder once, circles the one for today, and writes the caption. It runs on GitHub Actions, so no server and no laptop need to stay on.</p>
         <p>Prefer your phone? <a href="https://github.com/sritajkumarpatel/postaday-android">Postaday</a> is its Android sibling and runs the same workflow with your own keys.</p>
       </div>
       <figure class="sheet" aria-label="A contact sheet with one frame circled in grease pencil">
@@ -417,8 +417,8 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
             <span class="fname">IMG20261018104837.jpg · taken 18 Oct, 10:48</span>
           </div>
         </div>
-        <h3>Your Drive folder is the library</h3>
-        <p>Put handpicked photos in one link-shared folder. Each is analysed once and remembered by its file ID, so a rename never makes it new again, and a near-identical copy waits 30 days.</p>
+        <h3>Your folder is the library</h3>
+        <p>Put handpicked photos in one link-shared Drive folder, or a private Cloudflare R2 bucket. Each is analysed once and remembered by its file ID, and a near-identical copy waits 30 days.</p>
       </article>
       <article class="feature">
         <div class="window" aria-hidden="true">
@@ -528,7 +528,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
     <div class="wrap principle">
       <div><h3>A workflow, not an agent</h3><p>Prompt chaining with gates and an evaluator-optimizer review loop. The model gets no tools and chooses no steps.</p></div>
       <div><h3>It fails safe</h3><p>If the planner fails, a random eligible photo is used. If the review still finds a real problem, the day is skipped. A broken post never goes out.</p></div>
-      <div><h3>Never twice</h3><p>A photo is recorded only after Instagram returns a media ID, keyed by a hash of its Drive file ID, together with every photo of a set.</p></div>
+      <div><h3>Never twice</h3><p>A photo is recorded only after Instagram returns a media ID, keyed by a hash of its file ID, together with every photo of a set.</p></div>
     </div>
   </section>
 
@@ -573,7 +573,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
     </div>
     <div class="promises">
       <div class="promise"><span class="label">Instagram</span><p><strong>Official API only.</strong> It uses an access token you create and can revoke. It never asks for your Instagram password.</p></div>
-      <div class="promise"><span class="label">Secrets</span><p><strong>Only in GitHub secrets.</strong> Keys, tokens and the Drive folder link are passed only to the step that runs <code>forge</code>, never to installs or third-party actions.</p></div>
+      <div class="promise"><span class="label">Secrets</span><p><strong>Only in GitHub secrets.</strong> Keys, tokens, the Drive folder link and the R2 bucket name are passed only to the step that runs <code>forge</code>, never to installs or third-party actions.</p></div>
       <div class="promise"><span class="label">Photos</span><p><strong>No EXIF, no GPS.</strong> Published JPEGs carry only the colour profile. GPS is compared in memory to group outings and never saved. Photos are recorded by a one-way hash of their file ID.</p></div>
       <div class="promise"><span class="label">Content</span><p><strong>Rules in code.</strong> Explicit photos, screenshots and photos with children are skipped, and addresses and number plates stay out of the text.</p></div>
     </div>
@@ -582,7 +582,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
   <section id="stack" class="wrap" style="padding-top:0">
     <div class="section-head"><span class="label">Built with</span></div>
     <div class="stack">
-      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>OpenAI and Gemini SDKs</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
+      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>OpenAI and Gemini SDKs</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Cloudflare R2 · boto3</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
     </div>
   </section>
 </main>

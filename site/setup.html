@@ -150,10 +150,10 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
         <div class="kit-item"><h3>A GitHub account</h3><p>Free. Your copy must be a <strong style="color:var(--emulsion)">public</strong> repo: Instagram downloads each photo from a public link to it, and Actions minutes are free for public repos.</p></div>
         <div class="kit-item"><h3>An Instagram Professional account</h3><p>Creator or Business, switched in the Instagram app under Account type and tools. Free.</p></div>
         <div class="kit-item"><h3>A Meta developer app</h3><p>At developers.facebook.com, to create the access token. It stays in development mode; no app review.</p></div>
-        <div class="kit-item"><h3>A Google account</h3><p>For the Drive folder of photos and a free Google Cloud API key to read it.</p></div>
+        <div class="kit-item"><h3>A place for your photos</h3><p>A Google Drive folder with a free Google Cloud API key to read it (the default), or a private Cloudflare R2 bucket with a read-only token.</p></div>
         <div class="kit-item"><h3>An AI API key</h3><p>Claude by default, from the Claude Console with about $5 of credit; that lasts a long time. An OpenAI or Gemini key works too.</p></div>
       </div>
-      <div class="kit-foot"><span>Typical cost: <b>under a cent a post</b> on Claude Haiku 5.5, a little more on OpenAI or Gemini</span><span>Instagram API, Drive API, GitHub Actions: <b>free</b></span></div>
+      <div class="kit-foot"><span>Typical cost: <b>under a cent a post</b> on Claude Haiku 5.5, a little more on OpenAI or Gemini</span><span>Instagram API, Drive API or R2, GitHub Actions: <b>free</b></span></div>
     </div>
   </section>
 
@@ -179,10 +179,20 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
         <span class="no">03<small>PHOTOS</small></span>
         <div class="body">
           <h2>Make the photo folder</h2>
+          <p>Pick one place for your photos: <strong>Google Drive</strong> (the default) or a <strong>Cloudflare R2</strong> bucket. Everything in it is fair game, so handpick. Each place keeps its own photos, so switching later is a fresh start.</p>
+          <p><strong>Google Drive</strong></p>
           <ol>
-            <li>In Google Drive, create a folder and put in the photos you'd be happy to post. Everything in it is fair game, so handpick.</li>
+            <li>In Google Drive, create a folder and put in the photos you'd be happy to post.</li>
             <li>Right-click the folder → <strong>Share</strong> → General access: <strong>Anyone with the link</strong>, Viewer → <strong>Copy link</strong>. That link is the secret <code>DRIVE_FOLDER_MAIN</code>.</li>
             <li>In the <a href="https://console.cloud.google.com/">Google Cloud console</a>: create a project → APIs and services → enable <strong>Google Drive API</strong> → Credentials → Create credentials → <strong>API key</strong>, restricted to the Drive API. That is <code>GOOGLE_DRIVE_API_KEY</code>.</li>
+          </ol>
+          <p><strong>Or Cloudflare R2</strong></p>
+          <ol>
+            <li>In the <a href="https://dash.cloudflare.com/">Cloudflare dashboard</a>, open <strong>R2 Object Storage</strong> (it asks for a payment method once; the free tier covers this). <strong>Create bucket</strong>, no public access. Its name is <code>R2_BUCKET_MAIN</code>.</li>
+            <li>Drag your photos onto the bucket page, ideally into a folder such as <code>photos/</code>. For many files, an S3 app like Cyberduck or rclone works too.</li>
+            <li>Copy the <strong>Account ID</strong> from the R2 overview page: <code>R2_ACCOUNT_ID</code>.</li>
+            <li><strong>Manage API tokens → Create API token</strong> with <strong>Object Read only</strong>, for that bucket. Copy the <strong>Access Key ID</strong> and <strong>Secret Access Key</strong> right away (the secret is shown once): <code>R2_ACCESS_KEY_ID</code> and <code>R2_SECRET_ACCESS_KEY</code>.</li>
+            <li>If you used a folder, set <code>source.r2.prefix</code> in <code>config/profiles.yaml</code> to it, for example <code>photos/</code>.</li>
           </ol>
         </div>
       </li>
@@ -220,12 +230,14 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
                 <tr><td><button class="copy" type="button" data-copy="IG_MAIN_ACCESS_TOKEN">IG_MAIN_ACCESS_TOKEN</button></td><td>Instagram token (step 04)</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="IG_MAIN_USER_ID">IG_MAIN_USER_ID</button></td><td>Instagram user ID (step 04)</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="DRIVE_FOLDER_MAIN">DRIVE_FOLDER_MAIN</button></td><td>Drive folder link (step 03)</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="R2_BUCKET_MAIN">R2_BUCKET_MAIN</button></td><td><em>R2 instead of Drive.</em> Bucket name, plus <button class="copy" type="button" data-copy="R2_ACCOUNT_ID">R2_ACCOUNT_ID</button>, <button class="copy" type="button" data-copy="R2_ACCESS_KEY_ID">R2_ACCESS_KEY_ID</button> and <button class="copy" type="button" data-copy="R2_SECRET_ACCESS_KEY">R2_SECRET_ACCESS_KEY</button> (step 03). Then the Drive rows aren't needed.</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="GOOGLE_DRIVE_API_KEY">GOOGLE_DRIVE_API_KEY</button></td><td>Google API key (step 03)</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="GH_SECRETS_TOKEN">GH_SECRETS_TOKEN</button></td><td><em>Optional.</em> A fine-grained GitHub token for this repo only, with <strong>Secrets: Read and write</strong>, so the token renews itself every month.</td></tr>
               </tbody>
             </table>
           </div>
           <p>Using OpenAI or Gemini? Also open the <strong>Variables</strong> tab next to Secrets and add a repository variable <code>AI_PROVIDER</code> set to <code>openai</code> or <code>gemini</code>. Without it, Claude is used. A run whose provider has no key stops straight away and says which secret is missing.</p>
+          <p>Photos in R2? Add a repository variable <code>PHOTO_SOURCE</code> set to <code>r2</code> the same way. Without it, Google Drive is used.</p>
         </div>
       </li>
       <li class="step">
@@ -250,7 +262,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
           <h2>Try it by hand</h2>
           <p><strong>Actions → Daily post → Run workflow</strong>, in these modes, in order:</p>
           <ol>
-            <li><strong>check</strong>: verifies the AI key and model, the Instagram token, the posting quota and the Drive folder. No AI tokens spent.</li>
+            <li><strong>check</strong>: verifies the AI key and model, the Instagram token, the posting quota and the photo folder. No AI tokens spent.</li>
             <li><strong>plan</strong>: shows which photos it would post over the next 7 days, and why.</li>
             <li><strong>preview</strong>: download the <code>preview-main</code> artifact to see the exact image and caption.</li>
             <li><strong>post</strong>: posts once. Check your feed.</li>

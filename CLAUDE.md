@@ -4,7 +4,7 @@ Guidance for Claude (Claude Code or any Claude session) working in this reposito
 
 ## What this project is
 
-instaPostsForge posts once a day to an Instagram account from a Google Drive folder: one photo, or 2 to 5 photos from one outing or place as a multi-photo (carousel) post. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
+instaPostsForge posts once a day to an Instagram account from a Google Drive folder or a Cloudflare R2 bucket: one photo, or 2 to 5 photos from one outing or place as a multi-photo (carousel) post. An AI workflow decides which photo goes out and what it says. Plain code does everything with side effects: fetching, image preparation, hosting, publishing and record-keeping. Keep that split. AI output is always validated by code before it can reach Instagram.
 
 In agentic terms it is a workflow (prompt chaining with gates, light routing by photo category, and an evaluator-optimizer review loop), not an autonomous agent. Don't give the model tools or let it choose steps without a strong reason. See `docs/ARCHITECTURE.md`.
 
@@ -19,7 +19,7 @@ In agentic terms it is a workflow (prompt chaining with gates, light routing by 
 5. **Caption writer** (AI), then 6. **Hashtag strategist** (AI).
 7. **Reviewer** (AI): approves the post, or sends it back with feedback. Caption length is code's job: `trim_caption_text` holds the text to `ai.max_caption_text_chars` (150) before review (the writer gets one shortening pass first, then code drops body sentences), and a reviewer complaint about length alone doesn't block a post. The number of revisions is limited by `ai.max_revisions`, and only the part it faulted is redone (`Review.failed`). The capture time (`taken_at`, from EXIF or the file name) is added to the notes by code, never by the model.
 8. **Publish** (code): stages the JPEG(s) on the `media` branch, posts through the Instagram API (`publish_image`, or `publish_carousel` for a set), then deletes the staged files. A set only holds photos of one shape (`same_shape`, from the `shape` code adds to each analysis), so step 4 treats them all alike and none gets a border. Meta errors are explained by `_ERROR_HINTS` in `publishers/instagram.py`.
-9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the Drive file ID; a set's other photos are listed under `more_photos` and count as posted.
+9. **Record** (code): writes `state/<profile>/posts.json`, keyed by a hash of the source file ID (Drive file ID or R2 object key); a set's other photos are listed under `more_photos` and count as posted.
 
 ## Where the AI is configured
 
@@ -49,7 +49,7 @@ Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it s
 ## Rules that must not be broken
 
 - **Instagram credentials:** never automate Instagram with a username and password, or with unofficial private APIs. Use only the official Instagram API with an access token.
-- **Secrets:** never commit secrets. They live in `.env` locally and in GitHub Actions secrets. The repo is public, so `config/profiles.yaml` only names environment variables. The Drive folder link is a secret too, `DRIVE_FOLDER_<PROFILE>`. The AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) never reach output: `forge check` shows only a provider error's type and status, because SDK messages can echo part of a key.
+- **Secrets:** never commit secrets. They live in `.env` locally and in GitHub Actions secrets. The repo is public, so `config/profiles.yaml` only names environment variables. The Drive folder link is a secret too, `DRIVE_FOLDER_<PROFILE>`, and so is the R2 bucket name, `R2_BUCKET_<PROFILE>`; the R2 token needs only Object Read. The AI keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) never reach output: `forge check` shows only a provider error's type and status, because SDK messages can echo part of a key.
 - **GPS stays private:** `Photo.location` is only compared in memory (`grouping.py`). Never write coordinates to `state/`, logs or the summary.
 - **No repeats:** a photo must never be posted twice, including the other photos of a multi-photo post. Record a post only after Instagram returns a media ID, and key it by the source's file ID, never by file name.
 - **Instagram limits:** at most 5 hashtags, at most 2,200 characters, JPEG only, and an aspect ratio between 4:5 and 1.91:1. These are enforced in `captions/validator.py` and `imaging/processor.py`. Don't loosen them.
@@ -61,14 +61,15 @@ Every AI call is logged to `state/<profile>/usage/<YYYY-MM>.jsonl`, whether it s
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                 # must pass with no keys or network; AI, Drive, GitHub and Instagram are faked
+pytest -q                 # must pass with no keys or network; AI, Drive, R2, GitHub and Instagram are faked
 forge plan -p main        # needs keys in .env; posts nothing
 forge preview -p main     # full workflow into drafts/, posts nothing
 ```
 
 - **Deleted posts:** to make a deleted post's photos eligible again, remove its entry from `state/<profile>/posts.json`; its `more_photos` are freed with it. To start over, run `forge reset -p <profile> --keep-catalog` (or the Start fresh workflow); without `--keep-catalog` it also clears `catalog.json`, which a new copy of the repo should do.
-- **Switches:** `AUTO_POST` must be a repository variable (a job-level `if` can't read secrets); `MULTI_PHOTO` is read from `vars` or `secrets`; `AI_PROVIDER` comes from the Run workflow choice or `vars`, and the Run forge step gets only that provider's key.
+- **Switches:** `AUTO_POST` must be a repository variable (a job-level `if` can't read secrets); `MULTI_PHOTO` is read from `vars` or `secrets`; `AI_PROVIDER` and `PHOTO_SOURCE` come from the Run workflow choice or `vars`, and the Run forge step gets only that provider's key and that source's secrets.
 - **Tests:** add a test for every behaviour change. Tests use the fakes in `tests/fakes.py`, never real APIs.
+- **Photo sources:** `source.type` (`google_drive` or `r2`, plus `local_folder` for local runs), overridden by the `PHOTO_SOURCE` env var in `sources/__init__.py`. Each source keeps its own photos, so switching is a fresh start; don't add cross-source matching.
 - **New parts:** a new photo source, image host or publisher implements the matching base class (`sources/base.py`, `hosting/base.py`, `publishers/base.py`) and is registered in that package's `build_*` function.
 - **New accounts:** new accounts are new profiles in `config/profiles.yaml`, not code changes.
 - **Defaults:** each provider's cheap vision model is its default in `ai.models` (`claude-haiku-5-5`, `gpt-5.6-luna`, `gemini-3.1-flash-lite`), with a price row in `ai.pricing`. Claude stays the default provider. Don't hard-code a model anywhere except as the config default.

@@ -6,7 +6,7 @@
 
 **Built for photographers whose best shots stay stuck in the gallery.**
 
-One photo a day to Instagram, straight from a Google Drive folder, picked and captioned by AI agents (Claude, OpenAI or Gemini), posted by GitHub Actions.
+One photo a day to Instagram, straight from a Google Drive folder or a Cloudflare R2 bucket, picked and captioned by AI agents (Claude, OpenAI or Gemini), posted by GitHub Actions.
 
 **[See the project page →](https://sritajkumarpatel.github.io/instaPostsForge/)** · **[Use it yourself: setup guide →](https://sritajkumarpatel.github.io/instaPostsForge/setup.html)**
 
@@ -26,7 +26,7 @@ One photo a day to Instagram, straight from a Google Drive folder, picked and ca
 
 Most photographers have a drive full of shots worth sharing and no time to share them. Posting well every day is a chore: pick a photo, avoid repeating last week, write something good, choose hashtags, remember to do it at the right time. instaPostsForge does that for you.
 
-Drop your handpicked photos into a Google Drive folder. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude (or OpenAI or Gemini, if you prefer), checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
+Drop your handpicked photos into a Google Drive folder, or a Cloudflare R2 bucket if you prefer. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude (or OpenAI or Gemini, if you prefer), checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
 
 The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-android), which runs the same workflow on Android.
 
@@ -34,13 +34,13 @@ The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-and
 
 | | |
 | --- | --- |
-| 📁 **Your Drive folder** | Put handpicked photos in one Google Drive folder. Each new photo is described once and remembered. |
+| 📁 **Your photo folder** | Put handpicked photos in one Google Drive folder or Cloudflare R2 bucket. Each new photo is described once and remembered. |
 | 🤖 **AI picks and writes** | Five AI agents describe each photo, choose today's, write the caption and hashtags, and review the post. Claude by default; OpenAI or Gemini with one variable. |
 | 🖼️ **Multi-photo posts** | Some days it posts 2 to 5 photos from one outing or place as a carousel, all of one shape. |
 | 🛡️ **Code has the last word** | Every AI answer is checked by plain code against Instagram's limits and your content rules before anything is posted. |
 | 🙏 **Writes with care** | Short captions (at most 150 characters), playbooks per category and mood, and reverent captions for deities and festivals. |
 | ⏰ **Posts on a schedule** | Every day at your time on GitHub Actions, with check, plan and preview modes to look first. |
-| ✅ **Never twice** | Posted photos are recorded by their Drive file ID and a visual fingerprint, and are never posted again. |
+| ✅ **Never twice** | Posted photos are recorded by their file ID and a visual fingerprint, and are never posted again. |
 | 💸 **Know the cost** | Every AI call is logged with its tokens and estimated cost, and each run saves a token audit report. |
 | 🔒 **Safe in a public repo** | Secrets live only in GitHub secrets, GPS is never saved, and published JPEGs carry no EXIF. |
 
@@ -52,7 +52,7 @@ The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-and
 
 ```mermaid
 flowchart LR
-    A[📁 Drive folder] --> B[Analyst<br/>describes new photos]
+    A[📁 Drive folder or R2 bucket] --> B[Analyst<br/>describes new photos]
     B --> C[Planner<br/>picks today's photo or set]
     C --> D{Content rules<br/>in code}
     D -->|passes| E[Caption writer]
@@ -71,14 +71,14 @@ flowchart LR
 | # | Step | Who | What happens |
 | --- | --- | --- | --- |
 | 1 | Fetch results | code | Reads reach, likes, comments, saves and shares for posts from the last 30 days. |
-| 2 | Photo analyst | AI | Looks at each new photo in the Drive folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
+| 2 | Photo analyst | AI | Looks at each new photo in the folder once and notes its subject, setting, mood, colours, style, quality (1 to 10) and themes. The notes are saved in `state/<profile>/catalog.json`. |
 | 3 | Planner | AI | Picks today's photo from the unposted ones, or a set of 2 to 5 when they are stronger together (see [Multi-photo posts](#multi-photo-posts)). It balances strong photos with variety, and leans toward what has performed well. It also chooses the angle for the caption. |
 | 4 | Prepare image | code | Converts the photo to JPEG at its own aspect ratio, 1080 pixels wide (Instagram's feed width), quality 95 with full colour detail and the photo's colour profile. A photo just outside 4:5 to 1.91:1, like a 3:4 phone portrait, loses a thin strip to fit (`image.max_crop`, 10%), taken from where the analyst says the main subject isn't; only one further outside gets a border. |
 | 5 | Caption writer | AI | Writes a short, crisp caption (at most 150 characters of text): a hook, a line in the photo's tone and a closing question, plus a quote when one fits and alt text, in English. A quote's author is kept only when the model is certain of it. A longer draft goes back to the writer once to shorten; code trims whatever is still too long. |
 | 6 | Hashtag strategist | AI | Picks 3 to 5 specific tags (subject, place, niche). It rotates them so the same set isn't reused, and favours tags that brought reach. |
 | 7 | Reviewer | AI | Checks the caption and tags against the photo and Instagram's rules. It can send them back up to twice with feedback, but after the first round only its first concerns and serious problems count, so it can't keep moving the goalposts. Only the part it faulted is redone: tag feedback keeps the caption, caption feedback keeps the tags. Length isn't its call: code has already counted it, so a length complaint alone never stops a post. |
 | 8 | Publish | code | Stages the JPEG (or JPEGs) on this repo's `media` branch, posts through the official Instagram API, then deletes the staged files. |
-| 9 | Record | code | Saves the post under a hash of each photo's Drive file ID in `state/<profile>/posts.json`, so none of its photos is ever picked again. |
+| 9 | Record | code | Saves the post under a hash of each photo's file ID (Drive file ID or R2 object key) in `state/<profile>/posts.json`, so none of its photos is ever picked again. |
 
 Every AI step has a safe fallback. If the planner fails or names a photo that doesn't exist, a random unposted photo is used. If the reviewer still rejects the post after two revisions, nothing is posted that day and the run fails visibly. Hashtags that break a rule (too few, generic, more than 5) are sent back automatically.
 
@@ -95,13 +95,13 @@ Every AI step has a safe fallback. If the planner fails or names a photo that do
   The model gets no tools and chooses no steps. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains why, and which patterns (routing, parallelization, orchestrator-workers) could be added later.
 - **Fail safe.** If the planner fails, a random eligible photo is used. If the reviewer still finds a false claim, a doubtful quote author or a safety problem after its revisions, the day is skipped. A broken post is never published.
 - **Instagram limits in code.** At most 5 hashtags and 2,200 characters, JPEG only, aspect ratio between 4:5 and 1.91:1.
-- **No repeats.** A photo is keyed by a hash of its Drive file ID, and recorded only after Instagram returns a media ID.
+- **No repeats.** A photo is keyed by a hash of its source file ID, and recorded only after Instagram returns a media ID.
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    Drive[("Google Drive folder<br/>your photos")]
+    Drive[("Google Drive folder or Cloudflare R2 bucket<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
     Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
@@ -156,19 +156,40 @@ Claude is the default, but the same five agents, prompts and checks also run on 
 
 Each default is that provider's cheap model that can read photos, set under `ai.models`. Any step's model can be changed under `ai.agents`, as long as it belongs to the chosen provider. Gemini's thinking tops out at `high`, so `xhigh` and `max` act as `high` there. The prompts were tuned on Claude, so run **preview** a few times after switching and compare the drafts. Photos analysed earlier keep their notes, whichever provider wrote them.
 
+### Choosing where photos come from
+
+Google Drive is the default. Your photos can live in a Cloudflare R2 bucket instead, which is what the [Postaday](https://github.com/sritajkumarpatel/postaday-android) app uses. Pick one with the repository variable `PHOTO_SOURCE` (or `source.type` in `config/profiles.yaml`) and add that source's secrets. Each source has its own photos, so switching is a fresh start: put the photos you want posted in the new place.
+
+| `PHOTO_SOURCE` | Secrets it needs | Where the photos go |
+| --- | --- | --- |
+| `google_drive` (or unset) | `DRIVE_FOLDER_MAIN`, `GOOGLE_DRIVE_API_KEY` | A Drive folder shared as "Anyone with the link" |
+| `r2` | `R2_BUCKET_MAIN`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | A private R2 bucket, optionally in a folder set by `source.r2.prefix` |
+
+#### Photos in Cloudflare R2
+
+1. In the [Cloudflare dashboard](https://dash.cloudflare.com/), open **R2 Object Storage**. R2 asks for a payment method once, even on the free tier, which covers this easily.
+2. **Create bucket**: any name, automatic location, no public access. That name is `R2_BUCKET_MAIN`.
+3. Upload your photos by dragging them onto the bucket page, ideally into a folder such as `photos/`. For many files, any S3 app works, such as Cyberduck or rclone.
+4. Copy the **Account ID** from the R2 overview page. That is `R2_ACCOUNT_ID`.
+5. **Manage API tokens → Create API token**, permission **Object Read only**, applied to that bucket only. Copy the **Access Key ID** and **Secret Access Key** straight away, because the secret is shown once. These are `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`.
+6. Add the four secrets, set the repository variable `PHOTO_SOURCE` to `r2`, and if you used a folder, set `source.r2.prefix` in `config/profiles.yaml` (for example `photos/`).
+7. Run the workflow in **check** mode. It reports the source and how many photos it found.
+
+Sharing the bucket with Postaday is fine: keep these photos under their own folder, so the app's briefly staged files are never picked up. R2 lists no GPS, so multi-photo sets from R2 are grouped by capture time only.
+
 ### Tools and tech stack
 
 | Area | What |
 | --- | --- |
 | Language | Python 3.10+ (3.12 on GitHub Actions) |
 | AI | Claude through the official [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python) by default (Haiku 5.5; Sonnet, Opus and Fable selectable per agent), or OpenAI ([openai](https://github.com/openai/openai-python)) or Gemini ([google-genai](https://github.com/googleapis/python-genai)). Structured output, checked against Pydantic schemas whatever the provider |
-| Photos | Google Drive API (link-shared folder and an API key), or a local folder |
+| Photos | Google Drive API (link-shared folder and an API key) by default, or Cloudflare R2 through its S3 API with [boto3](https://github.com/boto/boto3) (private bucket, read-only token), or a local folder |
 | Imaging | Pillow: JPEG at 1080 wide, quality 95, 4:4:4 chroma, ICC profile kept, EXIF removed |
 | Hosting | This repo's `media` branch, only while Instagram fetches the photo |
 | Publishing | Instagram API with Instagram Login (official, token based) |
 | Scheduling and CI | GitHub Actions: daily post, monthly token refresh, tests; actions pinned to commit SHAs |
 | Memory | JSON files in `state/<profile>/`, committed after every run |
-| Tests | pytest with fakes for the AI providers, Drive, GitHub and Instagram; no test calls a real API |
+| Tests | pytest with fakes for the AI providers, Drive, R2, GitHub and Instagram; no test calls a real API |
 
 ---
 
@@ -192,8 +213,11 @@ Add these under the repo's **Settings → Secrets and variables → Actions → 
 | `GEMINI_API_KEY` (only with `AI_PROVIDER=gemini`) | [Google AI Studio](https://aistudio.google.com/apikey) → Create API key. Set up billing for the paid tier. |
 | `IG_MAIN_ACCESS_TOKEN` | [developers.facebook.com](https://developers.facebook.com/) → your app → Instagram → API setup with Instagram login → Generate token next to your account, with `instagram_business_content_publish` and `instagram_business_manage_insights`. Valid for about 60 days. |
 | `IG_MAIN_USER_ID` | The numeric ID shown next to your account on the same API setup page |
-| `DRIVE_FOLDER_MAIN` | Google Drive → right-click the folder → Share → General access: "Anyone with the link", Viewer → Copy link |
-| `GOOGLE_DRIVE_API_KEY` | [Google Cloud console](https://console.cloud.google.com/) → new project → APIs and services → enable Google Drive API → Credentials → Create credentials → API key → restrict it to the Drive API |
+| `DRIVE_FOLDER_MAIN` (Google Drive, the default) | Google Drive → right-click the folder → Share → General access: "Anyone with the link", Viewer → Copy link |
+| `GOOGLE_DRIVE_API_KEY` (Google Drive) | [Google Cloud console](https://console.cloud.google.com/) → new project → APIs and services → enable Google Drive API → Credentials → Create credentials → API key → restrict it to the Drive API |
+| `R2_BUCKET_MAIN` (only with `PHOTO_SOURCE=r2`) | The name of your R2 bucket. See [Photos in Cloudflare R2](#photos-in-cloudflare-r2). |
+| `R2_ACCOUNT_ID` (R2) | Cloudflare dashboard → R2 Object Storage → the Account ID on the overview page |
+| `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (R2) | R2 → Manage API tokens → Create API token with **Object Read only**, for that bucket. The secret is shown once. |
 | `GH_SECRETS_TOKEN` (optional) | GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Only this repository, permission **Secrets: Read and write**. It lets the monthly job save the refreshed Instagram token. |
 
 GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under the **Variables** tab (next to Secrets), as **repository variables**, you can also set:
@@ -202,6 +226,7 @@ GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under the *
 | --- | --- |
 | `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. It must be a **variable**: the check that lets the schedule run happens before any step, and GitHub doesn't let it read secrets, so an `AUTO_POST` secret is ignored. |
 | `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
+| `PHOTO_SOURCE` | `google_drive` or `r2`. Unset, `source.type` in the config decides (`google_drive`). A manual run can override it with the **source** choice on Run workflow. Each source has its own photos, so switching is a fresh start. |
 | `AI_PROVIDER` | `claude`, `openai` or `gemini`. Unset, `ai.provider` in the config decides (`claude`). A manual run can override it with the **provider** choice on Run workflow, and the run name shows which was used. |
 | `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). Set it under the **Variables** tab, Repository variables (a secret of the same name works too; an Environment variable doesn't). Each run's log says which it used, for example "Multi-photo posts are off (MULTI_PHOTO=false)". |
 
@@ -214,7 +239,7 @@ Before the first post, do two things:
 1. Under Settings → Actions → General, allow actions and set Workflow permissions to **Read and write**, so runs can commit `state/` and use the `media` branch.
 2. Add the secrets above.
 3. Go to Actions → Daily post → Run workflow and run these modes in order:
-    1. **check**: verifies the AI key and model, the Instagram token, the posting quota and the Drive folder, without spending any AI tokens.
+    1. **check**: verifies the AI key and model, the Instagram token, the posting quota and the photo folder (Drive or R2), without spending any AI tokens.
     2. **plan**: shows the next 7 days of photos and why each was picked.
     3. **preview**: download the `preview-main` artifact to see the exact image and caption.
     4. **post**: posts once. Check your feed.
@@ -239,7 +264,7 @@ cp .env.example .env             # then fill it in
 forge profiles                   # list profiles
 forge plan -p main --days 7      # what the planner would post this week, with reasons
 forge preview -p main            # full workflow, saved to drafts/, nothing posted
-forge check -p main              # verify the AI key, the token, quota and Drive folder
+forge check -p main              # verify the AI key, the token, quota and photo folder
 forge post -p main               # post today's photo (needs GITHUB_TOKEN in .env)
 forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
@@ -307,14 +332,14 @@ On some days the post is 2 to 5 photos of the same shape that go together instea
 - **Places:** photos from different days taken within 2 km of each other, or with the same place name from the analyst.
 - **Rules in code:** every photo must pass the content rules on its own; near-identical frames never share a set; the extra photos must come from the cover's set; at most `max_photos` (5) photos and `max_per_7_days` (3) multi-photo posts in any 7 posts; and the main subject of every photo counts for the variety rules.
 - **Shapes:** through the API, Instagram shows every photo in the first photo's shape. So a set only holds photos with the same width:height (to within 1%), and every photo gets the same treatment (a 3:4 set is trimmed to 4:5 alike), so none gets a border. A portrait and a landscape shot from the same outing are never posted together.
-- **Privacy:** GPS is read from Drive's photo metadata during the run, only compared in memory, and never saved: the repo is public.
+- **Privacy:** GPS is read from Drive's photo metadata during the run, only compared in memory, and never saved: the repo is public. R2 doesn't provide GPS, so photos from R2 are grouped by capture time only.
 - **Switch:** set `MULTI_PHOTO` to `false` (a repository variable or secret; any spelling, such as `False`, works) to post single photos only, with no commit. The run log says which setting it used. Without the variable, `selection.multi_photo.enabled` in `config/profiles.yaml` decides. `forge check` shows how many photos have a capture time and GPS.
 
 A multi-photo post costs a little more, because the caption writer and reviewer look at every photo in it.
 
 ### Never posting a photo twice
 
-Posted photos are tracked by their Drive file ID in `state/<profile>/posts.json`, so renaming a file doesn't make it eligible again. A photo is recorded only after Instagram confirms the post, and the workflow commits `state/` back to the repo after every run, so the next run (on any machine) knows what was posted. A copy of a recently posted photo saved under a new file is caught too: each photo gets a visual fingerprint, and a near-identical one is held back for 30 days. When every photo has been posted, the run stops with "add more photos". You can set `selection.when_exhausted: recycle` to start over instead. If you delete a post from Instagram and want its photos back in the pool, see [Troubleshooting](#troubleshooting).
+Posted photos are tracked by their file ID in `state/<profile>/posts.json`: the Drive file ID, which survives renaming, or the R2 object key. A photo is recorded only after Instagram confirms the post, and the workflow commits `state/` back to the repo after every run, so the next run (on any machine) knows what was posted. A copy of a recently posted photo saved under a new file is caught too: each photo gets a visual fingerprint, and a near-identical one is held back for 30 days. When every photo has been posted, the run stops with "add more photos". You can set `selection.when_exhausted: recycle` to start over instead. If you delete a post from Instagram and want its photos back in the pool, see [Troubleshooting](#troubleshooting).
 
 ### Token usage audit
 
@@ -337,11 +362,11 @@ Costs are estimates from the per-model prices in `ai.pricing`. Update those if a
 
 ### Cost
 
-With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. OpenAI's and Gemini's defaults cost two to three times as much per token, still cents a month. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, and GitHub Actions for a public repo.
+With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. OpenAI's and Gemini's defaults cost two to three times as much per token, still cents a month. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, R2 within its free tier, and GitHub Actions for a public repo.
 
-### Adding another account or Drive folder
+### Adding another account or photo folder
 
-Copy the `main` block in `config/profiles.yaml` under a new name. Point it at new variable names, for example `IG_TRAVEL_ACCESS_TOKEN`, `IG_TRAVEL_USER_ID` and `DRIVE_FOLDER_TRAVEL`. Add them to `.env`, to the repository secrets, and to the commented lines in both workflow files. Add the profile to the `PROFILES` variable, for example `["main","travel"]`. Run it locally with `forge post -p travel`.
+Copy the `main` block in `config/profiles.yaml` under a new name. Point it at new variable names, for example `IG_TRAVEL_ACCESS_TOKEN`, `IG_TRAVEL_USER_ID` and `DRIVE_FOLDER_TRAVEL` (or `R2_BUCKET_TRAVEL`; profiles can share one bucket with a different `source.r2.prefix` each). Add them to `.env`, to the repository secrets, and to the commented lines in both workflow files. Add the profile to the `PROFILES` variable, for example `["main","travel"]`. Run it locally with `forge post -p travel`.
 
 Any `defaults` setting can be overridden per profile, for example `ai.account`, `ai.quote`, `ai.playbooks_dir`, `ai.instructions_file` or `selection.strategy`, so a food account and a travel account can follow different rules from the same repo.
 
@@ -350,8 +375,8 @@ Any `defaults` setting can be overridden per profile, for example `ai.account`, 
 ## Privacy and security
 
 The repo is public, so it is built to hold nothing private:
-- Keys, tokens and the Drive folder link live only in `.env` (git-ignored) and in GitHub secrets.
-- `state/` keys photos by a one-way hash of their Drive file ID, because a raw ID is enough to download that photo from a link-shared folder. Staged images are named by the same hash.
+- Keys, tokens, the Drive folder link and the R2 bucket name live only in `.env` (git-ignored) and in GitHub secrets. The R2 bucket stays private and the token can only read it.
+- `state/` keys photos by a one-way hash of their file ID, because a raw ID is enough to download that photo from a link-shared folder. Staged images are named by the same hash.
 - In the workflows, secrets are passed only to the step that runs `forge`, never to `pip install` or third-party actions. Actions are pinned to commit SHAs, and Dependabot proposes updates weekly.
 - Network errors from the Instagram API never include the request URL, which carries the access token.
 - Staged JPEGs are re-encoded without EXIF, so no GPS location or camera data is published. Only the colour profile is kept, so colours look as shot.
@@ -390,6 +415,8 @@ After a new token, run the workflow in **check** mode before posting.
 
 **"The AI provider is openai, but OPENAI_API_KEY is empty".** `AI_PROVIDER` (or the provider chosen on Run workflow) names a provider whose key isn't saved. Add that secret, or change `AI_PROVIDER`. A message like "ai.agents.caption_writer.model is claude-sonnet-5-5, a Claude (Anthropic) model, but the AI provider is openai" means that step's model belongs to another provider: remove it or change it.
 
+**"The photo source is r2, but R2_BUCKET_MAIN is empty"** or **"Cloudflare R2 refused the request"**. `PHOTO_SOURCE` is `r2` but a secret is missing, or the token can't read the bucket. Check the four R2 secrets, that the token has Object Read for that bucket, and the bucket name. "No photos" with R2 usually means `source.r2.prefix` doesn't match the folder the photos are in.
+
 **Two posts on one day.** Scheduled runs post once a day, but every manual run in **post** mode posts again. Use **check**, **plan** or **preview** to look without posting.
 
 ---
@@ -413,7 +440,7 @@ src/instapostsforge/
   agents/clients/           one small client per AI provider (Claude, OpenAI, Gemini)
   prompts/                  one prompt file per agent
   captions/                 Instagram's caption and hashtag rules
-  sources/                  where photos come from (google_drive, local_folder)
+  sources/                  where photos come from (google_drive, r2, local_folder)
   imaging/                  JPEG conversion and aspect-ratio handling
   hosting/                  temporary public link for Instagram (GitHub media branch)
   publishers/               Instagram API: publish, insights, token refresh

@@ -1,10 +1,12 @@
 """Each provider's client turns one neutral request into that SDK's call, with fake SDK objects."""
 
+import base64
 from types import SimpleNamespace
 
 from instapostsforge.agents.clients import Image, Text
 from instapostsforge.agents.clients.anthropic import AnthropicClient
 from instapostsforge.agents.clients.gemini import GeminiClient
+from instapostsforge.agents.clients.ollama import OllamaClient, OllamaError
 from instapostsforge.agents.clients.openai import OpenAIClient
 from instapostsforge.agents.schemas import HashtagSet
 
@@ -174,3 +176,60 @@ def test_every_schema_converts_for_openai_strict_mode_and_gemini():
         strict = to_strict_json_schema(schema)
         assert strict["additionalProperties"] is False and set(strict["required"]) == set(strict["properties"])
         json.dumps(schema.model_json_schema())
+
+
+# --- Ollama Cloud ---
+
+
+class FakeSession:
+    def __init__(self, payload, status=200):
+        self.payload, self.status, self.calls, self.headers = payload, status, [], {}
+
+    def post(self, url, json, timeout):
+        self.calls.append((url, json))
+        return SimpleNamespace(status_code=self.status, json=lambda: self.payload, text="secret body")
+
+
+def ollama_ask(payload, status=200):
+    session = FakeSession(payload, status)
+    client = OllamaClient(session, api_key="ok-key")
+    reply = client.ask(
+        model="gemma4:31b", effort="medium", max_tokens=4000, system="sys",
+        parts=[Text("Photo 1:"), Image(b"\xff\xd8one"), Text("Photo 2:"), Image(b"\xff\xd8two"), Text("Notes")], schema=HashtagSet,
+    )
+    return reply, session
+
+
+def test_ollama_request_and_usage():
+    reply, session = ollama_ask({"message": {"content": '{"hashtags": []}'}, "done_reason": "stop", "prompt_eval_count": 900, "eval_count": 120})
+    url, body = session.calls[0]
+    assert url == "https://ollama.com/api/chat" and session.headers["Authorization"] == "Bearer ok-key"
+    assert body["model"] == "gemma4:31b" and body["stream"] is False and body["options"] == {"num_predict": 4000}
+    assert body["format"] == HashtagSet.model_json_schema() and "think" not in body
+    system, user = body["messages"]
+    assert system == {"role": "system", "content": "sys"}
+    assert user["content"] == "Photo 1:\n\nPhoto 2:\n\nNotes"
+    assert [base64.b64decode(i) for i in user["images"]] == [b"\xff\xd8one", b"\xff\xd8two"]  # in order
+    assert reply.stop == "done" and reply.parsed == HashtagSet(hashtags=[])
+    assert reply.tokens == {"input_tokens": 900, "output_tokens": 120}
+
+
+def test_ollama_truncation_and_bad_json():
+    assert ollama_ask({"message": {"content": '{"hasht'}, "done_reason": "length"})[0].stop == "too_long"
+    reply = ollama_ask({"message": {"content": "not json"}, "done_reason": "stop"})[0]
+    assert reply.stop == "done" and reply.parsed is None
+
+
+def test_ollama_error_hides_the_body():
+    import pytest
+
+    with pytest.raises(OllamaError) as err:
+        ollama_ask({}, status=401)
+    assert err.value.status_code == 401 and "secret body" not in str(err.value)
+
+
+def test_ollama_check_is_a_one_token_call():
+    session = FakeSession({"message": {"content": "o"}})
+    OllamaClient(session, api_key="k").check("gemma4:31b")
+    url, body = session.calls[0]
+    assert url.endswith("/api/chat") and body["model"] == "gemma4:31b" and body["options"] == {"num_predict": 1}

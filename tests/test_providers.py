@@ -8,12 +8,12 @@ from instapostsforge.agents import build_workflow
 from instapostsforge.agents.providers import PROVIDERS, model_provider, provider_name, resolve
 from instapostsforge.config import ConfigError, load_profile
 
-MODELS = {"claude": "claude-haiku-5-5", "openai": "gpt-5.6-luna", "gemini": "gemini-3.1-flash-lite"}
+MODELS = {"claude": "claude-haiku-5-5", "openai": "gpt-5.6-luna", "gemini": "gemini-3.1-flash-lite", "ollama": "gemma4:31b"}
 
 
 @pytest.fixture(autouse=True)
 def no_ai_env(monkeypatch):
-    for name in ("AI_PROVIDER", *(p.key_env for p in PROVIDERS.values())):
+    for name in ("AI_PROVIDER", "AI_MODEL", *(p.key_env for p in PROVIDERS.values())):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -26,14 +26,15 @@ def test_config_decides_and_ai_provider_overrides(monkeypatch):
 
 def test_unknown_provider_is_a_clear_error(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "mistral")
-    with pytest.raises(ConfigError, match="Unknown AI provider 'mistral'. Use one of: claude, openai, gemini"):
+    with pytest.raises(ConfigError, match="Unknown AI provider 'mistral'. Use one of: claude, openai, gemini, ollama"):
         provider_name({})
 
 
 def test_each_provider_gets_its_own_model(monkeypatch):
     for name, model in MODELS.items():
         monkeypatch.setenv("AI_PROVIDER", name)
-        assert resolve({"models": MODELS})["model"] == model and model_provider(model) == name
+        assert resolve({"models": MODELS})["model"] == model
+        assert model_provider(model) == (None if name == "ollama" else name)
 
 
 def test_a_model_from_another_provider_is_refused(monkeypatch):
@@ -98,3 +99,25 @@ def test_forge_check_reports_the_provider_without_showing_the_error(monkeypatch)
     monkeypatch.setattr(clients, "build_client", lambda provider: Offline(False))
     with pytest.raises(ConfigError, match="Could not reach OpenAI"):
         cli.check_ai({"models": MODELS})
+
+
+def test_ai_model_replaces_the_default_for_every_step(monkeypatch):
+    settings = {"models": MODELS, "agents": {"caption_writer": {"model": "claude-opus-5-5", "effort": "medium"}}}
+    monkeypatch.setenv("AI_MODEL", " claude-sonnet-5-5 ")
+    resolved = resolve(settings)
+    assert resolved["model"] == "claude-sonnet-5-5"
+    assert resolved["agents"]["caption_writer"] == {"effort": "medium"}  # its own model gives way, its effort stays
+    assert settings["agents"]["caption_writer"]["model"] == "claude-opus-5-5"  # the config itself is untouched
+
+
+def test_ai_model_from_another_provider_is_refused(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "gemini")
+    monkeypatch.setenv("AI_MODEL", "gpt-5.6-luna")
+    with pytest.raises(ConfigError, match="AI_MODEL is gpt-5.6-luna, a OpenAI model, but the AI provider is gemini"):
+        resolve({"models": MODELS})
+
+
+def test_ollama_takes_any_model_name(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("AI_MODEL", "gpt-oss:120b")  # an open model named by its maker, hosted on Ollama
+    assert resolve({"models": MODELS})["model"] == "gpt-oss:120b"

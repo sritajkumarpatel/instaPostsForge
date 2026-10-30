@@ -17,8 +17,11 @@ on:
       provider:
         description: AI provider for this run (variable = the AI_PROVIDER repository variable, or config if unset)
         type: choice
-        options: [variable, claude, openai, gemini]
+        options: [variable, claude, openai, gemini, ollama]
         default: variable
+      model:
+        description: AI model for this run, e.g. claude-sonnet-5-5 or gemma4:31b (empty = the AI_MODEL repository variable, else the provider's default)
+        default: ""
       source:
         description: Where the photos come from for this run (variable = the PHOTO_SOURCE repository variable, or config if unset)
         type: choice
@@ -53,6 +56,9 @@ jobs:
       # claude | openai | gemini. A manual run's choice wins, then the repository variable AI_PROVIDER;
       # empty means ai.provider in config/profiles.yaml decides. forge stops early if that provider's key is missing.
       AI_PROVIDER: ${{ (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER || '' }}
+      # The model for every AI step: the manual run's model box, then the repository variable AI_MODEL;
+      # empty means the provider's default in ai.models (config/profiles.yaml).
+      AI_MODEL: ${{ inputs.model || vars.AI_MODEL || '' }}
       # google_drive | r2. Same order: the manual choice, then the repository variable PHOTO_SOURCE, then
       # source.type in config. Each source keeps its own photos, so switching is a fresh start.
       PHOTO_SOURCE: ${{ (inputs.source != 'variable' && inputs.source) || vars.PHOTO_SOURCE || '' }}
@@ -74,6 +80,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'claude') && secrets.ANTHROPIC_API_KEY || '' }}
           OPENAI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'openai') && secrets.OPENAI_API_KEY || '' }}
           GEMINI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'gemini') && secrets.GEMINI_API_KEY || '' }}
+          OLLAMA_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'ollama') && secrets.OLLAMA_API_KEY || '' }}
           # Only the chosen photo source's secrets are handed over (both sets when config decides).
           GOOGLE_DRIVE_API_KEY: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'google_drive') && secrets.GOOGLE_DRIVE_API_KEY || '' }}
           R2_ACCOUNT_ID: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'r2') && secrets.R2_ACCOUNT_ID || '' }}

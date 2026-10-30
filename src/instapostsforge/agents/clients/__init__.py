@@ -21,6 +21,10 @@ def build_client(provider: str) -> ModelClient:
         from .gemini import GeminiClient
 
         return GeminiClient(api_key=key)
+    if provider == "ollama":
+        from .ollama import OllamaClient
+
+        return OllamaClient(api_key=key)
     from ...config import ConfigError
 
     raise ConfigError(f"Unknown AI provider '{provider}'.")

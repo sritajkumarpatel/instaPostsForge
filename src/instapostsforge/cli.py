@@ -157,7 +157,7 @@ def cmd_check(args) -> int:
 
 
 def check_ai(settings: dict) -> str:
-    """Confirms the AI provider's key works and its models exist, without spending tokens."""
+    """Confirms the AI provider's key works and its models exist (on Ollama Cloud, with a one-token call)."""
     from .agents.clients import build_client
     from .agents.providers import PROVIDERS, resolve
 

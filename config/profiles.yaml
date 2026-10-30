@@ -7,20 +7,24 @@
 
 defaults:
   ai:
-    # Which AI runs the five steps: claude | openai | gemini. The AI_PROVIDER environment variable
-    # (a repository variable in GitHub Actions) overrides this, so you can switch without a commit.
-    # Each provider needs its own key: ANTHROPIC_API_KEY, OPENAI_API_KEY or GEMINI_API_KEY.
+    # Which AI runs the five steps: claude | openai | gemini | ollama (Ollama Cloud). The AI_PROVIDER
+    # environment variable (a repository variable in GitHub Actions) overrides this, so you can switch
+    # without a commit. Each provider needs its own key: ANTHROPIC_API_KEY, OPENAI_API_KEY,
+    # GEMINI_API_KEY or OLLAMA_API_KEY.
     provider: claude
-    # The model for each provider, used by every step unless "agents" below says otherwise. These are
-    # each provider's cheap model that can read photos; Haiku is about a twentieth of Sonnet's price.
+    # The default model for each provider, used by every step unless "agents" below says otherwise.
+    # The AI_MODEL environment variable (a repository variable, or the model box on Run workflow)
+    # replaces it for every step. These are each provider's cheap model that can read photos.
     # For richer captions on Claude, set caption_writer's model to claude-sonnet-5-5 or claude-opus-5-5.
     models:
       claude: claude-haiku-5-5
       openai: gpt-5.6-luna
       gemini: gemini-3.1-flash-lite
+      ollama: gemma4:31b          # Google's open Gemma 4; reads photos. Free within Ollama Cloud's plan limits.
     # Default effort and output limit for every AI step. Each step can override them (and its model,
     # which must belong to the provider) under "agents" below. Effort: low | medium | high | xhigh | max
-    # (more effort means more thinking, better judgement and more tokens; Gemini tops out at high).
+    # (more effort means more thinking, better judgement and more tokens; Gemini tops out at high,
+    # and Ollama models ignore it).
     effort: low
     max_tokens: 8000
     agents:
@@ -56,6 +60,7 @@ defaults:
       claude-fable-5-1:      { input: 10.00, output: 50.00 }
       gpt-5.6-luna:          { input: 0.20,  output: 1.20, cache_read: 0.02,  cache_write: 0 }
       gemini-3.1-flash-lite: { input: 0.25,  output: 1.50, cache_read: 0.025, cache_write: 0 }
+      gemma4:31b:            { input: 0,     output: 0 }   # Ollama Cloud bills a plan, not tokens
     language: English
     quote: when_fitting       # always | when_fitting | never
     hashtags:

@@ -52,7 +52,7 @@ def test_shipped_config_loads():
     assert profile.ai["hashtags"]["max"] == 5
     assert profile.hosting["type"] == "github"
     assert set(profile.ai["agents"]) == {"analyst", "planner", "caption_writer", "hashtags", "reviewer"}
-    assert set(profile.ai["models"]) == {"claude", "openai", "gemini"}
+    assert set(profile.ai["models"]) == {"claude", "openai", "gemini", "ollama"}
     assert all(model in profile.ai["pricing"] for model in profile.ai["models"].values())
 
 

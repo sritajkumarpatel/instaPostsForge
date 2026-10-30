@@ -1,7 +1,8 @@
 """Which AI provider a run uses, its API key and its model.
 
 ai.provider in config/profiles.yaml picks the provider; the AI_PROVIDER environment variable (a
-repository variable in GitHub Actions) overrides it. ai.models names one model per provider.
+repository variable in GitHub Actions) overrides it. ai.models names each provider's default model;
+the AI_MODEL environment variable replaces it for every step.
 """
 
 from __future__ import annotations
@@ -24,6 +25,8 @@ PROVIDERS = {
     "claude": Provider("claude", "Claude (Anthropic)", "ANTHROPIC_API_KEY", ("claude-",)),
     "openai": Provider("openai", "OpenAI", "OPENAI_API_KEY", ("gpt-", "chatgpt-", "o1", "o3", "o4", "ft:gpt-")),
     "gemini": Provider("gemini", "Gemini (Google)", "GEMINI_API_KEY", ("gemini-",)),
+    # Ollama Cloud hosts open models under their makers' names (gemma4, gpt-oss...), so any name goes.
+    "ollama": Provider("ollama", "Ollama Cloud", "OLLAMA_API_KEY", ()),
 }
 
 
@@ -43,18 +46,32 @@ def model_provider(model: str) -> str | None:
     return None
 
 
+def env_model() -> str:
+    return os.environ.get("AI_MODEL", "").strip().strip("\"'").strip()
+
+
 def resolve(settings: dict) -> dict:
-    """The ai settings with provider and model filled in for this run, after checking they fit together."""
+    """The ai settings with provider and model filled in for this run, after checking they fit together.
+
+    The model is AI_MODEL if set (for every step), else ai.model, else the provider's default in ai.models.
+    """
     name = provider_name(settings)
-    model = settings.get("model") or (settings.get("models") or {}).get(name)
+    agents = {agent: dict(own or {}) for agent, own in (settings.get("agents") or {}).items()}
+    if chosen := env_model():
+        model, where = chosen, "AI_MODEL"
+        for own in agents.values():
+            own.pop("model", None)  # AI_MODEL is for every step
+    elif settings.get("model"):
+        model, where = settings["model"], "ai.model"
+    else:
+        model, where = (settings.get("models") or {}).get(name), f"ai.models.{name}"
     if not model:
-        raise ConfigError(f"No model set for {PROVIDERS[name].label}. Add one under ai.models.{name} in config/profiles.yaml.")
-    resolved = {**settings, "provider": name, "model": model}
-    used = [("ai.model" if settings.get("model") else f"ai.models.{name}", model)]
-    used += [(f"ai.agents.{agent}.model", own["model"]) for agent, own in (settings.get("agents") or {}).items() if (own or {}).get("model")]
+        raise ConfigError(f"No model set for {PROVIDERS[name].label}. Add one under ai.models.{name} in config/profiles.yaml, or set AI_MODEL.")
+    resolved = {**settings, "provider": name, "model": model, "agents": agents}
+    used = [(where, model)] + [(f"ai.agents.{agent}.model", own["model"]) for agent, own in agents.items() if own.get("model")]
     for where, m in used:
         other = model_provider(m)
-        if other and other != name:
+        if PROVIDERS[name].model_prefixes and other and other != name:
             raise ConfigError(
                 f"{where} is {m}, a {PROVIDERS[other].label} model, but the AI provider is {name}. "
                 f"Change or remove it, or set AI_PROVIDER to {other}."

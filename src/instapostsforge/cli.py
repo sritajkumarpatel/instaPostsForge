@@ -125,7 +125,7 @@ def cmd_reset(args) -> int:
 
 def cmd_check(args) -> int:
     from .publishers import InstagramPublisher
-    from .sources import build_source
+    from .sources import build_source, source_type
     from .state import ProfileState
 
     profile = load_profile(args.profile, args.config)
@@ -134,8 +134,23 @@ def cmd_check(args) -> int:
     account = publisher.account()
     print(f"Instagram account: @{account.get('username')} ({account.get('account_type')})")
     print(f"Publishing quota (last 24h): {publisher.publishing_quota()}")
-    photos = build_source(profile.source).list_photos()
+    kind = source_type(profile.source)
+    try:
+        photos = build_source(profile.source).list_photos()
+    except ConfigError:
+        raise
+    except Exception as err:
+        if kind != "r2":
+            raise
+        # boto3's message can name the bucket, so only the error type and S3 code are shown
+        code = (getattr(err, "response", None) or {}).get("Error", {}).get("Code", "")
+        raise ConfigError(
+            f"Cloudflare R2 refused the request: {type(err).__name__} {code}".rstrip()
+            + ". Check R2_ACCOUNT_ID, the access keys, that the token can read the bucket, and the bucket name."
+        ) from None
     state = ProfileState(profile.name)
+    label = {"google_drive": "Google Drive", "r2": "Cloudflare R2", "local_folder": "local folder"}[kind]
+    print(f"Photo source: {label}")
     print(f"Photos in source: {len(photos)}, not yet posted: {len([p for p in photos if not state.is_posted(p.id)])}")
     print(metadata_report(photos))
     return 0

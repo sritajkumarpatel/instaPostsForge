@@ -97,6 +97,14 @@ defaults:
     jpeg_quality: 95          # saved with full colour detail (4:4:4) and the photo's colour profile
     max_crop: 0.1             # a 3:4 portrait loses a thin strip (6%), placed away from the main subject, to reach 4:5 instead of getting side borders
     pad_color: auto           # border colour, only for photos that would lose more than max_crop: auto or a hex like "#ffffff"
+  # Where photos come from: google_drive or r2, per profile below. The PHOTO_SOURCE environment
+  # variable (a repository variable in GitHub Actions) overrides source.type. Each source keeps its
+  # own photos, so switching is a fresh start. The R2 account and keys can be shared by profiles.
+  source:
+    r2:
+      account_id_env: R2_ACCOUNT_ID
+      access_key_id_env: R2_ACCESS_KEY_ID          # an R2 API token with Object Read only
+      secret_access_key_env: R2_SECRET_ACCESS_KEY
   hosting:
     type: github              # Instagram can't read Drive links; the photo is staged here briefly
     branch: media
@@ -112,11 +120,16 @@ profiles:
       access_token_env: IG_MAIN_ACCESS_TOKEN
       user_id_env: IG_MAIN_USER_ID
     source:
-      type: google_drive
+      type: google_drive                  # google_drive | r2 (PHOTO_SOURCE overrides it)
+      # Google Drive
       folder_url_env: DRIVE_FOLDER_MAIN   # the folder's share link lives in this secret
       auth: api_key                       # api_key | service_account
       api_key_env: GOOGLE_DRIVE_API_KEY
       service_account_file_env: GOOGLE_SERVICE_ACCOUNT_FILE
+      # Cloudflare R2
+      r2:
+        bucket_env: R2_BUCKET_MAIN        # the bucket name lives in this secret
+        prefix: ""                        # folder inside the bucket, e.g. photos/ (empty: the whole bucket)
     ai:
       # ✏️ YOURS TO EDIT. This describes the original author's account (a Bengaluru mobile
       # photographer). If you copied this repo, replace every line with your own account:

@@ -1,5 +1,5 @@
 name: Daily post
-run-name: "Daily post: ${{ inputs.mode || 'post' }}${{ inputs.profile && format(' ({0})', inputs.profile) || '' }}${{ ((inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) && format(' · {0}', (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) || '' }}"
+run-name: "Daily post: ${{ inputs.mode || 'post' }}${{ inputs.profile && format(' ({0})', inputs.profile) || '' }}${{ ((inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) && format(' · {0}', (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER) || '' }}${{ ((inputs.source != 'variable' && inputs.source) || vars.PHOTO_SOURCE) && format(' · {0}', (inputs.source != 'variable' && inputs.source) || vars.PHOTO_SOURCE) || '' }}"
 
 on:
   schedule:
@@ -18,6 +18,11 @@ on:
         description: AI provider for this run (variable = the AI_PROVIDER repository variable, or config if unset)
         type: choice
         options: [variable, claude, openai, gemini]
+        default: variable
+      source:
+        description: Where the photos come from for this run (variable = the PHOTO_SOURCE repository variable, or config if unset)
+        type: choice
+        options: [variable, google_drive, r2]
         default: variable
 
 permissions:
@@ -48,6 +53,9 @@ jobs:
       # claude | openai | gemini. A manual run's choice wins, then the repository variable AI_PROVIDER;
       # empty means ai.provider in config/profiles.yaml decides. forge stops early if that provider's key is missing.
       AI_PROVIDER: ${{ (inputs.provider != 'variable' && inputs.provider) || vars.AI_PROVIDER || '' }}
+      # google_drive | r2. Same order: the manual choice, then the repository variable PHOTO_SOURCE, then
+      # source.type in config. Each source keeps its own photos, so switching is a fresh start.
+      PHOTO_SOURCE: ${{ (inputs.source != 'variable' && inputs.source) || vars.PHOTO_SOURCE || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -66,12 +74,17 @@ jobs:
           ANTHROPIC_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'claude') && secrets.ANTHROPIC_API_KEY || '' }}
           OPENAI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'openai') && secrets.OPENAI_API_KEY || '' }}
           GEMINI_API_KEY: ${{ (env.AI_PROVIDER == '' || env.AI_PROVIDER == 'gemini') && secrets.GEMINI_API_KEY || '' }}
-          GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+          # Only the chosen photo source's secrets are handed over (both sets when config decides).
+          GOOGLE_DRIVE_API_KEY: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'google_drive') && secrets.GOOGLE_DRIVE_API_KEY || '' }}
+          R2_ACCOUNT_ID: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'r2') && secrets.R2_ACCOUNT_ID || '' }}
+          R2_ACCESS_KEY_ID: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'r2') && secrets.R2_ACCESS_KEY_ID || '' }}
+          R2_SECRET_ACCESS_KEY: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'r2') && secrets.R2_SECRET_ACCESS_KEY || '' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # One set of three secrets per profile. Add lines here when you add a profile.
+          # One set of secrets per profile (with R2, R2_BUCKET_<PROFILE> instead of DRIVE_FOLDER_<PROFILE>). Add lines here when you add a profile.
           IG_MAIN_ACCESS_TOKEN: ${{ secrets.IG_MAIN_ACCESS_TOKEN }}
           IG_MAIN_USER_ID: ${{ secrets.IG_MAIN_USER_ID }}
-          DRIVE_FOLDER_MAIN: ${{ secrets.DRIVE_FOLDER_MAIN }}
+          DRIVE_FOLDER_MAIN: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'google_drive') && secrets.DRIVE_FOLDER_MAIN || '' }}
+          R2_BUCKET_MAIN: ${{ (env.PHOTO_SOURCE == '' || env.PHOTO_SOURCE == 'r2') && secrets.R2_BUCKET_MAIN || '' }}
           # IG_TRAVEL_ACCESS_TOKEN: ${{ secrets.IG_TRAVEL_ACCESS_TOKEN }}
           # IG_TRAVEL_USER_ID: ${{ secrets.IG_TRAVEL_USER_ID }}
           # DRIVE_FOLDER_TRAVEL: ${{ secrets.DRIVE_FOLDER_TRAVEL }}

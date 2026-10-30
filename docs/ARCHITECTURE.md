@@ -1,6 +1,6 @@
 # Architecture
 
-instaPostsForge is an **AI workflow**: plain code runs a fixed sequence of steps every day, and calls an AI model (Claude by default, or OpenAI or Gemini) at five of them. The AI never decides which steps run or touches Instagram directly. Code validates everything the AI produces before it can be posted.
+instaPostsForge is an **AI workflow**: plain code runs a fixed sequence of steps every day, and calls an AI model (Claude by default, or OpenAI, Gemini or Ollama Cloud) at five of them. The AI never decides which steps run or touches Instagram directly. Code validates everything the AI produces before it can be posted.
 
 ## System overview
 
@@ -9,7 +9,7 @@ flowchart TB
     Drive[("Google Drive folder or Cloudflare R2 bucket<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
-    Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
+    Claude["AI provider API: Claude, OpenAI, Gemini or Ollama Cloud<br/>analyst · planner · caption writer · hashtags · reviewer"]
     State[("state/#lt;profile#gt;/ in the repo<br/>posts · catalog · insights · usage")]
     Media[("media branch<br/>today's JPEG for about a minute")]
     IG["Instagram API<br/>official, token based"]

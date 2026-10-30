@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>instaPostsForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="instaPostsForge posts one photo a day to Instagram from a Google Drive folder or a Cloudflare R2 bucket. AI agents (Claude, OpenAI or Gemini) pick the photo and write the caption; code checks every word, and every token is audited.">
+<meta name="description" content="instaPostsForge posts one photo a day to Instagram from a Google Drive folder or a Cloudflare R2 bucket. AI agents (Claude, OpenAI, Gemini or Ollama Cloud) pick the photo and write the caption; code checks every word, and every token is audited.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2315110d'/%3E%3Cpath d='M3,8V3h5M16,3h5v5M21,16v5h-5M8,21H3v-5' fill='none' stroke='%23F2C14E' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12,5.5C12.6,9.4 14.6,11.4 18.5,12C14.6,12.6 12.6,14.6 12,18.5C11.4,14.6 9.4,12.6 5.5,12C9.4,11.4 11.4,9.4 12,5.5z' fill='%23F2C14E'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -322,7 +322,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
   <div class="wrap hero">
     <span class="label">Google Drive or Cloudflare R2 · GitHub Actions · AI agents</span>
     <h1>Built for photographers whose best shots stay <em>stuck in the gallery.</em></h1>
-    <p class="lede">Drop your handpicked photos in a Google Drive folder or a Cloudflare R2 bucket. Every evening instaPostsForge has its AI agents (Claude, OpenAI or Gemini) choose one, write its caption and hashtags, and post it to Instagram. Plain code checks every word, and every token is accounted for.</p>
+    <p class="lede">Drop your handpicked photos in a Google Drive folder or a Cloudflare R2 bucket. Every evening instaPostsForge has its AI agents (Claude, OpenAI, Gemini or Ollama Cloud) choose one, write its caption and hashtags, and post it to Instagram. Plain code checks every word, and every token is accounted for.</p>
     <div class="actions">
       <a class="btn primary" href="setup.html">Use it yourself</a>
       <a class="btn ghost" href="https://github.com/sritajkumarpatel/instaPostsForge">Read the code</a>
@@ -510,7 +510,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
     <div class="wrap section-head">
       <span class="label">How it works</span>
       <h2>Five AI agents, with code at every gate.</h2>
-      <p class="lede">The AI decides what to post and what to say. Plain code does everything with a side effect (fetching, image preparation, hosting, publishing, records) and validates every answer before it can reach Instagram. Every agent runs on Claude Haiku 5.5 by default, or on OpenAI or Gemini by setting one variable.</p>
+      <p class="lede">The AI decides what to post and what to say. Plain code does everything with a side effect (fetching, image preparation, hosting, publishing, records) and validates every answer before it can reach Instagram. Every agent runs on Claude Haiku 5.5 by default, or on OpenAI, Gemini or Ollama Cloud by setting one variable, with <code>AI_MODEL</code> to pick another model.</p>
     </div>
     <div class="strip">
       <div class="edge-print top" aria-hidden="true">ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER ▸ HASHTAGS ▸ REVIEWER ▸ CHECKS ▸ INSTAGRAM &nbsp;&nbsp;&nbsp; ANALYST ▸ PLANNER ▸ RULES ▸ CAPTION WRITER</div>
@@ -582,7 +582,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
   <section id="stack" class="wrap" style="padding-top:0">
     <div class="section-head"><span class="label">Built with</span></div>
     <div class="stack">
-      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>OpenAI and Gemini SDKs</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Cloudflare R2 · boto3</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
+      <span>Python</span><span>Claude · Anthropic Python SDK</span><span>OpenAI and Gemini SDKs</span><span>Ollama Cloud API</span><span>Pydantic</span><span>Pillow</span><span>Google Drive API</span><span>Cloudflare R2 · boto3</span><span>Instagram API</span><span>GitHub Actions</span><span>GitHub Pages</span><span>pytest</span>
     </div>
   </section>
 </main>

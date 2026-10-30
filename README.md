@@ -6,7 +6,7 @@
 
 **Built for photographers whose best shots stay stuck in the gallery.**
 
-One photo a day to Instagram, straight from a Google Drive folder or a Cloudflare R2 bucket, picked and captioned by AI agents (Claude, OpenAI or Gemini), posted by GitHub Actions.
+One photo a day to Instagram, straight from a Google Drive folder or a Cloudflare R2 bucket, picked and captioned by AI agents (Claude, OpenAI, Gemini or Ollama Cloud), posted by GitHub Actions.
 
 **[See the project page →](https://sritajkumarpatel.github.io/instaPostsForge/)** · **[Use it yourself: setup guide →](https://sritajkumarpatel.github.io/instaPostsForge/setup.html)**
 
@@ -14,7 +14,7 @@ One photo a day to Instagram, straight from a Google Drive folder or a Cloudflar
 [![Tests](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml/badge.svg)](https://github.com/sritajkumarpatel/instaPostsForge/actions/workflows/tests.yml)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/Runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
-![AI: Claude, OpenAI or Gemini](https://img.shields.io/badge/AI-Claude%20%C2%B7%20OpenAI%20%C2%B7%20Gemini-D97757)
+![AI: Claude, OpenAI, Gemini or Ollama](https://img.shields.io/badge/AI-Claude%20%C2%B7%20OpenAI%20%C2%B7%20Gemini%20%C2%B7%20Ollama-D97757)
 
 <sub>Idea by <a href="https://www.linkedin.com/in/sritaj-patel/">Sritaj Kumar Patel</a> · built with Claude</sub>
 
@@ -26,7 +26,7 @@ One photo a day to Instagram, straight from a Google Drive folder or a Cloudflar
 
 Most photographers have a drive full of shots worth sharing and no time to share them. Posting well every day is a chore: pick a photo, avoid repeating last week, write something good, choose hashtags, remember to do it at the right time. instaPostsForge does that for you.
 
-Drop your handpicked photos into a Google Drive folder, or a Cloudflare R2 bucket if you prefer. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude (or OpenAI or Gemini, if you prefer), checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
+Drop your handpicked photos into a Google Drive folder, or a Cloudflare R2 bucket if you prefer. Every evening a GitHub Actions job picks one (or a small set from one outing), writes a short caption and hashtags with Claude (or OpenAI, Gemini or Ollama Cloud, if you prefer), checks everything in code, and posts it through the official Instagram API. It never asks for your Instagram password: you grant it an access token that you can revoke at any time. No server and no laptop needed.
 
 The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-android), which runs the same workflow on Android.
 
@@ -35,7 +35,7 @@ The phone version is [Postaday](https://github.com/sritajkumarpatel/postaday-and
 | | |
 | --- | --- |
 | 📁 **Your photo folder** | Put handpicked photos in one Google Drive folder or Cloudflare R2 bucket. Each new photo is described once and remembered. |
-| 🤖 **AI picks and writes** | Five AI agents describe each photo, choose today's, write the caption and hashtags, and review the post. Claude by default; OpenAI or Gemini with one variable. |
+| 🤖 **AI picks and writes** | Five AI agents describe each photo, choose today's, write the caption and hashtags, and review the post. Claude by default; OpenAI, Gemini or Ollama Cloud with one variable. |
 | 🖼️ **Multi-photo posts** | Some days it posts 2 to 5 photos from one outing or place as a carousel, all of one shape. |
 | 🛡️ **Code has the last word** | Every AI answer is checked by plain code against Instagram's limits and your content rules before anything is posted. |
 | 🙏 **Writes with care** | Short captions (at most 150 characters), playbooks per category and mood, and reverent captions for deities and festivals. |
@@ -104,7 +104,7 @@ flowchart TB
     Drive[("Google Drive folder or Cloudflare R2 bucket<br/>your photos")]
     Config["Your settings in the repo<br/>config/profiles.yaml · config/ai-instructions.md · prompts/*.md"]
     Actions["GitHub Actions<br/>Daily post workflow (forge post)"]
-    Claude["AI provider API: Claude, OpenAI or Gemini<br/>analyst · planner · caption writer · hashtags · reviewer"]
+    Claude["AI provider API: Claude, OpenAI, Gemini or Ollama Cloud<br/>analyst · planner · caption writer · hashtags · reviewer"]
     State[("state/#lt;profile#gt;/ in the repo<br/>posts · catalog · insights · usage")]
     Media[("media branch<br/>today's JPEG for about a minute")]
     IG["Instagram API<br/>official, token based"]
@@ -146,15 +146,36 @@ Check the effect in the run's token audit report or with `forge usage -p main`.
 
 ### Choosing the AI provider
 
-Claude is the default, but the same five agents, prompts and checks also run on OpenAI or Gemini. Pick one with the repository variable `AI_PROVIDER` (or `ai.provider` in `config/profiles.yaml`) and add that provider's key. Only the chosen key is needed, and a run stops before doing anything if it is missing.
+Claude is the default, but the same five agents, prompts and checks also run on OpenAI, Gemini or Ollama Cloud. Pick one with the repository variable `AI_PROVIDER` (or `ai.provider` in `config/profiles.yaml`) and add that provider's key. Only the chosen key is needed, and a run stops before doing anything if it is missing.
 
 | `AI_PROVIDER` | Secret it needs | Default model | USD per million tokens (input / output) |
 | --- | --- | --- | --- |
 | `claude` (or unset) | `ANTHROPIC_API_KEY` | `claude-haiku-5-5` | 0.10 / 0.50 |
 | `openai` | `OPENAI_API_KEY` | `gpt-5.6-luna` | 0.20 / 1.20 |
 | `gemini` | `GEMINI_API_KEY` | `gemini-3.1-flash-lite` | 0.25 / 1.50 |
+| `ollama` | `OLLAMA_API_KEY` | `gemma4:31b` | free plan, with usage limits |
 
-Each default is that provider's cheap model that can read photos, set under `ai.models`. Any step's model can be changed under `ai.agents`, as long as it belongs to the chosen provider. Gemini's thinking tops out at `high`, so `xhigh` and `max` act as `high` there. The prompts were tuned on Claude, so run **preview** a few times after switching and compare the drafts. Photos analysed earlier keep their notes, whichever provider wrote them.
+Each default is that provider's cheap model that can read photos, set under `ai.models`. Any step's model can be changed under `ai.agents`, as long as it belongs to the chosen provider. Gemini's thinking tops out at `high`, so `xhigh` and `max` act as `high` there. Ollama ignores `effort`. The prompts were tuned on Claude, so run **preview** a few times after switching and compare the drafts. Photos analysed earlier keep their notes, whichever provider wrote them.
+
+#### Choosing the model
+
+You don't have to set a model: each provider uses its default above. To use another one for every step, set the repository variable `AI_MODEL` (for example `gpt-5.6` or `qwen3-vl:235b`), or type it in the **model** box on Run workflow for a single run. The model used is, first to last:
+
+1. the **model** box on Run workflow,
+2. the `AI_MODEL` variable,
+3. `ai.model` in `config/profiles.yaml`,
+4. the provider's default under `ai.models`.
+
+`AI_MODEL` applies to all five steps and replaces any per-step model under `ai.agents` (their effort settings stay). Leave it unset to keep per-step models. The model must read photos, because the analyst looks at every new one, and it must belong to the chosen provider. Ollama Cloud accepts any model from [its library](https://ollama.com/search?c=cloud) that has the vision tag. A model without a row in `ai.pricing` is logged with no cost estimate; add a row to see one.
+
+#### Ollama Cloud
+
+1. Sign in at [ollama.com](https://ollama.com/) and open **Settings → Keys** ([ollama.com/settings/keys](https://ollama.com/settings/keys)). **Add API key**, name it, and copy it. That is `OLLAMA_API_KEY`.
+2. Add it as a repository secret and set the repository variable `AI_PROVIDER` to `ollama`.
+3. Optionally set `AI_MODEL` to another cloud model with the vision tag. Without it, `gemma4:31b` is used.
+4. Run the workflow in **check** mode, then **preview**, and read the drafts before posting.
+
+The free plan has hourly and weekly limits, which one post a day fits comfortably; the first run over a big folder analyses every photo and may need a second day. Open models follow the JSON format less reliably than the paid defaults: a bad reply falls back or skips the day, never posts broken text.
 
 ### Choosing where photos come from
 
@@ -209,6 +230,7 @@ Add these under the repo's **Settings → Secrets and variables → Actions → 
 | Secret | Where it comes from |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | [Claude Console](https://console.anthropic.com/) → API keys → Create key. Add about $5 of credit under Billing. |
+| `OLLAMA_API_KEY` (only with `AI_PROVIDER=ollama`) | [ollama.com](https://ollama.com/settings/keys) → Settings → Keys → Add API key. The free plan is enough to start. |
 | `OPENAI_API_KEY` (only with `AI_PROVIDER=openai`) | [OpenAI platform](https://platform.openai.com/api-keys) → Create new secret key. Add credit under Billing. |
 | `GEMINI_API_KEY` (only with `AI_PROVIDER=gemini`) | [Google AI Studio](https://aistudio.google.com/apikey) → Create API key. Set up billing for the paid tier. |
 | `IG_MAIN_ACCESS_TOKEN` | [developers.facebook.com](https://developers.facebook.com/) → your app → Instagram → API setup with Instagram login → Generate token next to your account, with `instagram_business_content_publish` and `instagram_business_manage_insights`. Valid for about 60 days. |
@@ -227,7 +249,8 @@ GitHub provides `GITHUB_TOKEN` and `GITHUB_REPOSITORY` on every run. Under the *
 | `AUTO_POST` | Set to `true` to let the daily schedule post. Until then only manual runs do anything. It must be a **variable**: the check that lets the schedule run happens before any step, and GitHub doesn't let it read secrets, so an `AUTO_POST` secret is ignored. |
 | `PROFILES` | Which profiles the schedule posts to, as a JSON list. Default `["main"]`. |
 | `PHOTO_SOURCE` | `google_drive` or `r2`. Unset, `source.type` in the config decides (`google_drive`). A manual run can override it with the **source** choice on Run workflow. Each source has its own photos, so switching is a fresh start. |
-| `AI_PROVIDER` | `claude`, `openai` or `gemini`. Unset, `ai.provider` in the config decides (`claude`). A manual run can override it with the **provider** choice on Run workflow, and the run name shows which was used. |
+| `AI_PROVIDER` | `claude`, `openai`, `gemini` or `ollama`. Unset, `ai.provider` in the config decides (`claude`). A manual run can override it with the **provider** choice on Run workflow, and the run name shows which was used. |
+| `AI_MODEL` | One model for every step, such as `gpt-5.6` or `qwen3-vl:235b`. Unset, each provider uses its default under `ai.models`. A manual run can override it with the **model** box on Run workflow. See [Choosing the model](#choosing-the-model). |
 | `MULTI_PHOTO` | `false` posts single photos only; `true` allows multi-photo posts. Unset, `selection.multi_photo.enabled` in the config decides (on by default). Set it under the **Variables** tab, Repository variables (a secret of the same name works too; an Environment variable doesn't). Each run's log says which it used, for example "Multi-photo posts are off (MULTI_PHOTO=false)". |
 
 Before the first post, do two things:
@@ -362,7 +385,7 @@ Costs are estimates from the per-model prices in `ai.pricing`. Update those if a
 
 ### Cost
 
-With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. OpenAI's and Gemini's defaults cost two to three times as much per token, still cents a month. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, R2 within its free tier, and GitHub Actions for a public repo.
+With the default Claude Haiku 5.5, expect well under a cent per daily post (roughly $0.10 to $0.25 a month), plus a fraction of a cent the first time each photo is analysed. OpenAI's and Gemini's defaults cost two to three times as much per token, still cents a month, and Ollama Cloud's free plan costs nothing. Sonnet 5.5 costs about 20 times as much per token, and Opus 5.5 cost about $0.20 per post. These are estimates: the real cost depends on how many photos are in the folder and how often the reviewer asks for a rewrite. Each run's token audit report and `forge usage` show where the tokens go. Everything else is free: the Instagram API, the Drive API at this volume, R2 within its free tier, and GitHub Actions for a public repo.
 
 ### Adding another account or photo folder
 
@@ -413,7 +436,9 @@ After a new token, run the workflow in **check** mode before posting.
 
 **Start the posting history over.** Run **Actions → Start fresh** with **keep_catalog** ticked, or `forge reset -p <profile> --keep-catalog` and commit. By hand: replace `state/<profile>/posts.json` and `insights.json` with `{}` and commit. Every photo becomes unposted, and the subject, mood and repeat rules start fresh. Keep `catalog.json`, so no photo is analysed (and paid for) again.
 
-**"The AI provider is openai, but OPENAI_API_KEY is empty".** `AI_PROVIDER` (or the provider chosen on Run workflow) names a provider whose key isn't saved. Add that secret, or change `AI_PROVIDER`. A message like "ai.agents.caption_writer.model is claude-sonnet-5-5, a Claude (Anthropic) model, but the AI provider is openai" means that step's model belongs to another provider: remove it or change it.
+**"The AI provider is openai, but OPENAI_API_KEY is empty".** `AI_PROVIDER` (or the provider chosen on Run workflow) names a provider whose key isn't saved. Add that secret, or change `AI_PROVIDER`. A message like "ai.agents.caption_writer.model is claude-sonnet-5-5, a Claude (Anthropic) model, but the AI provider is openai" means that step's model belongs to another provider: remove it or change it, or set `AI_MODEL`, which replaces every step's model.
+
+**Ollama runs fall back to a random photo or skip the day.** The model's replies didn't match the expected format, or it can't read photos. Pick a cloud model with the vision tag in `AI_MODEL`, or a larger one. A "429" in **check** means the free plan's limit is used up; it resets on its own.
 
 **"The photo source is r2, but R2_BUCKET_MAIN is empty"** or **"Cloudflare R2 refused the request"**. `PHOTO_SOURCE` is `r2` but a secret is missing, or the token can't read the bucket. Check the four R2 secrets, that the token has Object Read for that bucket, and the bucket name. "No photos" with R2 usually means `source.r2.prefix` doesn't match the folder the photos are in.
 
@@ -437,7 +462,7 @@ src/instapostsforge/
   pipeline.py               the daily workflow
   grouping.py               finds photos that could go out together as one multi-photo post
   agents/                   AI agents: analyst, planner, caption writer, hashtag strategist, reviewer
-  agents/clients/           one small client per AI provider (Claude, OpenAI, Gemini)
+  agents/clients/           one small client per AI provider (Claude, OpenAI, Gemini, Ollama)
   prompts/                  one prompt file per agent
   captions/                 Instagram's caption and hashtag rules
   sources/                  where photos come from (google_drive, r2, local_folder)

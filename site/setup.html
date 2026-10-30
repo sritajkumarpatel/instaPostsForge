@@ -151,7 +151,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
         <div class="kit-item"><h3>An Instagram Professional account</h3><p>Creator or Business, switched in the Instagram app under Account type and tools. Free.</p></div>
         <div class="kit-item"><h3>A Meta developer app</h3><p>At developers.facebook.com, to create the access token. It stays in development mode; no app review.</p></div>
         <div class="kit-item"><h3>A place for your photos</h3><p>A Google Drive folder with a free Google Cloud API key to read it (the default), or a private Cloudflare R2 bucket with a read-only token.</p></div>
-        <div class="kit-item"><h3>An AI API key</h3><p>Claude by default, from the Claude Console with about $5 of credit; that lasts a long time. An OpenAI or Gemini key works too.</p></div>
+        <div class="kit-item"><h3>An AI API key</h3><p>Claude by default, from the Claude Console with about $5 of credit; that lasts a long time. An OpenAI, Gemini or free Ollama Cloud key works too.</p></div>
       </div>
       <div class="kit-foot"><span>Typical cost: <b>under a cent a post</b> on Claude Haiku 5.5, a little more on OpenAI or Gemini</span><span>Instagram API, Drive API or R2, GitHub Actions: <b>free</b></span></div>
     </div>
@@ -215,6 +215,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
           <h2>Get an AI API key</h2>
           <p>Claude is the default. In the <a href="https://console.anthropic.com/">Claude Console</a>: <strong>API keys → Create key</strong>, and add about $5 of credit under Billing. That is <code>ANTHROPIC_API_KEY</code>.</p>
           <p>Prefer another provider? Make a key at the <a href="https://platform.openai.com/api-keys">OpenAI platform</a> (<code>OPENAI_API_KEY</code>) or in <a href="https://aistudio.google.com/apikey">Google AI Studio</a> (<code>GEMINI_API_KEY</code>), with billing set up. You only need the one you use; step 06 says how to pick it. Each uses its own cheap model that can read photos (<code>gpt-5.6-luna</code> or <code>gemini-3.1-flash-lite</code>), still cents a month.</p>
+          <p>Want it free? Sign in at <a href="https://ollama.com/settings/keys">ollama.com → Settings → Keys</a> and add an API key (<code>OLLAMA_API_KEY</code>). Ollama Cloud's free plan runs the open model <code>gemma4:31b</code> by default and easily covers a post a day. Captions may need a little more checking in preview.</p>
         </div>
       </li>
       <li class="step">
@@ -226,7 +227,7 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
             <table>
               <thead><tr><th scope="col">Name</th><th scope="col">Value</th></tr></thead>
               <tbody>
-                <tr><td><button class="copy" type="button" data-copy="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</button></td><td>Claude API key (step 05). Or, instead, <button class="copy" type="button" data-copy="OPENAI_API_KEY">OPENAI_API_KEY</button> or <button class="copy" type="button" data-copy="GEMINI_API_KEY">GEMINI_API_KEY</button>: only the provider you use.</td></tr>
+                <tr><td><button class="copy" type="button" data-copy="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</button></td><td>Claude API key (step 05). Or, instead, <button class="copy" type="button" data-copy="OPENAI_API_KEY">OPENAI_API_KEY</button> <button class="copy" type="button" data-copy="GEMINI_API_KEY">GEMINI_API_KEY</button> or <button class="copy" type="button" data-copy="OLLAMA_API_KEY">OLLAMA_API_KEY</button>: only the provider you use.</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="IG_MAIN_ACCESS_TOKEN">IG_MAIN_ACCESS_TOKEN</button></td><td>Instagram token (step 04)</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="IG_MAIN_USER_ID">IG_MAIN_USER_ID</button></td><td>Instagram user ID (step 04)</td></tr>
                 <tr><td><button class="copy" type="button" data-copy="DRIVE_FOLDER_MAIN">DRIVE_FOLDER_MAIN</button></td><td>Drive folder link (step 03)</td></tr>
@@ -236,7 +237,8 @@ footer .tagline { color: var(--emulsion); font: 600 var(--step-1)/1.3 var(--disp
               </tbody>
             </table>
           </div>
-          <p>Using OpenAI or Gemini? Also open the <strong>Variables</strong> tab next to Secrets and add a repository variable <code>AI_PROVIDER</code> set to <code>openai</code> or <code>gemini</code>. Without it, Claude is used. A run whose provider has no key stops straight away and says which secret is missing.</p>
+          <p>Using OpenAI, Gemini or Ollama? Also open the <strong>Variables</strong> tab next to Secrets and add a repository variable <code>AI_PROVIDER</code> set to <code>openai</code>, <code>gemini</code> or <code>ollama</code>. Without it, Claude is used. A run whose provider has no key stops straight away and says which secret is missing.</p>
+          <p>Want a different model? Add a repository variable <code>AI_MODEL</code> with its name, such as <code>qwen3-vl:235b</code> on Ollama. It is used for every step; without it each provider uses its default. A manual run can also take a model in the <strong>model</strong> box on Run workflow.</p>
           <p>Photos in R2? Add a repository variable <code>PHOTO_SOURCE</code> set to <code>r2</code> the same way. Without it, Google Drive is used.</p>
         </div>
       </li>

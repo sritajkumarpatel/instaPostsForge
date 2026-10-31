@@ -1,6 +1,7 @@
 """Each provider's client turns one neutral request into that SDK's call, with fake SDK objects."""
 
 import base64
+import json
 from types import SimpleNamespace
 
 from instapostsforge.agents.clients import Image, Text
@@ -182,16 +183,17 @@ def test_every_schema_converts_for_openai_strict_mode_and_gemini():
 
 
 class FakeSession:
-    def __init__(self, payload, status=200):
-        self.payload, self.status, self.calls, self.headers = payload, status, [], {}
+    def __init__(self, *payloads, status=200):
+        self.payloads, self.status, self.calls, self.headers = list(payloads), status, [], {}
 
     def post(self, url, json, timeout):
         self.calls.append((url, json))
-        return SimpleNamespace(status_code=self.status, json=lambda: self.payload, text="secret body")
+        payload = self.payloads[min(len(self.calls), len(self.payloads)) - 1]
+        return SimpleNamespace(status_code=self.status, json=lambda: payload, text="secret body")
 
 
-def ollama_ask(payload, status=200):
-    session = FakeSession(payload, status)
+def ollama_ask(*payloads, status=200):
+    session = FakeSession(*payloads, status=status)
     client = OllamaClient(session, api_key="ok-key")
     reply = client.ask(
         model="gemma4:31b", effort="medium", max_tokens=4000, system="sys",
@@ -207,7 +209,8 @@ def test_ollama_request_and_usage():
     assert body["model"] == "gemma4:31b" and body["stream"] is False and body["options"] == {"num_predict": 4000}
     assert body["format"] == HashtagSet.model_json_schema() and "think" not in body
     system, user = body["messages"]
-    assert system == {"role": "system", "content": "sys"}
+    assert system["role"] == "system" and system["content"].startswith("sys\n\nReply with only a JSON object")
+    assert json.dumps(HashtagSet.model_json_schema()) in system["content"]
     assert user["content"] == "Photo 1:\n\nPhoto 2:\n\nNotes"
     assert [base64.b64decode(i) for i in user["images"]] == [b"\xff\xd8one", b"\xff\xd8two"]  # in order
     assert reply.stop == "done" and reply.parsed == HashtagSet(hashtags=[])
@@ -216,8 +219,26 @@ def test_ollama_request_and_usage():
 
 def test_ollama_truncation_and_bad_json():
     assert ollama_ask({"message": {"content": '{"hasht'}, "done_reason": "length"})[0].stop == "too_long"
-    reply = ollama_ask({"message": {"content": "not json"}, "done_reason": "stop"})[0]
-    assert reply.stop == "done" and reply.parsed is None
+    reply, session = ollama_ask({"message": {"content": "not json"}, "done_reason": "stop", "eval_count": 5})
+    assert reply.stop == "done" and reply.parsed is None and len(session.calls) == 2  # one more try
+    assert reply.tokens["output_tokens"] == 10 and "no JSON object" in reply.detail
+
+
+def test_ollama_reads_json_in_a_code_fence():
+    reply = ollama_ask({"message": {"content": 'Here it is:\n```json\n{"hashtags": []}\n```'}, "done_reason": "stop"})[0]
+    assert reply.parsed == HashtagSet(hashtags=[])
+
+
+def test_ollama_retries_once_and_names_the_bad_fields():
+    bad = {"message": {"content": '{"hashtags": [{"tag": "#a", "role": "other", "reason": "x"}]}'}, "done_reason": "stop"}
+    good = {"message": {"content": '{"hashtags": []}'}, "done_reason": "stop"}
+    reply, session = ollama_ask(bad, good)
+    assert reply.parsed == HashtagSet(hashtags=[]) and len(session.calls) == 2
+    retry = session.calls[1][1]["messages"]
+    assert retry[-2]["role"] == "assistant" and "hashtags.0.role" in retry[-1]["content"]
+
+    reply = ollama_ask(bad)[0]
+    assert reply.parsed is None and "hashtags.0.role" in reply.detail and "#a" not in reply.detail
 
 
 def test_ollama_error_hides_the_body():

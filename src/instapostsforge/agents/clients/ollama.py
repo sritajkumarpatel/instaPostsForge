@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import json
 
 import requests
 from pydantic import ValidationError
@@ -39,28 +40,48 @@ class OllamaClient(ModelClient):
     def ask(self, *, model, effort, max_tokens, system, parts, schema):
         # Ollama takes a message's images apart from its text, so each Image becomes an image of the
         # user message and the text keeps "Photo n:" labels in order. Effort isn't sent: most open
-        # models on Ollama don't think, and asking one that can't is an error.
+        # models on Ollama don't think, and asking one that can't is an error. Open models don't
+        # always keep to the `format` schema, so it is also spelled out in the system prompt, and a
+        # reply that still doesn't fit gets one more try.
         text = "\n\n".join(p.text for p in parts if isinstance(p, Text))
         images = [base64.standard_b64encode(p.jpeg).decode("ascii") for p in parts if isinstance(p, Image)]
         user = {"role": "user", "content": text}
         if images:
             user["images"] = images
-        data = self._post(
-            "/api/chat",
-            {
-                "model": model,
-                "messages": [{"role": "system", "content": system}, user],
-                "format": schema.model_json_schema(),
-                "stream": False,
-                "options": {"num_predict": max_tokens},
-            },
-        )
-        tokens = {"input_tokens": int(data.get("prompt_eval_count") or 0), "output_tokens": int(data.get("eval_count") or 0)}
-        done = data.get("done_reason") or "stop"
-        if done == "length":
-            return ModelReply(parsed=None, stop="too_long", tokens=tokens, detail="done_reason=length")
-        try:
-            parsed = schema.model_validate_json((data.get("message") or {}).get("content") or "")
-        except ValidationError:
-            parsed = None  # the workflow treats this as no usable reply and falls back
-        return ModelReply(parsed=parsed, tokens=tokens, detail=f"done_reason={done}")
+        json_schema = schema.model_json_schema()
+        system += "\n\nReply with only a JSON object, no other text, that matches this JSON schema:\n" + json.dumps(json_schema)
+        messages = [{"role": "system", "content": system}, user]
+        tokens = {"input_tokens": 0, "output_tokens": 0}
+        for attempt in range(2):
+            data = self._post(
+                "/api/chat",
+                {"model": model, "messages": messages, "format": json_schema, "stream": False, "options": {"num_predict": max_tokens}},
+            )
+            tokens["input_tokens"] += int(data.get("prompt_eval_count") or 0)
+            tokens["output_tokens"] += int(data.get("eval_count") or 0)
+            done = data.get("done_reason") or "stop"
+            if done == "length":
+                return ModelReply(parsed=None, stop="too_long", tokens=tokens, detail="done_reason=length")
+            content = (data.get("message") or {}).get("content") or ""
+            parsed, problem = parse_reply(schema, content)
+            if parsed is not None:
+                return ModelReply(parsed=parsed, tokens=tokens, detail=f"done_reason={done}")
+            messages = [
+                *messages,
+                {"role": "assistant", "content": content},
+                {"role": "user", "content": f"That reply was not usable ({problem}). Reply again with only the JSON object."},
+            ]
+        # The workflow treats this as no usable reply. The detail names fields, never the reply's text.
+        return ModelReply(parsed=None, tokens=tokens, detail=f"done_reason={done}, {problem}")
+
+
+def parse_reply(schema, content: str):
+    """The reply as `schema`, or None and what was wrong. Code fences and text around the object are ignored."""
+    start, end = content.find("{"), content.rfind("}")
+    if start < 0 or end < start:
+        return None, "no JSON object" if content.strip() else "empty reply"
+    try:
+        return schema.model_validate_json(content[start : end + 1]), ""
+    except ValidationError as err:
+        fields = sorted({".".join(str(x) for x in e["loc"]) or e["type"] for e in err.errors()})
+        return None, "invalid: " + ", ".join(fields[:6])

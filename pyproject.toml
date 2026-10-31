@@ -33,7 +33,7 @@ forge = "instapostsforge.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-instapostsforge = ["prompts/*.md"]
+instapostsforge = ["prompts/*.md", "imaging/fonts/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

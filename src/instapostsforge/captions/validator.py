@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 
 from ..models import Caption
+from .policy import ContentPolicy
 
 # Tags that are so broad they add nothing (Instagram has said as much).
 GENERIC_TAGS = {
@@ -15,6 +16,10 @@ GENERIC_TAGS = {
 }
 TAG_PATTERN = re.compile(r"^#[\w]+$", re.UNICODE)
 SENTENCE_BREAK = re.compile(r"(?<=[.!?…])(\s+)")
+# The most characters each piece of text on a styled image may have; longer ones are left off the image.
+OVERLAY_LIMITS = {"title": 32, "line": 80, "note": 32}
+# Text on an image is drawn with the bundled fonts: letters, digits and plain punctuation only.
+OVERLAY_ALLOWED = re.compile(r"[^\w\s.,'’‘\-–—:;!?&()]", re.UNICODE)
 
 
 class CaptionError(Exception):
@@ -72,11 +77,27 @@ def trim_caption_text(text: str, limit: int) -> str | None:
     return result if len(result) <= limit else None
 
 
-def normalize_caption(caption: Caption, rules: CaptionRules) -> Caption:
-    """Returns a cleaned copy of the caption, or raises CaptionError."""
+def clean_overlay(overlay: dict[str, str] | None) -> dict[str, str]:
+    """The text for a styled image, tidied: no emoji, hashtags, mentions or links (the fonts can't draw
+    emoji, and nothing on an image can be clicked), and each piece within its length or left off."""
+    cleaned: dict[str, str] = {}
+    for key, limit in OVERLAY_LIMITS.items():
+        text = (overlay or {}).get(key) or ""
+        text = re.sub(r"https?://\S+|[#@]\w+", "", text)
+        text = " ".join(OVERLAY_ALLOWED.sub("", text).split()).strip(" -–—:;,")
+        if text and len(text) <= limit:
+            cleaned[key] = text
+    return cleaned
+
+
+def normalize_caption(caption: Caption, rules: CaptionRules, policy: ContentPolicy | None = None) -> Caption:
+    """Returns a cleaned copy of the caption, or raises CaptionError. With a content policy, a hashtag on
+    its list is dropped, and a blocked term anywhere in the words raises, so the writer tries again."""
     tags: list[str] = []
     for raw in caption.hashtags:
         tag = clean_hashtag(raw)
+        if tag and policy is not None and policy.blocks_tag(tag):
+            continue
         if tag and tag not in tags:
             tags.append(tag)
     tags = tags[: rules.max_hashtags]
@@ -96,7 +117,16 @@ def normalize_caption(caption: Caption, rules: CaptionRules) -> Caption:
         quote=(caption.quote or "").strip() or None,
         quote_author=(caption.quote_author or "").strip() or None,
         more_alt_texts=[a.strip()[:1000] for a in caption.more_alt_texts],
+        overlay=clean_overlay(caption.overlay),
     )
+    if policy is not None:
+        words = [cleaned.text, cleaned.quote, cleaned.quote_author, cleaned.alt_text, *cleaned.more_alt_texts, *cleaned.overlay.values()]
+        found = sorted({term for w in words for term in policy.found_in(w)})
+        if found:
+            raise CaptionError(
+                f"content: the post mentions {', '.join(repr(t) for t in found)}, a topic this account never posts about "
+                "(politics, caste, religious debate, war and conflict, sexual content). Rewrite it without that topic."
+            )
     if len(cleaned.render()) > rules.max_chars:
         raise CaptionError(f"Caption is {len(cleaned.render())} characters; the limit is {rules.max_chars}.")
     return cleaned

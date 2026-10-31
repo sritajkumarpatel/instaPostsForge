@@ -36,3 +36,7 @@ For a multi-photo post:
 - reason says why these photos work better together; angle is the one idea that ties them.
 
 Leave extra_photo_ids empty for a single photo.
+
+## Today's style
+
+When photo_sets has todays_style, the account owner chose a grid or story post for today: follow it. Plan today's post (the first item) as a multi-photo post from one set as it describes, even though single photos are otherwise the default. Pick photos that look good side by side: varied subjects and distances, colours that sit well together, and the strongest as the cover.

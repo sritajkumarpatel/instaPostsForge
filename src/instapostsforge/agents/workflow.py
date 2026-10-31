@@ -170,12 +170,13 @@ class AgentWorkflow(AIWorkflow):
         intro = f"This is a multi-photo post of {len(blocks) // 2} photos, shown in this order; photo 1 is the cover."
         return blocks, intro + "\n\nAnalyst's notes:\n" + "\n".join(notes)
 
-    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None):
+    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None, style_brief=""):
         system = self._prompt(
             "caption_writer",
             quote_rule=QUOTE_RULES.get(self.settings.get("quote", "when_fitting"), QUOTE_RULES["when_fitting"]),
             language=self.settings.get("language", "English"),
             playbook=self.playbooks.for_photo(analysis),
+            style_brief=style_brief or "Nothing is written on the image today: leave overlay_title, overlay_line and overlay_note empty.",
         )
         blocks, notes = self._photos_content(image_jpeg, analysis, more_photos)
         text = (
@@ -196,6 +197,11 @@ class AgentWorkflow(AIWorkflow):
             quote=draft.quote,
             quote_author=draft.quote_author if draft.quote_is_attributed else None,
             more_alt_texts=more_alts,
+            overlay={
+                k: v.strip()
+                for k, v in (("title", draft.overlay_title), ("line", draft.overlay_line), ("note", draft.overlay_note))
+                if style_brief and v and v.strip()
+            },
         )
 
     def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback="", more_analyses=None):
@@ -230,6 +236,8 @@ class AgentWorkflow(AIWorkflow):
             f"{' by ' + caption.quote_author if caption.quote_author else ''}\n\n"
             f"Hashtags: {' '.join(caption.hashtags)}\n\nAlt text: {alt}"
         )
+        if caption.overlay:
+            text += "\n\nText drawn on the image: " + "; ".join(f"{k}: \"{v}\"" for k, v in caption.overlay.items())
         system = self._prompt("reviewer", playbook=self.playbooks.for_photo(analysis))
         result = self._ask("reviewer", system, [*blocks, Text(text)], ReviewResult)
         failed = [c for c in result.checks if not c.passed]

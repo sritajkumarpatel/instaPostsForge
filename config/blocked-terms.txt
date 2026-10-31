@@ -1,0 +1,94 @@
+# Words and phrases that must never appear in a caption, a quote, a hashtag or the text on the image.
+# Code checks every post against this list after the AI writes it, whatever the AI was told, and sends
+# the caption back for a rewrite when one turns up (the day is skipped if it keeps turning up).
+#
+# One term per line, matched as whole words and ignoring case. End a term with * to match any ending
+# (terror* matches terror, terrorist, terrorism). Lines starting with # are comments.
+#
+# Devotional posts are allowed (see "Deities, temples and festivals" in ai-instructions.md), so names of
+# deities, festivals and faiths are not listed here. What is blocked is caste, religious debate and
+# communal topics, politics, war and conflict, and sexual content.
+
+# Politics
+politic*
+election*
+electoral
+vote bank
+bjp
+congress party
+rss
+modi
+rahul gandhi
+kejriwal
+opposition party
+ruling party
+lok sabha
+rajya sabha
+manifesto
+propaganda
+protest*
+bandh
+
+# Caste, communal and religious debate
+caste*
+casteism
+casteist
+dalit*
+brahmin
+brahmins
+upper caste
+lower caste
+reservation quota
+communal tension*
+communal violence
+communal riots
+rioting
+rioters
+hindu muslim
+jihad*
+love jihad
+conversion racket
+anti national
+anti-national
+blasphem*
+infidel*
+kafir
+
+# War, conflict and terror
+war
+wars
+warfare
+warzone
+war zone
+ceasefire
+air strike*
+airstrike*
+surgical strike*
+missile*
+bomb
+bombs
+bombing*
+terror*
+militant*
+insurgen*
+border tension*
+border dispute*
+riots
+rioting
+rioters
+genocide
+massacre*
+pakistan army
+indian army
+operation sindoor
+
+# Sexual and explicit content
+nude*
+nudity
+sexy
+sexual*
+erotic*
+nsfw
+porn*
+onlyfans
+lingerie

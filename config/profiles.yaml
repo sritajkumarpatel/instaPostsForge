@@ -35,6 +35,9 @@ defaults:
       reviewer:       { effort: low }
     # Standing instructions every AI step follows (voice, topics to avoid, and so on).
     instructions_file: config/ai-instructions.md
+    # Words that must never appear in a caption, quote, hashtag or text on the image (politics, caste,
+    # religious debate, war, sexual content). Code checks every post against it, whatever the AI wrote.
+    blocked_terms_file: config/blocked-terms.txt
     # Per-category and per-mood rules. Each step gets only the sections for the photo's
     # category and mood. A profile can point to its own folder.
     playbooks_dir: config/playbooks
@@ -82,6 +85,7 @@ defaults:
     min_quality: 4            # photos scoring lower are used only when nothing better is left
     skip_screenshots: true    # never post screenshots, memes or photos of documents
     allow_children: false     # photos where a child is visible are skipped unless true
+    skip_sensitive_topics: true  # never post photos of political rallies, protests, the armed forces or communal messages
     near_duplicate_days: 30   # keep a near-identical photo at least this many days from the first
     # Multi-photo (carousel) posts: on some days the planner may post 2 to max_photos photos from
     # one outing or one place instead of a single photo. Only photos of the same shape share a post,
@@ -94,6 +98,22 @@ defaults:
       max_per_7_days: 3       # at most this many multi-photo posts in any 7 posts
       group_hours: 3          # photos taken within this many hours of the previous one form an outing
       group_km: 2             # ...and within this many km of it, when both have GPS (never saved)
+    # Post style: how the day's photo is laid out. "single" posts the photo as shot, as always.
+    # The others are drawn by code from templates, with a few words the AI writes for the image:
+    #   grid      2 to 9 photos of one outing tiled on one slide, then each photo on its own slide
+    #   gallery   one photo on a wide margin with a small museum-style label (title, place, month)
+    #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
+    #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
+    #   story     a title slide over the cover, the other photos, and a closing line
+    #   auto      code picks one of auto_styles that suits the day's photos and their mood
+    # The POST_STYLE, POST_MOOD and POST_CATEGORY environment variables (the Run workflow's choices, or
+    # repository variables) override name, mood and category for a run.
+    style:
+      name: single
+      auto_styles: [single, gallery, poster, grid, story, panorama]
+      mood: ""                # only photos of this mood today: calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe
+      category: ""            # only photos of this category (genre) today: landscape, street, food, animals, macro, ...
+      decor_dir: config/decor # optional PNGs with transparency (leaves, a sprig) placed on posters; none are bundled
   image:
     keep_aspect_ratio: true
     min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape

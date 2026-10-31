@@ -41,6 +41,7 @@ Score it as a scrolling viewer would: sharpness, exposure, composition, and how 
 - is_screenshot_or_meme: a screenshot, meme, document, receipt or mostly text.
 - shows_private_home: the outside of a private home, a house number, a street address or a car number plate is readable. This only keeps the address out of the text; such photos are still posted.
 - is_explicit: nudity, sexual content or graphic gore. Ordinary rooms, homes, cars and belongings are not explicit.
+- is_sensitive_topic: the photo is about politics or conflict: a political rally, party flag, poster or leader's cut-out, a protest or bandh, soldiers, weapons or military hardware, or a sign or banner with a communal or caste message. A temple, idol, puja or festival is not a sensitive topic, and neither is a national flag at a monument.
 
 ## Main subject
 

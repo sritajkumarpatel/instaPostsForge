@@ -20,16 +20,18 @@ from pathlib import Path
 
 from .agents import AIWorkflow, PlanItem, SetPhoto, build_workflow
 from .agents.playbooks import NO_QUOTE_CATEGORIES
-from .captions import CaptionError, CaptionRules, normalize_caption, trim_caption_text
+from .captions import CaptionError, CaptionRules, ContentPolicy, normalize_caption, trim_caption_text
 from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
 from .imaging import PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
+from .imaging import layouts
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
 from .state import ProfileState
 from .state.store import photo_key
+from .styles import MULTI_STYLES, StyleRequest, brief_for, choose_style, grid_size, style_request
 from .usage import UsageLog
 
 log = logging.getLogger(__name__)
@@ -116,6 +118,18 @@ class Run:
         self.today = today or date.today()
         self._images: dict[str, PreparedImage] = {}
         self.notes: list[str] = []
+        self.style: StyleRequest = style_request(profile.selection)
+
+    def multi(self) -> dict:
+        """The multi-photo settings for today: a grid or story style asks for several photos whatever the
+        switch says, and a style that holds one photo turns sets off."""
+        settings = multi_photo_settings(self.profile)
+        name = self.style.name
+        if self.style.wants_set:
+            return {**settings, "enabled": True, "max_photos": MULTI_STYLES[name], "max_per_7_days": 7, "switched_by": f"the {name} style"}
+        if self.style.single_only:
+            return {**settings, "enabled": False, "switched_by": f"the {name} style, which holds one photo"}
+        return settings
 
     # --- code steps --------------------------------------------------------
 
@@ -218,6 +232,8 @@ class Run:
             reason = None
             if analysis.get("is_explicit"):
                 reason = "explicit or nude content"
+            elif analysis.get("is_sensitive_topic") and rules.get("skip_sensitive_topics", True):
+                reason = "politics, protests, the armed forces or communal messages"
             elif analysis.get("is_screenshot_or_meme") and rules.get("skip_screenshots", True):
                 reason = "screenshots or memes"
             elif analysis.get("has_children") and not rules.get("allow_children", False):
@@ -253,7 +269,7 @@ class Run:
         no_repeat = planning.get("no_repeat_category", False)
         subject_days = int(planning.get("no_repeat_subject_days", 3))
         max_mood = int(planning.get("max_same_mood_per_7_days", 2))
-        max_multi = int(multi_photo_settings(self.profile).get("max_per_7_days", 3))
+        max_multi = int(self.multi().get("max_per_7_days", 3))
         history = self.c.state.history(limit=max(6, subject_days))
         # Today's post must not share a category with the last post, nor with anything posted
         # yesterday or earlier today (a second run in one day still counts against yesterday).
@@ -298,7 +314,9 @@ class Run:
     def photo_sets(self, pool: list[Photo]) -> list[PhotoSet]:
         """Sets of photos that could go out together: split by shape, so every photo in a set has the
         same width:height and nothing needs a border, and with near-identical frames removed."""
-        settings = multi_photo_settings(self.profile)
+        settings = self.multi()
+        # A grid or story redraws every photo onto its own slide, so its photos needn't share a shape.
+        split_by_shape = not self.style.wants_set
         analyses = {p.id: self.c.state.analysis_for(p.id) or {} for p in pool}
         times = {p.id: t for p in pool if (t := self.known_time(p))}
         place_names = {
@@ -324,8 +342,8 @@ class Run:
                 ):
                     continue
                 kept.append(photo)
-            by_shape: list[list[Photo]] = []
-            for photo in kept:
+            by_shape: list[list[Photo]] = [] if split_by_shape else [kept]
+            for photo in kept if split_by_shape else []:
                 shape = analyses[photo.id].get("shape")
                 group = next((g for g in by_shape if same_shape(shape, analyses[g[0].id].get("shape"))), None)
                 if group:
@@ -346,13 +364,31 @@ class Run:
             extras = [i for i in dict.fromkeys(item.extra_ids) if i in photo_set.ids and i != item.photo_id and i in allowed]
             if len(extras) > len(best):
                 best = extras
-        limit = multi_photo_settings(self.profile)["max_photos"] - 1
+        limit = self.multi()["max_photos"] - 1
         if len(best) < len(item.extra_ids):
             log.info("Dropped %d extra photo(s) the planner named outside the cover's set.", len(item.extra_ids) - len(best))
         return best[:limit]
 
+    def chosen_kind(self, photos: list[Photo]) -> list[Photo]:
+        """Only photos of the mood and category picked for this run (POST_MOOD, POST_CATEGORY), when any
+        match; otherwise every photo, with a note, so a narrow choice never stops the day's post."""
+        mood, category = self.style.mood, self.style.category
+        if not (mood or category):
+            return photos
+        wanted = " and ".join(f"{k} {v}" for k, v in (("mood", mood), ("category", category)) if v)
+        keep = [
+            p for p in photos
+            if (not mood or (self.c.state.analysis_for(p.id) or {}).get("mood") == mood)
+            and (not category or (self.c.state.analysis_for(p.id) or {}).get("category") == category)
+        ]
+        if keep:
+            log.info("Planning from the %d photo(s) with %s.", len(keep), wanted)
+            return keep
+        self.notes.append(f"No unposted photo has {wanted}, so the planner chose from all photos.")
+        return photos
+
     def plan(self, photos: list[Photo], horizon: int = 1) -> list[tuple[Photo, PlanItem]]:
-        photos = self.eligible(photos)
+        photos = self.chosen_kind(self.eligible(photos))
         by_id = {p.id: p for p in photos}
         rng = random.Random(self.today.isoformat())
         strategy = self.profile.selection.get("strategy", "ai_planner")
@@ -364,7 +400,7 @@ class Run:
             for p in pool:
                 analysis = self.c.state.analysis_for(p.id) or {}
                 candidates.append({"photo_id": p.id, "name": p.name, **{k: analysis.get(k) for k in ANALYSIS_FIELDS if k in analysis}})
-            multi = multi_photo_settings(self.profile)
+            multi = self.multi()
             log.info("Multi-photo posts are %s (%s).", "on" if multi["enabled"] else "off", multi["switched_by"])
             sets = self.photo_sets(pool) if multi["enabled"] else []
             rng.shuffle(sets)
@@ -376,6 +412,13 @@ class Run:
                     "multi_photo_posts_in_last_7": sum(1 for h in history if h.get("photo_count", 1) > 1),
                     "sets": [{"set_id": x.set_id, "kind": x.kind, "photo_ids": x.ids} for x in sets],
                 }
+                if self.style.wants_set:
+                    brief_sets["todays_style"] = (
+                        f"The account owner chose a {self.style.name} post today, so plan today's post as a multi-photo post "
+                        f"from one set: the cover plus 1 to {multi['max_photos'] - 1} extra photos"
+                        + (" (3, 5 or 8 extras fill a grid of 4, 6 or 9 best)" if self.style.name == "grid" else "")
+                        + ". The photos are redrawn onto the layout, so they needn't share a shape; pick ones that look good together."
+                    )
             try:
                 items = self.c.ai.plan(
                     candidates, self.c.state.history(), today=self.today, horizon=horizon, photo_sets=brief_sets
@@ -420,12 +463,13 @@ class Run:
             analysis["place_name"] = None  # never name the location of a private home
         return analysis
 
-    def compose(self, photo: Photo, plan_item: PlanItem, more: list[Photo] | None = None) -> Caption:
+    def compose(self, photo: Photo, plan_item: PlanItem, more: list[Photo] | None = None, style: str = "single") -> Caption:
         ai, state, settings = self.c.ai, self.c.state, self.profile.ai
         preview = self.image(photo).preview_jpeg
         analysis = self.notes_for(photo)
         more_photos = [SetPhoto(self.image(p).preview_jpeg, self.notes_for(p)) for p in more or []] or None
         rules = CaptionRules.from_settings(settings)
+        policy = ContentPolicy.from_settings(settings)
         max_revisions = int(settings.get("max_revisions", 2))
         feedback = ""
         last_problem = ""
@@ -435,6 +479,7 @@ class Run:
         redo_caption = redo_tags = True
         first_failed: set[str] | None = None  # what the first review faulted; later rounds may only re-raise these
         hard_problem = False  # whether the last review raised a concern that must stop the post
+        brief = brief_for(style)  # what goes on a styled image; empty for a plain photo
 
         def write(note: str) -> Caption:
             text = ai.write_caption(
@@ -445,6 +490,7 @@ class Run:
                 top_captions=state.top_captions(),
                 feedback=note,
                 **({"more_photos": more_photos} if more_photos else {}),
+                **({"style_brief": brief} if brief else {}),
             )
             if text.quote and analysis.get("category") in NO_QUOTE_CATEGORIES and settings.get("quote", "when_fitting") == "when_fitting":
                 text.quote = text.quote_author = None
@@ -486,8 +532,10 @@ class Run:
                     **({"more_analyses": [p.analysis for p in more_photos]} if more_photos else {}),
                 )
             draft.hashtags = list(tags)
+            if not brief:
+                draft.overlay = {}  # a plain photo carries no text, whatever the writer returned
             try:
-                caption = normalize_caption(draft, rules)
+                caption = normalize_caption(draft, rules, policy)
             except CaptionError as err:
                 feedback = last_problem = f"The post broke a rule: {err}"
                 log.warning("Attempt %d: %s", attempt + 1, last_problem)
@@ -521,6 +569,46 @@ class Run:
         raise ReviewRejected(f"No post today: the caption did not pass review. Last concern: {last_problem}")
 
 
+    # --- styled posts (code: layouts from templates) -----------------------------
+
+    def label_detail(self, photo: Photo) -> str | None:
+        """The small line under a gallery title: the place (never a private home's) and the month."""
+        analysis = self.c.state.analysis_for(photo.id) or {}
+        place_name = None if analysis.get("shows_private_home") else (analysis.get("place_name") or "").strip()
+        when = self.known_time(photo)
+        parts = [p for p in (place_name, when.strftime("%B %Y") if when else None) if p]
+        return " · ".join(parts) or None
+
+    def styled_slides(self, style: str, photo: Photo, more: list[Photo], caption: Caption) -> tuple[list[bytes], list[str]]:
+        """The slides of a styled post, as JPEGs, and an alt text for each."""
+        quality = int(self.profile.image.get("jpeg_quality", 95))
+        alts = [caption.alt_text, *caption.more_alt_texts]
+        photos = [
+            layouts.LayoutPhoto(layouts.load_photo(self.c.source.download(p)), focus_from(self.c.state.analysis_for(p.id)), alts[i] if i < len(alts) else "")
+            for i, p in enumerate([photo, *more])
+        ]
+        text = caption.overlay
+        title, line, note = text.get("title"), text.get("line"), text.get("note")
+        seed = int(photo_key(photo.id)[-8:], 16)  # the same decoration for the same photo
+        slides: list[layouts.Slide] = []
+        if style == "grid":
+            joined = "; ".join(a for a in alts if a)
+            slides.append(layouts.Slide(layouts.grid(photos, title), f"A grid of {len(photos)} photos" + (f" titled {title}" if title else "") + (f": {joined}" if joined else ".")))
+            slides += [layouts.Slide(layouts.gallery(p), p.alt_text) for p in photos]
+        elif style == "story":
+            slides.append(layouts.Slide(layouts.title_over(photos[0], title), photos[0].alt_text))
+            slides += [layouts.Slide(layouts.gallery(p), p.alt_text) for p in photos[1:]]
+            if line:
+                slides.append(layouts.Slide(layouts.closing(line, seed), line))
+        elif style == "poster":
+            slides.append(layouts.Slide(layouts.poster(photos[0], title, line, note, seed=seed, decor_dir=self.style.decor_dir), photos[0].alt_text))
+        elif style == "panorama" and (parts := layouts.panorama(photos[0])):
+            slides += [layouts.Slide(img, f"{photos[0].alt_text} (part {n} of {len(parts)})".strip()) for n, img in enumerate(parts, 1)]
+        else:  # gallery, and a panorama that can't be split
+            slides.append(layouts.Slide(layouts.gallery(photos[0], title, self.label_detail(photo)), photos[0].alt_text))
+        return [layouts.to_jpeg(s.image, quality) for s in slides[:10]], [s.alt_text[:1000] for s in slides[:10]]
+
+
 def _safe_name(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", name)[:80]
 
@@ -539,43 +627,69 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         log.info("Planner chose a multi-photo post of %d, cover %s: %s", 1 + len(more), photo.name, plan_item.reason)
     else:
         log.info("Planner chose %s: %s", photo.name, plan_item.reason)
-    caption = r.compose(photo, plan_item, more)
-    jpegs = r.post_images(photo, more)
+    style, style_note = ("single", None) if r.style.plain else choose_style(
+        r.style,
+        photo_count=1 + len(more),
+        cover=r.c.state.analysis_for(photo.id) or {},
+        today=r.today,
+        last_style=next((h.get("style") for h in components.state.history(limit=1)), None),
+    )
+    if style_note:
+        r.notes.append(style_note)
+    if style == "grid":
+        more = more[: grid_size(1 + len(more)) - 1]  # a grid holds 2, 3, 4, 6 or 9 photos
+    elif style in ("gallery", "poster", "panorama"):
+        more = []  # one photo; the planner's others stay unposted
+    elif style == "story":
+        more = more[: MULTI_STYLES["story"] - 1]
+    if style != "single":
+        log.info("Today's post is drawn in the %s style (%s).", style, r.style.switched_by)
+    caption = r.compose(photo, plan_item, more, style)
+    if style == "single":
+        jpegs, alts = r.post_images(photo, more), [caption.alt_text, *caption.more_alt_texts]
+    else:
+        jpegs, alts = r.styled_slides(style, photo, more, caption)
 
     result = PostResult(
-        profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason, more_photos=more
+        profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason, more_photos=more, style=style
     )
     result.notes.extend(r.notes)
+    if style != "single":
+        result.notes.append(f"Drawn in the {style} style: {len(jpegs)} slide{'s' if len(jpegs) > 1 else ''}.")
     if components.usage is not None:
         result.usage = components.usage.summary()
-    if any(r.image(p).padded for p in [photo, *more]):
+    if style == "single" and any(r.image(p).padded for p in [photo, *more]):
         result.notes.append("A photo was outside Instagram's 4:5 to 1.91:1 range, so a border was added.")
 
     if not publish:
         out = drafts_dir / profile.name / f"{r.today.isoformat()}_{_safe_name(photo.name)}"
         out.mkdir(parents=True, exist_ok=True)
-        if more:
+        if len(jpegs) > 1:
             for n, jpeg in enumerate(jpegs, 1):
                 (out / f"{n}.jpg").write_bytes(jpeg)
         else:
             (out / "image.jpg").write_bytes(jpegs[0])
         (out / "caption.txt").write_text(caption.render() + "\n", encoding="utf-8")
-        (out / "alt_text.txt").write_text("\n".join([caption.alt_text, *caption.more_alt_texts]) + "\n", encoding="utf-8")
-        (out / "plan.txt").write_text(f"{plan_item.reason}\nAngle: {plan_item.angle}\n", encoding="utf-8")
+        (out / "alt_text.txt").write_text("\n".join(alts) + "\n", encoding="utf-8")
+        styled = f"Style: {style}\n" + "".join(f"Text on the image ({k}): {v}\n" for k, v in caption.overlay.items()) if style != "single" else ""
+        (out / "plan.txt").write_text(f"{plan_item.reason}\nAngle: {plan_item.angle}\n{styled}", encoding="utf-8")
         result.draft_dir = str(out)
         return result
 
     if components.host is None or components.publisher is None:
         raise RuntimeError("Publishing needs both an image host and a publisher.")
-    keys = [f"{profile.name}-{photo_key(p.id)[len('h:'):]}.jpg" for p in [photo, *more]]  # never the Drive ID: the repo is public
+    if style == "single":
+        keys = [f"{profile.name}-{photo_key(p.id)[len('h:'):]}.jpg" for p in [photo, *more]]  # never the Drive ID: the repo is public
+    else:
+        keys = [f"{profile.name}-{photo_key(photo.id)[len('h:'):]}-{style}-{n}.jpg" for n in range(1, len(jpegs) + 1)]
     uploaded: list[str] = []
     try:
         urls = []
         for key, jpeg in zip(keys, jpegs):
             urls.append(components.host.upload(key, jpeg))
             uploaded.append(key)
-        if more:
-            media_id = components.publisher.publish_carousel(urls, caption.render(), [caption.alt_text, *caption.more_alt_texts])
+        if len(urls) > 1:
+            media_id = components.publisher.publish_carousel(urls, caption.render(), alts)
         else:
             media_id = components.publisher.publish_image(urls[0], caption.render(), caption.alt_text)
     finally:
@@ -592,6 +706,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         hashtags=caption.hashtags,
         plan_reason=plan_item.reason,
         more_photo_ids=[p.id for p in more],
+        **({"style": style} if style != "single" else {}),
     )
     result.published = True
     result.media_id = media_id

@@ -327,6 +327,8 @@ The run name shows the mode, for example "Daily post: preview". A preview's summ
 | Caption length | `ai.max_caption_text_chars` (150), plus the per-category ranges in `config/playbooks/categories.md` |
 | How much of a 3:4 portrait may be trimmed to fit 4:5 | `image.max_crop` (0.1) |
 | Multi-photo posts | `selection.multi_photo` in `config/profiles.yaml`, or `MULTI_PHOTO` (a repository variable or secret) |
+| Post style (grid, poster, gallery frame, panorama, story) and today's mood or genre | `selection.style` in `config/profiles.yaml`, the Run workflow's choices, or `POST_STYLE` (a repository variable) |
+| Words that must never appear | `config/blocked-terms.txt` |
 | Upload size and quality | `image.max_width` (1080) and `image.jpeg_quality` (95) |
 | Which model each agent uses, its effort and token limit | `ai.model`, `ai.effort`, `ai.max_tokens` and `ai.agents.<agent>` in `config/profiles.yaml` |
 | Quote policy, hashtag count, review and revisions | `ai.quote`, `ai.hashtags`, `ai.review`, `ai.max_revisions` |
@@ -335,6 +337,8 @@ The analyst puts every photo in one of 12 categories (landscape, sky, city, stre
 
 Some rules are enforced in code, whatever the AI says:
 - Explicit or nude photos (`is_explicit`) are never posted. Everything else in the folder is handpicked, so homes, cars and belongings are fine to show.
+- Photos about politics or conflict (`is_sensitive_topic`: rallies, party posters, protests, soldiers or weapons, communal or caste messages) are never posted, unless `selection.skip_sensitive_topics: false`.
+- No politics, caste, religious debate, communal topics, war or sexual content in the caption, quote, hashtags or text on the image. The AI is told so in `config/ai-instructions.md`, the reviewer fails safety for it, and code checks every post against `config/blocked-terms.txt`: a blocked hashtag is dropped, and a blocked word sends the caption back for a rewrite (the day is skipped if it keeps coming back). Reverent devotional posts are not religious debate and stay welcome.
 - Screenshots, memes and photos of documents are never posted.
 - Photos where a child is visible are skipped unless `selection.allow_children: true`.
 - A near-identical copy of a photo posted in the last 30 days is held back.
@@ -359,6 +363,27 @@ On some days the post is 2 to 5 photos of the same shape that go together instea
 - **Switch:** set `MULTI_PHOTO` to `false` (a repository variable or secret; any spelling, such as `False`, works) to post single photos only, with no commit. The run log says which setting it used. Without the variable, `selection.multi_photo.enabled` in `config/profiles.yaml` decides. `forge check` shows how many photos have a capture time and GPS.
 
 A multi-photo post costs a little more, because the caption writer and reviewer look at every photo in it.
+
+### Post styles
+
+By default (`single`) the photo goes out as shot. A post can instead be laid out in a style, drawn by code from templates with a few words the AI writes for the image. Every slide is 1080×1350 (4:5).
+
+| Style | What it looks like | Photos |
+| --- | --- | --- |
+| `single` | The photo as shot (or a multi-photo post, as above) | 1, or a set |
+| `grid` | 2 to 9 photos of one outing or place tiled on one slide with a short line across it, then each photo on its own slide | 2 to 9 |
+| `gallery` | The photo on a wide off-white margin with a museum-style label: a title, then the place and month | 1 |
+| `poster` | The photo as a print on warm paper, with a spaced two-phrase title ("Small towns, big dreams"), a quiet line under it and a handwritten note in the margin | 1 |
+| `panorama` | A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe | 1 |
+| `story` | The cover full-bleed with a title, the other photos on gallery margins, then a closing line | 2 to 9 |
+| `auto` | Code picks one of `auto_styles` that suits the photos and their mood, never the same look two days running | any |
+
+- **Choosing:** set `selection.style.name` in `config/profiles.yaml`, or choose **style**, **mood** and **category** when you start the Run workflow by hand. The repository variable `POST_STYLE` sets the style for scheduled runs. Locally: `forge preview -p main --style poster --mood nostalgic`.
+- **Mood and category** narrow today's photos to those the analyst gave that mood or category. If none match, the planner chooses from all photos and the run says so.
+- **Text on the image** comes from the caption writer (`overlay_title`, `overlay_line`, `overlay_note`), is held to 32 or 80 characters, loses any emoji, hashtags or links, goes through the same blocked-terms check as the caption, and is shown to the reviewer. It can't be edited after posting, so the rules for it are the strictest.
+- **Fallbacks, never failures:** a grid or story with no set to draw from becomes a gallery frame or a poster, and a panorama of a photo that isn't wide becomes a gallery frame. An unknown style name posts a plain photo.
+- **Decorations:** put PNGs with a transparent background (a leafy branch, a sprig) in `config/decor/` to have one placed on each poster. None are bundled.
+- **Fonts:** Playfair Display and Caveat, both under the SIL Open Font License, are bundled in `src/instapostsforge/imaging/fonts/`.
 
 ### Never posting a photo twice
 
@@ -452,6 +477,7 @@ After a new token, run the workflow in **check** mode before posting.
 config/profiles.yaml        accounts and AI settings (public: names secrets, never holds them)
 config/ai-instructions.md   standing instructions every AI step follows
 config/playbooks/           rules per photo category and per mood
+config/blocked-terms.txt    words that must never appear in a post, checked in code
 CLAUDE.md                   guidance for Claude working on this repo
 docs/ARCHITECTURE.md        diagrams and the agentic pattern
 site/                       the project page and setup guide, published to GitHub Pages
@@ -466,7 +492,8 @@ src/instapostsforge/
   prompts/                  one prompt file per agent
   captions/                 Instagram's caption and hashtag rules
   sources/                  where photos come from (google_drive, r2, local_folder)
-  imaging/                  JPEG conversion and aspect-ratio handling
+  imaging/                  JPEG conversion and aspect-ratio handling; layouts.py draws the post styles
+  styles.py                 which style a post is drawn in, and what the caption writer is told about it
   hosting/                  temporary public link for Instagram (GitHub media branch)
   publishers/               Instagram API: publish, insights, token refresh
   state/                    what the workflow remembers per profile

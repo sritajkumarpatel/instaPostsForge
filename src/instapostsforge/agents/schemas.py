@@ -32,6 +32,10 @@ class PhotoAnalysis(BaseModel):
     is_screenshot_or_meme: bool
     shows_private_home: bool
     is_explicit: bool = Field(default=False, description="Nudity, sexual content or graphic gore; such photos are never posted.")
+    is_sensitive_topic: bool = Field(
+        default=False,
+        description="A political rally, party flag or poster, protest, armed forces or weapons, or a communal or caste message; such photos are never posted.",
+    )
     themes: list[str] = Field(description="Themes and audiences, specific to broad.")
     # Where the main subject sits, so a trim to Instagram's shape can leave it whole. Code checks the
     # numbers (imaging.focus_from); no range limits here, so one odd number can't sink the whole analysis.
@@ -64,6 +68,9 @@ class CaptionDraft(BaseModel):
     more_alt_texts: list[str] = Field(
         default_factory=list, description="Multi-photo posts only: one alt text for each other photo, in order."
     )
+    overlay_title: str | None = Field(default=None, description="Styled posts only: the short title drawn on the image.")
+    overlay_line: str | None = Field(default=None, description="Styled posts only: one short line drawn on the image.")
+    overlay_note: str | None = Field(default=None, description="Poster posts only: a handwritten aside of a few words.")
 
 
 class ChosenTag(BaseModel):

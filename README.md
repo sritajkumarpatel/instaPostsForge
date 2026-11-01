@@ -366,14 +366,14 @@ A multi-photo post costs a little more, because the caption writer and reviewer 
 
 ### Post styles
 
-By default (`single`) the photo goes out as shot. A post can instead be laid out in a style, drawn by code from templates with a few words the AI writes for the image. Every slide is 1080×1350 (4:5).
+By default (`single`) the photo goes out as shot. A post can instead be laid out in a style, drawn by code from templates with a few words the AI writes for the image. Every slide is 1080×1350 (4:5). **See every style with example images in [docs/STYLES.md](docs/STYLES.md).**
 
 | Style | What it looks like | Photos |
 | --- | --- | --- |
 | `single` | The photo as shot (or a multi-photo post, as above) | 1, or a set |
 | `grid` | 2 to 9 photos of one outing or place tiled on one slide with a short line across it, then each photo on its own slide | 2 to 9 |
 | `gallery` | The photo on a wide off-white margin with a museum-style label: a title, then the place and month | 1 |
-| `poster` | The photo as a print on warm paper, with a spaced two-phrase title ("Small towns, big dreams"), a quiet line under it and a handwritten note in the margin | 1 |
+| `poster` | The photo as a large print on paper, with a spaced two-phrase title ("Small towns, big dreams"), a quiet line and a handwritten note. The layout suits the photo's shape, and layout, finish (border, tape, tilt) and paper tone change from post to post | 1 |
 | `panorama` | A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe | 1 |
 | `story` | The cover full-bleed with a title, the other photos on gallery margins, then a closing line | 2 to 9 |
 | `auto` | Code picks one of `auto_styles` that suits the photos and their mood, never the same look two days running | any |

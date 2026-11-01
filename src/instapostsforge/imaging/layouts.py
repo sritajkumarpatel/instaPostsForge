@@ -21,6 +21,8 @@ from .processor import Focus, _to_jpeg, place
 
 W, H = 1080, 1350
 PAPER = (239, 233, 221)
+# Paper tones a poster may be printed on: cream, oat, sage, mist blue and blush.
+PAPER_TONES = ((239, 233, 221), (232, 226, 214), (226, 230, 218), (222, 228, 232), (240, 228, 222))
 GALLERY = (246, 244, 239)
 INK = (48, 43, 38)
 SOFT_INK = (112, 102, 92)
@@ -215,16 +217,17 @@ def overlay_title(canvas: Image.Image, text: str, centre_y: int) -> None:
 
 
 def gallery(photo: LayoutPhoto, title: str | None = None, detail: str | None = None) -> Image.Image:
-    """The photo on a wide off-white margin with a small museum-style label under it."""
+    """The photo on an off-white margin with a small museum-style label under it. The print takes as
+    much of the slide as the label leaves, so the photo, not the margin, fills the frame."""
     canvas = Image.new("RGB", (W, H), GALLERY)
-    label_space = 190 if (title or detail) else 0
-    print_ = contain(photo.image, (W - 180, H - 200 - label_space))
+    label_space = 150 if (title or detail) else 0
+    print_ = contain(photo.image, (W - 120, H - 140 - label_space))
     x = (W - print_.width) // 2
-    y = (H - label_space - print_.height) // 2 + (20 if label_space else 0)
+    y = (H - label_space - print_.height) // 2 + (10 if label_space else 0)
     shadow(canvas, (x, y, x + print_.width, y + print_.height), blur=16, offset=8, strength=60)
     canvas.paste(print_, (x, y))
     draw = ImageDraw.Draw(canvas)
-    ly = y + print_.height + 56
+    ly = y + print_.height + 44
     if title:
         typeface, lines = fitted(draw, title, "serif", 44, W - 220, 1, weight="Medium")
         draw.text(((W - text_width(draw, lines[0], typeface)) // 2, ly), lines[0], font=typeface, fill=INK)
@@ -235,6 +238,111 @@ def gallery(photo: LayoutPhoto, title: str | None = None, detail: str | None = N
     return canvas
 
 
+# --- poster: several layouts, picked to suit the photo's shape -------------------------
+
+TITLE_SPACING = 9
+
+
+def _title_lines(draw, title: str, width: int, size: int = 36):
+    """A poster title in spaced capitals. "Small towns, big dreams" sets as two lines, one phrase each."""
+    upper = title.upper()
+    phrases = [p.strip() for p in upper.split(",") if p.strip()]
+    if len(phrases) == 2:
+        typeface = min((fitted(draw, p, "serif", size, width, 1, spacing=TITLE_SPACING)[0] for p in phrases), key=lambda f: f.size)
+        return typeface, phrases
+    return fitted(draw, upper.replace(",", ""), "serif", size, width, 2, spacing=TITLE_SPACING)
+
+
+def text_block_height(title: str | None, line: str | None, width: int) -> int:
+    draw = ImageDraw.Draw(Image.new("L", (1, 1)))
+    height = 0
+    if title:
+        typeface, lines = _title_lines(draw, title, width)
+        height += (line_height(typeface) + 2) * len(lines) + 44
+    if line:
+        typeface, lines = fitted(draw, line, "italic", 28, width, 3)
+        height += (line_height(typeface) + 4) * len(lines)
+    return height
+
+
+def draw_text_block(canvas: Image.Image, x: int, y: int, width: int, title: str | None, line: str | None, align: str = "left") -> int:
+    """The spaced title, a short rule and the italic line, from (x, y); returns where it ends."""
+    draw = ImageDraw.Draw(canvas)
+
+    def left_for(w: int) -> int:
+        return x + (width - w) // 2 if align == "center" else x + width - w if align == "right" else x
+
+    if title:
+        typeface, lines = _title_lines(draw, title, width)
+        for ln in lines:
+            draw_spaced(draw, (left_for(text_width(draw, ln, typeface, TITLE_SPACING)), y), ln, typeface, INK, TITLE_SPACING)
+            y += line_height(typeface) + 2
+        y += 18
+        rx = left_for(80)
+        draw.line((rx, y, rx + 80, y), fill=SOFT_INK, width=2)
+        y += 26
+    if line:
+        typeface, lines = fitted(draw, line, "italic", 28, width, 3)
+        for ln in lines:
+            draw.text((left_for(text_width(draw, ln, typeface)), y), ln, font=typeface, fill=SOFT_INK)
+            y += line_height(typeface) + 4
+    return y
+
+
+def draw_note(canvas: Image.Image, note: str, box: tuple[int, int, int, int], angle: float) -> None:
+    """A handwritten aside, underlined and slightly tilted, fitted inside box (x0, y0, x1, y1)."""
+    x0, y0, x1, y1 = box
+    width = max(160, x1 - x0)
+    layer = Image.new("L", (width, max(140, y1 - y0)), 0)
+    ldraw = ImageDraw.Draw(layer)
+    hand, lines = fitted(ldraw, note, "hand", 54, width - 30, 3)
+    ny = 8
+    for ln in lines:
+        ldraw.text((12, ny), ln, font=hand, fill=255)
+        ny += line_height(hand) - 8
+    ldraw.line((16, ny + 14, 16 + min(width - 30, text_width(ldraw, lines[-1], hand)), ny + 6), fill=255, width=3)
+    layer = layer.crop((0, 0, width, min(layer.height, ny + 30))).rotate(angle, resample=Image.BICUBIC, expand=True)
+    nx = min(max(0, x0), W - layer.width)
+    ny = min(max(0, y0), H - layer.height)
+    canvas.paste(Image.new("RGB", layer.size, SOFT_INK), (nx, ny), layer)
+
+
+def place_print(canvas: Image.Image, image: Image.Image, xy: tuple[int, int], rng: random.Random, finish: str) -> tuple[int, int, int, int]:
+    """Lays the photo on the paper as a print: plain, with a white border, or taped down, sometimes
+    with the slightest tilt. Returns the box it covers."""
+    x, y = xy
+    if finish in ("border", "taped_border"):
+        edge = 16
+        bordered = Image.new("RGB", (image.width + edge * 2, image.height + edge * 2), (250, 248, 243))
+        bordered.paste(image, (edge, edge))
+        image, x, y = bordered, x - edge, y - edge
+    tilt = rng.choice((-1.2, -0.8, 0.8, 1.2)) if finish == "border" and rng.random() < 0.5 else 0
+    box = (x, y, x + image.width, y + image.height)
+    shadow(canvas, box)
+    if tilt:
+        rotated = image.convert("RGBA").rotate(tilt, resample=Image.BICUBIC, expand=True)
+        canvas.paste(rotated, (x - (rotated.width - image.width) // 2, y - (rotated.height - image.height) // 2), rotated)
+    else:
+        canvas.paste(image, (x, y))
+    if finish.startswith("taped"):
+        for cx, angle in ((box[0] + 40, rng.uniform(-30, -18)), (box[2] - 40, rng.uniform(18, 30))):
+            tape = Image.new("RGBA", (150, 44), (236, 226, 200, 170)).rotate(angle, resample=Image.BICUBIC, expand=True)
+            canvas.paste(tape, (cx - tape.width // 2, box[1] - tape.height // 2), tape)
+    return box
+
+
+POSTER_LAYOUTS = {
+    "landscape": ("wide_top", "wide_low", "wide_band"),
+    "portrait": ("tall_left", "tall_right", "tall_centre"),
+    "square": ("square_top", "square_left"),
+}
+
+
+def poster_layouts(shape: float) -> tuple[str, ...]:
+    kind = "landscape" if shape >= 1.15 else "portrait" if shape < 0.9 else "square"
+    return POSTER_LAYOUTS[kind]
+
+
 def poster(
     photo: LayoutPhoto,
     title: str | None = None,
@@ -243,59 +351,76 @@ def poster(
     *,
     seed: int = 0,
     decor_dir: str | None = None,
+    layout: str | None = None,
+    finish: str | None = None,
 ) -> Image.Image:
-    """The photo as a print on warm paper: a spaced serif title and a quiet italic line at the bottom
-    left, and a handwritten note at the top right, like the poster carousels on Instagram."""
-    canvas = paper(seed)
-    has_text = bool(title or line)
-    box_w, box_h = (700 if note else 820), (900 if has_text else 1080)
-    print_ = contain(photo.image, (box_w, box_h))
-    x = 110 if note else (W - print_.width) // 2
-    y = 120 + (box_h - print_.height) // 3
-    shadow(canvas, (x, y, x + print_.width, y + print_.height))
-    canvas.paste(print_, (x, y))
+    """The photo as a large print on warm paper, with a spaced serif title, a quiet italic line and a
+    handwritten note. The layout suits the photo's shape (a wide photo spans the page, a tall one
+    stands to one side of the note) and, with the print's finish, changes from post to post: the seed
+    picks them, so the same post always looks the same and the next one looks different."""
+    rng = random.Random(seed)
+    canvas = paper(seed, rng.choice(PAPER_TONES))
+    shape = photo.image.width / photo.image.height
+    layout = layout or rng.choice(poster_layouts(shape))
+    finish = finish or rng.choice(("plain", "border", "taped", "taped_border"))
+    margin = 70
+    text_w = 600
+    text_h = text_block_height(title, line, text_w)
+    gap = 56 if text_h else 0
+    angle = rng.choice((-7, -5, 5, 7))
+
+    if layout in ("wide_top", "wide_low", "wide_band", "square_top", "square_left"):
+        full = layout == "wide_band"
+        note_room = 130 if note and layout != "square_left" else 0
+        box_w = W if full else W - 2 * margin - (150 if layout == "square_left" and note else 0)
+        box_h = H - 2 * margin - text_h - gap - note_room
+        print_ = contain(photo.image, (box_w, box_h)) if not full else cover(photo, (W, min(box_h, round(W / max(shape, 1.0)))))
+        px = 0 if full else margin if layout == "square_left" else (W - print_.width) // 2
+        block = print_.height + gap + text_h + note_room
+        top = max(margin, (H - block) // 2)
+        if layout == "wide_low":  # words above, the photo below them
+            draw_text_block(canvas, margin + 10, top, text_w, title, line)
+            py = top + text_h + gap
+            box = place_print(canvas, print_, (px, py), rng, "plain" if full else finish)
+            if note:
+                draw_note(canvas, note, (W - 400, box[3] + 16, W - margin, box[3] + 16 + note_room + 40), angle)
+        else:  # the photo first, the words under it
+            py = top
+            box = place_print(canvas, print_, (px, py), rng, "plain" if full else finish)
+            ty = box[3] + gap
+            if layout == "square_left" and note:
+                draw_note(canvas, note, (box[2] + 12, py + 40, W - 8, py + 360), angle)
+            elif note:
+                draw_note(canvas, note, (W - 380, max(box[3] + 10, ty + text_h - 120), W - margin, ty + text_h + note_room), angle)
+            draw_text_block(canvas, margin + 10, ty, text_w if note else W - 2 * margin, title, line)
+    else:  # tall photos stand to one side, with the note in the column beside them
+        note_col = 250 if note else 0
+        box_w = W - 2 * margin - note_col
+        box_h = H - 2 * margin - text_h - gap
+        print_ = contain(photo.image, (box_w if layout != "tall_centre" else W - 2 * margin, box_h))
+        if layout == "tall_centre":
+            px = (W - print_.width) // 2
+        elif layout == "tall_left":
+            px = margin
+        else:
+            px = W - margin - print_.width
+        block = print_.height + gap + text_h
+        py = max(margin, (H - block) // 2)
+        box = place_print(canvas, print_, (px, py), rng, finish)
+        if note:
+            if layout == "tall_left":
+                draw_note(canvas, note, (box[2] + 24, py + 50, W - 16, py + 400), angle)
+            elif layout == "tall_right":
+                draw_note(canvas, note, (16, py + 50, box[0] - 24, py + 400), -abs(angle))
+            else:
+                draw_note(canvas, note, (W - 400, box[3] + 10, W - margin, box[3] + 200), angle)
+        align = "right" if layout == "tall_right" else "left"
+        draw_text_block(canvas, margin + 10, box[3] + gap, W - 2 * margin - 20 - (360 if layout == "tall_centre" and note else 0), title, line, align)
 
     leaf = decor(decor_dir, seed)
     if leaf is not None:
-        leaf = contain(leaf, (420, 420))
-        canvas.paste(leaf, (max(0, x - leaf.width // 2), max(0, y - leaf.height // 3)), leaf)
-
-    draw = ImageDraw.Draw(canvas)
-    bottom = y + print_.height
-    ty = max(bottom + 60, H - 300)
-    if title:
-        spacing = 9
-        # "Small towns, big dreams" sets as two lines, one phrase each, the way a poster would.
-        phrases = [p.strip() for p in title.upper().split(",") if p.strip()]
-        typeface, lines = fitted(draw, title.upper().replace(",", ""), "serif", 34, 560, 2, spacing=spacing)
-        if len(phrases) == 2:
-            typeface = min((fitted(draw, p, "serif", 34, 560, 1, spacing=spacing)[0] for p in phrases), key=lambda f: f.size)
-            lines = phrases
-        for ln in lines:
-            draw_spaced(draw, (90, ty), ln, typeface, INK, spacing)
-            ty += line_height(typeface) + 2
-        ty += 18
-        draw.line((92, ty, 172, ty), fill=SOFT_INK, width=2)
-        ty += 26
-    if line:
-        typeface, lines = fitted(draw, line, "italic", 26, 520, 3)
-        for ln in lines:
-            draw.text((90, ty), ln, font=typeface, fill=SOFT_INK)
-            ty += line_height(typeface) + 4
-    if note:
-        # In the margin beside the print, slightly tilted, as if written there by hand.
-        room = W - (x + print_.width) - 50
-        layer = Image.new("L", (max(room, 200), 300), 0)
-        ldraw = ImageDraw.Draw(layer)
-        hand, lines = fitted(ldraw, note, "hand", 50, layer.width - 20, 3)
-        ny = 10
-        for ln in lines:
-            ldraw.text((10, ny), ln, font=hand, fill=255)
-            ny += line_height(hand) - 8
-        ldraw.line((14, ny + 14, 14 + min(layer.width - 30, text_width(ldraw, lines[-1], hand)), ny + 6), fill=255, width=3)
-        layer = layer.rotate(8, resample=Image.BICUBIC, expand=True)
-        nx = min(W - layer.width - 10, x + print_.width + 30)
-        canvas.paste(Image.new("RGB", layer.size, SOFT_INK), (nx, y + 40), layer)
+        leaf = contain(leaf, (380, 380))
+        canvas.paste(leaf, (0, 0), leaf)
     return canvas
 
 

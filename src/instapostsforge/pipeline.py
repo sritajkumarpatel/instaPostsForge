@@ -589,7 +589,9 @@ class Run:
         ]
         text = caption.overlay
         title, line, note = text.get("title"), text.get("line"), text.get("note")
-        seed = int(photo_key(photo.id)[-8:], 16)  # the same decoration for the same photo
+        # Picks the poster's layout, finish and paper: the same post looks the same on a re-run that
+        # day, and every other post gets a fresh combination.
+        seed = int(photo_key(photo.id)[-8:], 16) ^ self.today.toordinal()
         slides: list[layouts.Slide] = []
         if style == "grid":
             joined = "; ".join(a for a in alts if a)

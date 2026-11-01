@@ -48,10 +48,27 @@ def subjects(names, **extra):
 # --- the choice -------------------------------------------------------------------
 
 
-def test_single_is_the_default_and_unknown_styles_fall_back_to_it(monkeypatch, caplog):
-    assert style_request({}).name == "single"
+def test_any_is_the_default_and_unknown_styles_fall_back_to_it(monkeypatch, caplog):
+    request = style_request({})
+    assert request.name == "any" and "single" not in request.any_styles
     monkeypatch.setenv("POST_STYLE", "collage")
-    assert style_request({}).name == "single" and "Unknown post style" in caplog.text
+    assert style_request({}).name == "any" and "Unknown post style" in caplog.text
+    monkeypatch.setenv("POST_STYLE", "auto")  # the older name
+    assert style_request({}).name == "any"
+    monkeypatch.setenv("POST_STYLE", "single")
+    assert style_request({"style": {"name": "poster"}}).name == "single"
+    assert style_request({"style": {"auto_styles": ["poster", "single"]}}).any_styles == ["poster", "single"]
+
+
+def test_any_follows_the_planners_pick_when_it_fits():
+    request = StyleRequest("any")
+    assert choose_style(request, photo_count=1, cover={}, today=DAY, suggested="poster") == ("poster", None)
+    assert choose_style(request, photo_count=4, cover={}, today=DAY, suggested="grid") == ("grid", None)
+    # A pick that can't be drawn, or isn't allowed, is replaced by one that suits the photos.
+    assert choose_style(request, photo_count=1, cover={"shape": 1.2}, today=DAY, suggested="panorama")[0] in ("gallery", "poster")
+    assert choose_style(request, photo_count=1, cover={}, today=DAY, suggested="single")[0] != "single"
+    assert choose_style(request, photo_count=1, cover={}, today=DAY, suggested="grid")[0] in ("gallery", "poster")
+    assert choose_style(StyleRequest("any", any_styles=["poster"]), photo_count=4, cover={}, today=DAY)[0] == "poster"
 
 
 def test_run_choices_override_config(monkeypatch):
@@ -75,13 +92,13 @@ def test_choose_style_falls_back_rather_than_failing():
     assert choose_style(StyleRequest("panorama"), photo_count=1, cover={"shape": 2.0}, today=DAY) == ("panorama", None)
 
 
-def test_auto_suits_the_mood_and_avoids_yesterdays_look():
-    request = StyleRequest("auto", auto_styles=["gallery", "poster"])
+def test_any_without_a_pick_suits_the_mood_and_avoids_yesterdays_look():
+    request = StyleRequest("any", any_styles=["gallery", "poster"])
     for day in range(1, 15):
         style, _ = choose_style(request, photo_count=1, cover={"mood": "nostalgic"}, today=date(2026, 11, day), last_style="poster")
         assert style == "gallery"
-    assert choose_style(StyleRequest("auto", auto_styles=["grid"]), photo_count=4, cover={}, today=DAY)[0] == "grid"
-    assert choose_style(StyleRequest("auto", auto_styles=["single", "panorama"]), photo_count=1, cover={"shape": 1.2}, today=DAY)[0] == "single"
+    assert choose_style(StyleRequest("any", any_styles=["grid"]), photo_count=4, cover={}, today=DAY)[0] == "grid"
+    assert choose_style(StyleRequest("any", any_styles=["single", "panorama"]), photo_count=1, cover={"shape": 1.2}, today=DAY)[0] == "single"
 
 
 def test_grid_sizes():
@@ -143,11 +160,13 @@ def test_reviewer_sees_the_text_on_the_image():
 # --- the pipeline ---------------------------------------------------------------------------
 
 
-def test_single_style_posts_exactly_as_before(tmp_path):
+def test_single_style_posts_exactly_as_before(tmp_path, monkeypatch):
+    monkeypatch.setenv("POST_STYLE", "single")
     files = {"a.jpg": photo_jpeg(1)}
     ai = FakeAI()
     c = components(tmp_path, files, ai)
     result = pipeline.run(make_profile(), c, publish=True, today=DAY)
+    assert ai.calls["plan"][0]["style_options"] is None
     assert result.style == "single" and result.caption.overlay == {}
     assert ai.calls["caption"][0]["style_brief"] == ""
     assert list(c.host.uploaded) == [f"test-{pipeline.photo_key('a.jpg')[2:]}.jpg"]
@@ -258,3 +277,35 @@ def test_poster_layout_suits_the_shape_and_changes_from_post_to_post():
     photo = layouts.LayoutPhoto(Image.new("RGB", (1500, 1000), (200, 30, 30)))
     looks = {layouts.poster(photo, "Old walls, new light", seed=seed).resize((27, 34)).tobytes() for seed in range(8)}
     assert len(looks) > 2
+
+
+def test_by_default_the_planner_chooses_the_style(tmp_path):
+    ai = FakeAI(styles={"a.jpg": "poster"})
+    c = components(tmp_path, {"a.jpg": photo_jpeg(1)}, ai)
+    result = pipeline.run(make_profile(), c, publish=True, today=DAY)
+    options = ai.calls["plan"][0]["style_options"]
+    assert set(options) == {"poster", "gallery", "grid", "story", "panorama"}
+    assert result.style == "poster" and "warm paper" in ai.calls["caption"][0]["style_brief"]
+    assert ProfileState("test", tmp_path / "state").history()[0]["style"] == "poster"
+
+
+def test_by_default_a_set_can_become_a_grid_of_mixed_shapes(tmp_path):
+    files = {n: photo_jpeg(i, *((600, 750) if i % 2 else (900, 600))) for i, n in enumerate(OUTING)}
+    ai = FakeAI(plan_order=[OUTING[0]], extras={OUTING[0]: OUTING[1:]}, analyses=subjects(OUTING), styles={OUTING[0]: "grid"})
+    selection = {"strategy": "ai_planner", "multi_photo": {"enabled": True, "max_photos": 5}}
+    result = pipeline.run(make_profile(selection=selection), components(tmp_path, files, ai), publish=True, today=DAY)
+    assert ai.calls["plan"][0]["photo_sets"]["max_photos_per_post"] == 9  # room for a full grid
+    assert result.style == "grid" and len(result.more_photos) == 3
+
+
+def test_planner_is_shown_the_styles_and_its_pick_is_checked():
+    import json
+
+    from instapostsforge.agents.schemas import Plan, PlannedPhoto
+    from instapostsforge.styles import STYLE_GUIDE
+
+    options = {s: STYLE_GUIDE[s] for s in ("poster", "gallery")}
+    wf, msgs = workflow(Plan(order=[PlannedPhoto(photo_id="a", reason="r", angle="g", style="poster"), PlannedPhoto(photo_id="b", reason="r", angle="g", style="collage")]))
+    items = wf.plan([{"photo_id": "a"}, {"photo_id": "b"}], [], today=DAY, horizon=2, style_options=options)
+    assert [i.style for i in items] == ["poster", None]  # a name outside the options is dropped
+    assert json.loads(msgs.calls[0]["parts"][0].text)["post_styles"] == options

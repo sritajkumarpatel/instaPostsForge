@@ -14,7 +14,8 @@ from instapostsforge.models import Photo
 from instapostsforge.state import ProfileState
 from instapostsforge.state.store import photo_key
 
-MULTI = {"strategy": "ai_planner", "multi_photo": {"enabled": True, "max_photos": 5, "max_per_7_days": 3}}
+# Plain multi-photo posts, as shot: the single style (the default "any" draws every post in a layout).
+MULTI = {"strategy": "ai_planner", "multi_photo": {"enabled": True, "max_photos": 5, "max_per_7_days": 3}, "style": {"name": "single"}}
 
 # Names carry the capture time, as phone photos do: a morning outing of three and one evening photo.
 OUTING = ["IMG20261018090000.jpg", "IMG20261018093000.jpg", "IMG20261018101500.jpg"]

@@ -37,6 +37,14 @@ For a multi-photo post:
 
 Leave extra_photo_ids empty for a single photo.
 
+## Post styles
+
+When the brief has post_styles, every post is drawn in one of those designed layouts, and you choose which for each post you plan. Set style to one of its names, judging from the analyst's notes:
+- Match the layout to the photos: a wide photo (shape 1.5 or more) of a landscape, skyline or sea can be a panorama; a quiet, nostalgic or story-telling single photo suits a poster; a strong, clean single photo suits a gallery frame; a set with several varied photos suits a grid; a set that unfolds over time suits a story.
+- grid and story need a multi-photo post (extra_photo_ids from one set); the other styles show one photo, so leave extra_photo_ids empty for them.
+- Vary the look: avoid the style of the most recent post (recent posts show their style) when another fits as well.
+- Say in reason why the style suits the photos.
+
 ## Today's style
 
 When photo_sets has todays_style, the account owner chose a grid or story post for today: follow it. Plan today's post (the first item) as a multi-photo post from one set as it describes, even though single photos are otherwise the default. Pick photos that look good side by side: varied subjects and distances, colours that sit well together, and the strongest as the cover.

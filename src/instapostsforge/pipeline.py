@@ -125,6 +125,8 @@ class Run:
         switch says, and a style that holds one photo turns sets off."""
         settings = multi_photo_settings(self.profile)
         name = self.style.name
+        if self.style.any and any(s in MULTI_STYLES for s in self.style.any_styles) and settings["enabled"]:
+            return {**settings, "max_photos": max(settings["max_photos"], 9)}  # room for a full grid
         if self.style.wants_set:
             return {**settings, "enabled": True, "max_photos": MULTI_STYLES[name], "max_per_7_days": 7, "switched_by": f"the {name} style"}
         if self.style.single_only:
@@ -316,7 +318,7 @@ class Run:
         same width:height and nothing needs a border, and with near-identical frames removed."""
         settings = self.multi()
         # A grid or story redraws every photo onto its own slide, so its photos needn't share a shape.
-        split_by_shape = not self.style.wants_set
+        split_by_shape = self.style.sets_need_one_shape
         analyses = {p.id: self.c.state.analysis_for(p.id) or {} for p in pool}
         times = {p.id: t for p in pool if (t := self.known_time(p))}
         place_names = {
@@ -420,8 +422,14 @@ class Run:
                         + ". The photos are redrawn onto the layout, so they needn't share a shape; pick ones that look good together."
                     )
             try:
+                style_options = self.style.options_for_planner()
                 items = self.c.ai.plan(
-                    candidates, self.c.state.history(), today=self.today, horizon=horizon, photo_sets=brief_sets
+                    candidates,
+                    self.c.state.history(),
+                    today=self.today,
+                    horizon=horizon,
+                    photo_sets=brief_sets,
+                    **({"style_options": style_options} if style_options else {}),
                 )
                 chosen, seen = [], set()
                 for item in items:
@@ -635,6 +643,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         cover=r.c.state.analysis_for(photo.id) or {},
         today=r.today,
         last_style=next((h.get("style") for h in components.state.history(limit=1)), None),
+        suggested=plan_item.style,
     )
     if style_note:
         r.notes.append(style_note)

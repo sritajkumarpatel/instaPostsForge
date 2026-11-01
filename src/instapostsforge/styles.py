@@ -1,14 +1,16 @@
 """Post styles: how a day's photo or photos are laid out before they go to Instagram.
 
-"single" is the plain photo as shot, exactly as before styles existed, and it stays the default. The
-other styles are drawn by code (imaging/layouts.py) from templates:
+"any" is the default: every post is drawn in one of the designed styles below, and the AI planner
+chooses which one suits each day's photos. "single" is the plain photo as shot, used only when chosen.
+The designed styles are drawn by code (imaging/layouts.py) from templates:
 
 - grid: 2 to 9 photos of one outing or place tiled on one slide, then each photo on its own slide.
 - gallery: one photo on a wide margin with a small museum-style label (title, place, month).
 - poster: one photo as a print on warm paper with a spaced title, a quiet line and a handwritten note.
 - panorama: one wide photo cut into 2 or 3 slides that join up as you swipe.
 - story: a title slide over the cover, the other photos on gallery margins, and a closing line.
-- auto: code picks one of the styles in selection.style.auto_styles that suits the day's photos.
+- any: the planner picks one of selection.style.any_styles for each post from the photos' notes; if
+  its pick can't be drawn, code picks one that suits the photos' mood. "auto" means the same.
 
 The AI's part is choosing the photos (the planner, as for multi-photo posts) and writing the few
 words that go on the image (the caption writer's overlay_* fields). Code checks those words like the
@@ -30,15 +32,27 @@ from .agents.playbooks import CATEGORIES, MOODS
 
 log = logging.getLogger(__name__)
 
-STYLES = ("single", "auto", "grid", "gallery", "poster", "panorama", "story")
+STYLES = ("any", "single", "grid", "gallery", "poster", "panorama", "story")
+DESIGNED = ("poster", "gallery", "grid", "story", "panorama")  # what "any" chooses from by default
+ALIASES = {"auto": "any"}
 # Styles that put several photos in one post, and the most photos each may hold. A carousel has at
 # most 10 slides: a grid adds its collage slide, and a story adds a closing slide.
 MULTI_STYLES = {"grid": 9, "story": 9}
 GRID_SIZES = (9, 6, 4, 3, 2)  # how many photos a grid can hold; others are trimmed to the next size down
 PANORAMA_MIN_SHAPE = 1.5  # width:height a photo needs to make at least two joined slides
-OFF = {"", "any", "all", "auto", "none", "variable"}
+OFF = {"", "any", "all", "auto", "none", "variable"}  # "no filter" for mood and category
 
-# For auto: the styles that suit each mood, best first. Plain "single" suits every mood.
+# Short descriptions the planner chooses from when the style is "any".
+STYLE_GUIDE = {
+    "poster": "one photo as a large print on paper with a short title, a line and a handwritten note; suits calm, nostalgic, romantic or story-telling single photos",
+    "gallery": "one photo on a clean margin with a museum-style title label; suits strong, clean single photos of any mood",
+    "panorama": "one wide photo (3:2 or wider, shape 1.5 or more) split into joined slides; suits wide landscapes, skylines and seascapes",
+    "grid": "3 to 9 photos from one set tiled on one slide, then each on its own; suits outings with many varied photos",
+    "story": "2 to 9 photos from one set as a sequence with a title and a closing line; suits outings that unfold over time",
+    "single": "the photo as shot, with no layout",
+}
+
+# For any, when the planner's pick can't be used: the styles that suit each mood, best first.
 MOOD_STYLES = {
     "calm": ("gallery", "poster"),
     "nostalgic": ("poster", "gallery"),
@@ -102,16 +116,31 @@ def _env(name: str) -> str:
 class StyleRequest:
     """Today's requested style and photo filters, from config and the run's environment."""
 
-    name: str = "single"
+    name: str = "any"
     mood: str | None = None
     category: str | None = None
-    auto_styles: list[str] = field(default_factory=lambda: ["single", "gallery", "poster", "grid", "story", "panorama"])
+    any_styles: list[str] = field(default_factory=lambda: list(DESIGNED))
     decor_dir: str | None = None
     switched_by: str = "selection.style in the config"
 
     @property
     def plain(self) -> bool:
         return self.name == "single"
+
+    @property
+    def any(self) -> bool:
+        return self.name == "any"
+
+    @property
+    def sets_need_one_shape(self) -> bool:
+        """A plain multi-photo post shows every photo in the cover's shape; a designed style redraws them."""
+        return self.plain or (self.any and "single" in self.any_styles)
+
+    def options_for_planner(self) -> dict | None:
+        """What the planner is told when it chooses the style ("any"); None when the style is fixed."""
+        if not self.any:
+            return None
+        return {s: STYLE_GUIDE[s] for s in self.any_styles}
 
     @property
     def wants_set(self) -> bool:
@@ -141,15 +170,17 @@ def style_request(selection: dict) -> StyleRequest:
     unknown value is ignored with a warning, never an error, so a typo can't stop the daily post."""
     settings = dict(selection.get("style") or {})
     request = StyleRequest(decor_dir=settings.get("decor_dir"))
-    if settings.get("auto_styles"):
-        request.auto_styles = [s for s in settings["auto_styles"] if s in STYLES and s != "auto"] or ["single"]
+    listed = settings.get("any_styles") or settings.get("auto_styles")  # auto_styles: the older name
+    if listed:
+        request.any_styles = [s for s in listed if s in STYLES and s != "any"] or list(DESIGNED)
 
-    name = str(settings.get("name", "single")).strip().lower()
-    if (env := _env("POST_STYLE")) and env not in OFF - {"auto"}:
+    name = str(settings.get("name", "any")).strip().lower()
+    if (env := _env("POST_STYLE")) and env not in ("", "variable"):
         name, request.switched_by = env, f"POST_STYLE={env}"
+    name = ALIASES.get(name, name)
     if name not in STYLES:
-        log.warning("Unknown post style %r; posting a plain photo. Choose one of: %s.", name, ", ".join(STYLES))
-        name = "single"
+        log.warning("Unknown post style %r; letting the planner choose. Choose one of: %s.", name, ", ".join(STYLES))
+        name = "any"
     request.name = name
 
     request.mood = _pick("mood", MOODS, _env("POST_MOOD"), settings.get("mood"))
@@ -161,23 +192,40 @@ def grid_size(count: int) -> int:
     return next((n for n in GRID_SIZES if n <= count), 0)
 
 
-def choose_style(request: StyleRequest, *, photo_count: int, cover: dict, today: date, last_style: str | None = None) -> tuple[str, str | None]:
+def fits(style: str, photo_count: int, wide: bool) -> bool:
+    if style in MULTI_STYLES:
+        return photo_count >= (3 if style == "grid" else 2)
+    if style == "panorama":
+        return wide
+    return True  # single-photo styles take the cover; any other photos are left for later
+
+
+def choose_style(
+    request: StyleRequest, *, photo_count: int, cover: dict, today: date, last_style: str | None = None, suggested: str | None = None
+) -> tuple[str, str | None]:
     """The style today's post is drawn in, given the photos the planner chose, and a note when the
-    requested style couldn't be used. Falls back step by step: a set style with one photo becomes a
-    single-photo style, and a panorama of a photo that isn't wide becomes a gallery frame."""
+    requested style couldn't be used. With "any", the planner's suggestion wins when it is allowed and
+    fits the photos; otherwise code picks one that suits them. A fixed style falls back step by step:
+    a set style with one photo becomes a single-photo style, and a panorama of a photo that isn't wide
+    becomes a gallery frame."""
     shape = cover.get("shape") or 1.0
     wide = shape >= PANORAMA_MIN_SHAPE
     name = request.name
-    if name == "auto":
-        allowed = request.auto_styles
+    if name == "any":
+        allowed = request.any_styles
+        if suggested in allowed and fits(suggested, photo_count, wide):
+            return suggested, None
         if photo_count > 1:
             options = [s for s in ("grid", "story") if s in allowed and (s != "grid" or photo_count >= 3)]
             options = options or (["single"] if "single" in allowed else [])
+            if not options:  # no set style allowed: the cover alone, in a single-photo style
+                return choose_style(request, photo_count=1, cover=cover, today=today, last_style=last_style)
         else:
             suits = MOOD_STYLES.get(cover.get("mood") or "", ("gallery",))
-            options = [s for s in (*suits, "single") if s in allowed and (s != "panorama" or wide)]
+            options = [s for s in (*suits, "poster", "gallery", "single") if s in allowed and (s != "panorama" or wide)]
+            options = list(dict.fromkeys(options))
         options = [s for s in options if s != last_style] or options  # a different look from yesterday's when possible
-        return (random.Random(today.isoformat()).choice(options) if options else "single"), None
+        return (random.Random(today.isoformat()).choice(options) if options else "gallery"), None
     if name in MULTI_STYLES and photo_count < 2:
         fallback = "gallery" if name == "grid" else "poster"
         return fallback, f"The {name} style needs several photos from one outing or place, so today's photo was set as a {fallback} instead."

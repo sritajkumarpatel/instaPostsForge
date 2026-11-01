@@ -132,7 +132,14 @@ class AgentWorkflow(AIWorkflow):
         return result.model_dump()
 
     def plan(
-        self, candidates: list[dict], history: list[dict], *, today: date, horizon: int, photo_sets: dict | None = None
+        self,
+        candidates: list[dict],
+        history: list[dict],
+        *,
+        today: date,
+        horizon: int,
+        photo_sets: dict | None = None,
+        style_options: dict[str, str] | None = None,
     ) -> list[PlanItem]:
         planning = self.settings.get("planning") or {}
         brief = {
@@ -146,6 +153,8 @@ class AgentWorkflow(AIWorkflow):
             brief["photo_sets"] = photo_sets
         else:
             brief["photo_sets"] = "Multi-photo posts are off today: plan single photos only."
+        if style_options:
+            brief["post_styles"] = style_options
         result = self._ask(
             "planner",
             self._prompt(
@@ -156,7 +165,10 @@ class AgentWorkflow(AIWorkflow):
             [Text(json.dumps(brief, ensure_ascii=False, indent=1))],
             Plan,
         )
-        return [PlanItem(p.photo_id, p.reason, p.angle, list(p.extra_photo_ids)) for p in result.order]
+        return [
+            PlanItem(p.photo_id, p.reason, p.angle, list(p.extra_photo_ids), p.style if style_options and p.style in style_options else None)
+            for p in result.order
+        ]
 
     @staticmethod
     def _photos_content(image_jpeg: bytes, analysis: dict, more_photos: list[SetPhoto] | None) -> tuple[list[Part], str]:

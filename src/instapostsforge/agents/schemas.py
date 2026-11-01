@@ -53,6 +53,10 @@ class PlannedPhoto(BaseModel):
     )
     reason: str
     angle: str
+    style: str | None = Field(
+        default=None,
+        description="Only when the brief lists post_styles: the one that suits this post best, by its name. Otherwise empty.",
+    )
 
 
 class Plan(BaseModel):

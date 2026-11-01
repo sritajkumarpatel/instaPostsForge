@@ -25,7 +25,8 @@ class FakeSource(PhotoSource):
 class FakeAI(AIWorkflow):
     """Scripted answers; records what each agent was asked."""
 
-    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=(), analyses=None, quotes=None, extras=None, overlays=None):
+    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=(), analyses=None, quotes=None, extras=None, overlays=None, styles=None):
+        self.styles = styles or {}  # photo ID -> the post style the planner picks for it
         self.overlays = list(overlays or [])  # text for styled images, one dict per caption written
         self.plan_order = plan_order
         self.extras = extras or {}  # cover photo ID -> the other photos the planner puts with it
@@ -44,14 +45,14 @@ class FakeAI(AIWorkflow):
         base = {"subject": f"subject of {photo_name}", "main_subject": f"thing {photo_name}", "category": "street", "mood": "calm", "quality_score": 7}
         return {**base, **self.analyses.get(photo_name, {})}
 
-    def plan(self, candidates, history, *, today, horizon, photo_sets=None):
-        self.calls["plan"].append({"candidates": candidates, "history": history, "horizon": horizon, "photo_sets": photo_sets})
+    def plan(self, candidates, history, *, today, horizon, photo_sets=None, style_options=None):
+        self.calls["plan"].append({"candidates": candidates, "history": history, "horizon": horizon, "photo_sets": photo_sets, "style_options": style_options})
         if "plan" in self.fail:
             raise RuntimeError("planner down")
         # Code shuffles the candidates; by default this fake plans them best first, like a planner would.
         default = [c["photo_id"] for c in sorted(candidates, key=lambda c: (-c.get("quality_score", 0), c["photo_id"]))]
         order = self.plan_order or default
-        return [PlanItem(pid, f"because {pid}", f"angle for {pid}", list(self.extras.get(pid, []))) for pid in order]
+        return [PlanItem(pid, f"because {pid}", f"angle for {pid}", list(self.extras.get(pid, [])), self.styles.get(pid)) for pid in order]
 
     def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None, style_brief=""):
         self.calls["caption"].append({"angle": angle, "feedback": feedback, "analysis": analysis, "more_photos": more_photos, "style_brief": style_brief})

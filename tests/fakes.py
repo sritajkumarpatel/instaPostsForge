@@ -105,3 +105,28 @@ class FakePublisher(Publisher):
 
     def fetch_insights(self, media_id, metrics):
         return self.insights.get(media_id, {"reach": 100})
+
+
+class FakeMaskMaker:
+    """Stands in for the cut-out model: returns a drawn mask instead of running one.
+
+    `shapes` are boxes as fractions (left, top, right, bottom), drawn solid; `soft` draws them at half
+    strength instead, like a model that isn't sure."""
+
+    name = "fake"
+
+    def __init__(self, shapes=((0.35, 0.2, 0.65, 0.8),), soft: bool = False):
+        self.shapes = shapes
+        self.soft = soft
+        self.calls = 0
+
+    def __call__(self, image):
+        from PIL import Image, ImageDraw
+
+        self.calls += 1
+        mask = Image.new("L", image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        w, h = image.size
+        for left, top, right, bottom in self.shapes:
+            draw.rectangle((left * w, top * h, right * w - 1, bottom * h - 1), fill=150 if self.soft else 255)
+        return mask

@@ -124,6 +124,18 @@ defaults:
         backdrops: []   # behind posters and gallery prints: paper, palette, echo, swatches, two_tone, sun, kraft, linen, handmade, slate, navy, newsprint
         frames: []      # gallery frames and small sets: postcard, ticket, film, magazine, festive, polaroids
         marks: []       # drawn on notes posts: field_notes, doodles, constellation, date_stamp, viewfinder, highlight, thirds, tape, cover
+      # The pop-out poster's subject cut-out (pip install -e ".[cutout]"). A local model makes a mask of the
+      # main subject; the photo's pixels are only shown through it, never changed. Every check below must
+      # pass, or the post gets a plain poster. Try a photo with: forge cutout -p main --photo <name>
+      popout:
+        model: birefnet-lite    # birefnet-lite (cleanest edges, 10-25 s on a CPU) or isnet (about 1 s); POPOUT_MODEL overrides
+        min_area: 0.03          # the subject covers at least this share of the photo
+        max_area: 0.60          # and at most this
+        max_second_piece: 0.15  # a second blob bigger than this share of the main one: the subject is in pieces
+        min_box_overlap: 0.5    # at least this share of the cut-out lies in the analyst's subject box
+        max_soft_edge: 0.12     # at most this share of the cut-out is half-transparent (fog, blur, glass)
+        min_ground: 0.06        # stepping down out of the window needs this much photo under the subject
+        min_margin: 0.02        # stepping out sideways needs this much room on that side
   image:
     keep_aspect_ratio: true
     min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape

@@ -94,6 +94,8 @@ class CaptionDraft(BaseModel):
     overlay_marks: list[str] = Field(
         default_factory=list, description="Notes-style posts only: one short handwritten note per listed thing, in the brief's order."
     )
+    overlay_kicker: str | None = Field(default=None, description="Pop-out posts only: the small label above the title.")
+    overlay_tags: list[str] = Field(default_factory=list, description="Pop-out posts only: up to four single words for the foot of the page.")
 
 
 class ChosenTag(BaseModel):

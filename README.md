@@ -371,7 +371,7 @@ Every post is laid out in a designed style, drawn by code from templates with a 
 
 | Style | What it looks like | Photos |
 | --- | --- | --- |
-| `any` (default) | The planner picks one of `any_styles` (poster, gallery, grid, story, panorama, notes) for each post from the photos' notes, avoiding the last post's look. If its pick can't be drawn, code picks one that suits the photos' mood | any |
+| `any` (default) | The planner picks one of `any_styles` (poster, gallery, grid, story, panorama, notes, popout) for each post from the photos' notes, avoiding the last post's look. If its pick can't be drawn, code picks one that suits the photos' mood | any |
 | `single` | The photo as shot (or a multi-photo post, as above), only when chosen | 1, or a set |
 | `grid` | 2 to 9 photos of one outing or place tiled on one slide with a short line across it, then each photo on its own slide | 2 to 9 |
 | `gallery` | The photo on a wide off-white margin with a museum-style label: a title, then the place and month | 1 |
@@ -379,6 +379,7 @@ Every post is laid out in a designed style, drawn by code from templates with a 
 | `panorama` | A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe | 1 |
 | `story` | The cover full-bleed with a title, the other photos on gallery margins, then a closing line | 2 to 9 |
 | `notes` | The photo exactly as shot, then the same photo with a hand-drawn layer on top: notes with arrows, doodles, a star map, a film date stamp, viewfinder marks, rule-of-thirds lines, a tape label or a magazine cover | 1 |
+| `popout` | An editorial poster on light paper: the photo shows through a window and its main subject (a person, vehicle, animal or object) steps out of the window onto the page, with a soft shadow and, when it steps down, a faded patch of its own ground. A large serif title with a small label above it, a widely spaced line under it and up to four words along the foot. Needs `pip install ".[cutout]"` | 1 |
 
 **Looks.** On top of the style, code picks a look by plain rules, with no AI call: the background behind a poster or gallery print (paper tinted with the photo's own colours, a blurred copy of the photo, colour swatches, two tones, a sun shape, or kraft, linen, handmade, slate, navy or newsprint paper), a frame (postcard, ticket stub, film strip, magazine page, festive border, or instant prints for a small set), or the marks for a notes post. The photo's mood and category choose the candidates, the date picks one, and the last post's look is skipped. Narrow them with `selection.style.looks`.
 
@@ -388,8 +389,9 @@ Every post is laid out in a designed style, drawn by code from templates with a 
 - **Drawing on photos:** the analyst names up to three things in the photo and roughly where they are (`anchors`), and the caption writer writes a short note for each (`overlay_marks`, 28 characters at most). Everything else (where notes go, the date stamp from the capture time, the place on a tape label or postmark, the time on the viewfinder) is code. Marks never touch the analyst's subject band, a note that can't be placed clear of it is dropped, people are never pointed at or drawn on, and photos of a deity, shrine or prayer (`is_devotional`) get a plain festive frame instead.
 - **Colour rules:** backgrounds take the photo's own colours, text is checked for contrast (4.5:1) and switched to dark or light ink when it fails, and colours that read as a flag or party set (saffron, white and green; red, white and blue) are never shown together as bands or swatches. No frame copies a real brand, masthead, ticket or stamp.
 - **Fallbacks, never failures:** a grid or story with no set to draw from becomes a gallery frame or a poster, and a panorama of a photo that isn't wide becomes a gallery frame. An unknown style name falls back to `any`. Add `single` to `any_styles` to let the planner pick plain posts too.
+- **Pop-out:** a local segmentation model (`imaging/cutout.py`: BiRefNet-lite by default, or IS-Net, set in `selection.style.popout.model`) marks which pixels are the subject; the photo's own pixels are shown through that mask and never changed or generated. The model file is downloaded once, checked against a pinned SHA-256 and cached between runs. It is tried only on a photo with one clear subject that isn't devotional and has no children, and only kept when the mask passes every check in `selection.style.popout` (one piece, firm edges, where the analyst said the subject is, room in the photo to step out). Otherwise the post is a plain poster, and the run says why. The caption writer adds `overlay_kicker` and `overlay_tags`; code sets every word in spaced capitals, takes the title's colour from the photo when it reads on the paper, and keeps all text off the subject. The alt text always says the layout is a composite of the unedited photo, and `disclose_in_caption` adds "Cut-out layout · photo unedited" after the caption. Try a photo with `forge cutout -p main --photo <name>`.
 - **Decorations:** put PNGs with a transparent background (a leafy branch, a sprig) in `config/decor/` to have one placed on each poster. None are bundled.
-- **Fonts:** Playfair Display and Caveat, both under the SIL Open Font License, are bundled in `src/instapostsforge/imaging/fonts/`.
+- **Fonts:** Playfair Display, Cormorant Garamond and Caveat, all under the SIL Open Font License, are bundled in `src/instapostsforge/imaging/fonts/`.
 
 ### Never posting a photo twice
 

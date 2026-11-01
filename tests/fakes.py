@@ -62,6 +62,8 @@ class FakeAI(AIWorkflow):
         default = {"title": "Quiet streets", "line": "The city after rain.", "note": "Same roads"}
         if "hand-drawn" in style_brief:
             default.update({"mark1": "still warm", "mark2": "six pm light"})
+        if "editorial poster" in style_brief:
+            default = {"kicker": "Road trips", "title": "Somewhere ahead", "line": "Good roads, brighter days", "tag1": "Roads", "tag2": "People"}
         overlay = (self.overlays.pop(0) if self.overlays else default) if style_brief else {}
         return Caption(text=text, hashtags=[], alt_text="A wet street at night.", quote=quote, more_alt_texts=more_alts, overlay=overlay)
 

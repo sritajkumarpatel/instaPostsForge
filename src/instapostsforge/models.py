@@ -32,6 +32,8 @@ class Caption:
     more_alt_texts: list[str] = field(default_factory=list)  # one per extra photo of a multi-photo post
     # Words drawn onto a styled post's image (see styles.py): "title", "line" and "note". Empty for a plain photo.
     overlay: dict[str, str] = field(default_factory=dict)
+    # A line code adds after the text, never the model: today only the pop-out's "this is a composite" note.
+    footer: str | None = None
 
     def render(self) -> str:
         """The full caption as it appears on Instagram."""
@@ -41,6 +43,8 @@ class Caption:
             if self.quote_author:
                 line += f" — {self.quote_author.strip()}"
             parts.append(line)
+        if self.footer:
+            parts.append(self.footer.strip())
         if self.hashtags:
             parts.append(" ".join(self.hashtags))
         return "\n\n".join(parts)

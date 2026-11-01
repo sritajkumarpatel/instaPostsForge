@@ -232,3 +232,29 @@ def test_overlay_text_with_a_blocked_word_is_rewritten(tmp_path, monkeypatch):
     profile = make_profile(ai={"hashtags": {"min": 3, "max": 5}, "max_revisions": 1, "blocked_terms_file": "config/blocked-terms.txt"})
     result = pipeline.run(profile, components(tmp_path, {"a.jpg": photo_jpeg(1)}, ai), publish=True, today=DAY)
     assert result.caption.overlay == {"title": "Old walls, new light"}
+
+
+def _photo_share(slide, colour=(200, 30, 30)):
+    """How much of the slide the solid test photo covers."""
+    data = slide.convert("RGB").resize((108, 135)).tobytes()
+    pixels = [data[i : i + 3] for i in range(0, len(data), 3)]
+    return sum(1 for p in pixels if abs(p[0] - colour[0]) < 40 and p[1] < 90 and p[2] < 90) / len(pixels)
+
+
+@pytest.mark.parametrize("size,kind", [((1500, 1000), "landscape"), ((800, 1200), "portrait"), ((1000, 1000), "square")])
+def test_every_poster_layout_lets_the_photo_fill_most_of_the_page(size, kind):
+    photo = layouts.LayoutPhoto(Image.new("RGB", size, (200, 30, 30)))
+    for layout in layouts.POSTER_LAYOUTS[kind]:
+        for finish in ("plain", "border", "taped", "taped_border"):
+            slide = layouts.poster(photo, "Soft hues, quiet sky", "The slow fade of a monsoon evening.", "lavender and salmon", layout=layout, finish=finish)
+            assert slide.size == (1080, 1350)
+            # A 3:2 photo can cover at most about 40% of a 4:5 page at full width; the old layout gave it 25%.
+            assert _photo_share(slide) > 0.37, (layout, finish)
+
+
+def test_poster_layout_suits_the_shape_and_changes_from_post_to_post():
+    assert layouts.poster_layouts(1.5) == layouts.POSTER_LAYOUTS["landscape"]
+    assert layouts.poster_layouts(0.75) == layouts.POSTER_LAYOUTS["portrait"]
+    photo = layouts.LayoutPhoto(Image.new("RGB", (1500, 1000), (200, 30, 30)))
+    looks = {layouts.poster(photo, "Old walls, new light", seed=seed).resize((27, 34)).tobytes() for seed in range(8)}
+    assert len(looks) > 2

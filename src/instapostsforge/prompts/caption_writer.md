@@ -38,6 +38,10 @@ When you are shown several photos, they go out together as one post, photo 1 fir
 - The length range is the cover's playbook range, and the $caption_max character limit still applies, so tie the later photos in with a short phrase each ("a kitten and two deer further on"), not a sentence each.
 - alt_text describes photo 1; more_alt_texts gives one alt text for each other photo, in order.
 
+## Text on the image
+
+$style_brief
+
 Write in $language.
 
 # Playbook for this photo

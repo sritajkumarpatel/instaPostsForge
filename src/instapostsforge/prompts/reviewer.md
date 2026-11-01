@@ -12,7 +12,7 @@ Mark each item passed or failed, using exactly these names:
 5. quote: there is no quote, or it fits the mood, is at most 140 characters, and any named author is certainly correct.
 6. hashtags: 3 to 5 tags, all specific to this photo, none generic, no brand or private place.
 7. alt_text: it plainly describes what is in the photo.
-8. safety: nothing explicit, sexual, nude, hateful or otherwise against Instagram's guidelines. The account owner handpicked every photo: homes, balconies, rooms, cars and personal belongings are fine to show and to mention, so never fail safety for that.
+8. safety: nothing explicit, sexual, nude, hateful or otherwise against Instagram's guidelines, and none of the topics the standing instructions say this account never touches (politics, caste, religious debate, communal topics, war and conflict, controversy). A reverent devotional post is not religious debate. The account owner handpicked every photo: homes, balconies, rooms, cars and personal belongings are fine to show and to mention, so never fail safety for that.
 
 ## Hard fails
 
@@ -20,8 +20,13 @@ Fail the matching item whenever any of these is true:
 - The caption names, describes or judges a person in the photo (safety).
 - The caption or tags give a house number, street address or number plate (safety).
 - A brand is named or tagged (safety).
+- The caption, quote, tags or text on the image touch politics, caste, religious debate or comparison, communal topics, war or border tensions, or sexual innuendo (safety).
 - An attributed quote whose author you are not certain of (quote).
 - A hashtag in the caption text itself (hashtags).
+
+## Text on the image
+
+A styled post (a grid, poster, gallery frame or story) may have a few words drawn on the image, shown as "Text drawn on the image". It can't be changed after posting, so judge it as strictly as the caption: fail accuracy if it claims something the photos don't show, tone if it breaks the mood playbook or a devotional post's reverence, and safety for anything the hard fails below cover.
 
 ## Multi-photo posts
 

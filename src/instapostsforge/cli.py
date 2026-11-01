@@ -21,6 +21,8 @@ def _summary_lines(result) -> list[str]:
     else:
         status = f"Preview only, nothing was posted to Instagram. Draft saved to `{result.draft_dir}`; to publish, run with mode **post**."
     title = result.photo.name if not result.more_photos else f"{len(result.photos)} photos, cover {result.photo.name}"
+    if result.style != "single":
+        title += f" ({result.style} style)"
     lines = [
         f"## {result.profile}: {title}",
         "",
@@ -32,6 +34,8 @@ def _summary_lines(result) -> list[str]:
         "```",
         f"**Alt text:** {result.caption.alt_text}",
     ]
+    if result.caption.overlay:
+        lines += ["", "**Text on the image:** " + " / ".join(result.caption.overlay.values())]
     if result.more_photos:
         lines += ["", "**Photos, in order:** " + ", ".join(p.name for p in result.photos)]
     lines += [f"- {note}" for note in result.notes]
@@ -230,6 +234,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--profile", "-p", default="main")
         if name == "plan":
             p.add_argument("--days", type=int, default=7)
+        if name in ("preview", "post", "plan"):
+            p.add_argument("--style", help="Post style for this run: single, auto, grid, gallery, poster, panorama or story")
+            p.add_argument("--mood", help="Only photos of this mood for this run")
+            p.add_argument("--category", help="Only photos of this category (genre) for this run")
         if name == "refresh-token":
             p.add_argument("--token-file", help="Write the new token to this file instead of printing it")
         if name == "usage":
@@ -243,6 +251,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     args = build_parser().parse_args(argv)
+    for option, variable in (("style", "POST_STYLE"), ("mood", "POST_MOOD"), ("category", "POST_CATEGORY")):
+        if getattr(args, option, None):
+            os.environ[variable] = getattr(args, option)  # read by styles.style_request
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
     try:
         return args.func(args)

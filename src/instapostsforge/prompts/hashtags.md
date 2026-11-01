@@ -12,6 +12,7 @@ Choose between $min_tags and $max_tags hashtags for this post, as this mix:
 - Use real tags people actually follow and search. No made-up compound tags, and no tags longer than 30 characters.
 - Never use general reach tags: #explore, #explorepage, #viral, #trending, #fyp, #foryou, #instagood, #instadaily, #photooftheday, #picoftheday, #love, #instagram, #like4like, #follow4follow. Code removes them anyway.
 - Never tag a brand, a person's name or a private location.
+- Never use a tag about politics, a party or politician, caste, religious debate, communal topics, war or conflict, or anything sexual. Devotional tags for a deity or festival (such as #ganeshchaturthi) are fine on devotional posts. Code drops tags on its blocked list.
 - Rotate: don't repeat the exact set of any of the last 10 posts, and avoid any tag used in more than half of them unless its results are clearly the best.
 - When tag results are given, favour tags with higher average reach. Treat tags used fewer than 3 times as unproven rather than bad.
 

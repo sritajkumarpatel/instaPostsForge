@@ -25,7 +25,8 @@ class FakeSource(PhotoSource):
 class FakeAI(AIWorkflow):
     """Scripted answers; records what each agent was asked."""
 
-    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=(), analyses=None, quotes=None, extras=None):
+    def __init__(self, *, plan_order=None, captions=None, tag_sets=None, reviews=None, fail=(), analyses=None, quotes=None, extras=None, overlays=None):
+        self.overlays = list(overlays or [])  # text for styled images, one dict per caption written
         self.plan_order = plan_order
         self.extras = extras or {}  # cover photo ID -> the other photos the planner puts with it
         self.captions = list(captions or [])
@@ -52,12 +53,13 @@ class FakeAI(AIWorkflow):
         order = self.plan_order or default
         return [PlanItem(pid, f"because {pid}", f"angle for {pid}", list(self.extras.get(pid, []))) for pid in order]
 
-    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None):
-        self.calls["caption"].append({"angle": angle, "feedback": feedback, "analysis": analysis, "more_photos": more_photos})
+    def write_caption(self, image_jpeg, *, analysis, angle, recent_captions, top_captions, feedback="", more_photos=None, style_brief=""):
+        self.calls["caption"].append({"angle": angle, "feedback": feedback, "analysis": analysis, "more_photos": more_photos, "style_brief": style_brief})
         text = self.captions.pop(0) if self.captions else "Quiet streets after rain."
         quote = self.quotes.pop(0) if self.quotes else None
         more_alts = [f"Photo {n} of the set." for n in range(2, 2 + len(more_photos or []))]
-        return Caption(text=text, hashtags=[], alt_text="A wet street at night.", quote=quote, more_alt_texts=more_alts)
+        overlay = (self.overlays.pop(0) if self.overlays else {"title": "Quiet streets", "line": "The city after rain.", "note": "Same roads"}) if style_brief else {}
+        return Caption(text=text, hashtags=[], alt_text="A wet street at night.", quote=quote, more_alt_texts=more_alts, overlay=overlay)
 
     def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback="", more_analyses=None):
         self.calls["tags"].append({"recent": recent_tag_sets, "stats": tag_stats, "feedback": feedback, "more": more_analyses})

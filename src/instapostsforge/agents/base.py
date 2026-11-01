@@ -55,9 +55,11 @@ class AIWorkflow(ABC):
         top_captions: list[str],
         feedback: str = "",
         more_photos: list[SetPhoto] | None = None,
+        style_brief: str = "",
     ) -> Caption:
         """Caption writer: caption text, optional quote and alt text (hashtags left empty).
-        For a multi-photo post, image_jpeg and analysis are the cover and more_photos the rest, in order."""
+        For a multi-photo post, image_jpeg and analysis are the cover and more_photos the rest, in order.
+        For a styled post, style_brief says what text goes on the image; it comes back in Caption.overlay."""
 
     @abstractmethod
     def choose_hashtags(

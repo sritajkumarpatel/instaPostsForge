@@ -27,6 +27,21 @@ on:
         type: choice
         options: [variable, google_drive, r2]
         default: variable
+      style:
+        description: Post style for this run (variable = the POST_STYLE repository variable, or config if unset; single = the photo as shot)
+        type: choice
+        options: [variable, single, auto, grid, gallery, poster, panorama, story]
+        default: variable
+      mood:
+        description: Only photos of this mood for this run (any = no filter)
+        type: choice
+        options: [any, calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe]
+        default: any
+      category:
+        description: Only photos of this category (genre) for this run (any = no filter)
+        type: choice
+        options: [any, landscape, sky, city, street, people, food, animals, macro, night, travel, event, abstract]
+        default: any
 
 permissions:
   contents: write  # stage the photo on the media branch and commit state/ after each post
@@ -62,6 +77,12 @@ jobs:
       # google_drive | r2. Same order: the manual choice, then the repository variable PHOTO_SOURCE, then
       # source.type in config. Each source keeps its own photos, so switching is a fresh start.
       PHOTO_SOURCE: ${{ (inputs.source != 'variable' && inputs.source) || vars.PHOTO_SOURCE || '' }}
+      # How the post is laid out: the manual choice, then the repository variable POST_STYLE, then
+      # selection.style in config (single, the photo as shot, unless changed). Mood and category narrow
+      # the photos for a manual run; empty means selection.style in config decides.
+      POST_STYLE: ${{ (inputs.style != 'variable' && inputs.style) || vars.POST_STYLE || '' }}
+      POST_MOOD: ${{ (inputs.mood != 'any' && inputs.mood) || '' }}
+      POST_CATEGORY: ${{ (inputs.category != 'any' && inputs.category) || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

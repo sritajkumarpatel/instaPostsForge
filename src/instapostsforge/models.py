@@ -30,6 +30,8 @@ class Caption:
     quote: str | None = None
     quote_author: str | None = None
     more_alt_texts: list[str] = field(default_factory=list)  # one per extra photo of a multi-photo post
+    # Words drawn onto a styled post's image (see styles.py): "title", "line" and "note". Empty for a plain photo.
+    overlay: dict[str, str] = field(default_factory=dict)
 
     def render(self) -> str:
         """The full caption as it appears on Instagram."""
@@ -58,6 +60,7 @@ class PostResult:
     usage: dict = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
     more_photos: list[Photo] = field(default_factory=list)  # the other photos of a multi-photo post
+    style: str = "single"  # how the post was laid out (styles.py); "single" is the photo as shot
 
     @property
     def photos(self) -> list[Photo]:

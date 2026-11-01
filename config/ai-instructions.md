@@ -18,7 +18,19 @@ This file holds the rules that apply to every photo. Rules for one kind of photo
 
 - Every caption is written fresh for its photo. Never reuse a caption, and never open two captions in a row the same way.
 - Quotes are optional. When used, an original line is preferred. Name an author only when certain.
-- Avoid politics, religion and current events unless the photo is clearly about them.
+- Avoid current events unless the photo is clearly about them.
+
+## Topics this account never touches
+
+These apply to everything that goes out: the caption, the quote, the hashtags and any text drawn on the image. Code also checks every post against `config/blocked-terms.txt` and sends it back if one of those words turns up.
+
+- Politics: parties, politicians, elections, government policy, protests and bandhs.
+- Caste in any form, religious debate, comparing faiths, conversion, and communal topics.
+- War, border tensions, the armed forces in conflict, terrorism, weapons and violence.
+- Nudity, sexual or erotic content and innuendo.
+- Other controversy: tragedies or disasters used for engagement, hate, slurs, body shaming, and regional, gender or community stereotypes.
+
+Devotional posts are welcome (see below): reverence for a deity or festival is not religious debate. They still never mention caste, compare faiths or take a political or communal angle.
 
 ## Deities, temples and festivals
 

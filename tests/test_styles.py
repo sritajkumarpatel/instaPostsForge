@@ -144,7 +144,7 @@ def test_writer_returns_overlay_text_only_for_a_styled_post():
     wf, msgs = workflow(draft, draft)
     plain = wf.write_caption(b"jpg", analysis={}, angle="", recent_captions=[], top_captions=[])
     styled = wf.write_caption(b"jpg", analysis={}, angle="", recent_captions=[], top_captions=[], style_brief=brief_for("poster"))
-    assert plain.overlay == {} and "leave overlay_title" in msgs.calls[0]["system"]
+    assert plain.overlay == {} and "leave every overlay field empty" in msgs.calls[0]["system"]
     assert styled.overlay == {"title": "Old walls, new light", "line": "A quiet line."}
     assert "warm paper" in msgs.calls[1]["system"] and "$style_brief" not in msgs.calls[1]["system"]
 

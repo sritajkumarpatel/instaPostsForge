@@ -30,7 +30,7 @@ on:
       style:
         description: Post style for this run (variable = the POST_STYLE repository variable, or config if unset, which is any; any = the AI picks a designed style; single = the photo as shot)
         type: choice
-        options: [variable, any, single, poster, gallery, grid, story, panorama, notes]
+        options: [variable, any, single, poster, gallery, grid, story, panorama, notes, popout]
         default: variable
       mood:
         description: Only photos of this mood for this run (any = no filter)
@@ -89,7 +89,13 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install .
+      # The pop-out poster's cut-out model (about 224 MB), downloaded once and checked against the SHA-256
+      # pinned in imaging/cutout.py; the key changes when a pin does. No secrets reach this step.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/instapostsforge/models
+          key: cutout-models-${{ hashFiles('src/instapostsforge/imaging/cutout.py') }}
+      - run: pip install ".[cutout]"
       - name: Run forge
         run: forge "$MODE" --profile "$PROFILE"
         # Secrets are given to this step only, never to installs or third-party actions.

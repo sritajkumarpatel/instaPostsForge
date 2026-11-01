@@ -17,7 +17,19 @@ GENERIC_TAGS = {
 TAG_PATTERN = re.compile(r"^#[\w]+$", re.UNICODE)
 SENTENCE_BREAK = re.compile(r"(?<=[.!?…])(\s+)")
 # The most characters each piece of text on a styled image may have; longer ones are left off the image.
-OVERLAY_LIMITS = {"title": 32, "line": 80, "note": 32, "mark1": 28, "mark2": 28, "mark3": 28}  # marks: notes drawn on the photo
+OVERLAY_LIMITS = {
+    "title": 32,
+    "line": 80,
+    "note": 32,
+    "mark1": 28,  # marks: notes drawn on a notes post
+    "mark2": 28,
+    "mark3": 28,
+    "kicker": 24,  # kicker and tags: the pop-out poster's small label and footer words
+    "tag1": 12,
+    "tag2": 12,
+    "tag3": 12,
+    "tag4": 12,
+}
 # Text on an image is drawn with the bundled fonts: letters, digits and plain punctuation only.
 OVERLAY_ALLOWED = re.compile(r"[^\w\s.,'’‘\-–—:;!?&()]", re.UNICODE)
 

@@ -16,6 +16,7 @@ import os
 import random
 import re
 from dataclasses import dataclass
+from typing import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -28,7 +29,7 @@ from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
 from .imaging import PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
-from .imaging import backdrops, frames, layouts, marks
+from .imaging import backdrops, frames, layouts, marks, popout
 from .imaging.palette import palette
 from .imaging.processor import _to_jpeg
 from .models import Caption, Photo, PostResult
@@ -91,6 +92,36 @@ class ReviewRejected(Exception):
     pass
 
 
+def _lazy_mask_maker(selection: dict) -> Callable[[Image.Image], Image.Image] | None:
+    """The cut-out model, loaded only when a pop-out is actually drawn (it downloads once and takes a few
+    seconds), or None when onnxruntime and numpy aren't installed or the pop-out is switched off."""
+    import importlib.util
+
+    settings = ((selection.get("style") or {}).get("popout") or {})
+    if settings.get("enabled", True) is False or not all(importlib.util.find_spec(m) for m in ("onnxruntime", "numpy")):
+        return None
+    loaded: list = []
+
+    def make(image: Image.Image) -> Image.Image:
+        if not loaded:
+            from .imaging import cutout
+
+            loaded.append(cutout.MaskMaker(cutout.settings_from(selection)["model"]))
+        return loaded[0](image)
+
+    make.name = "lazy"  # type: ignore[attr-defined]
+    return make
+
+
+@dataclass
+class _Popout:
+    """The checked cut-out for today's cover, made before the words are written."""
+
+    mask: Image.Image
+    variants: list[str]
+    model: str
+
+
 @dataclass
 class Components:
     """Everything a run needs. Tests pass fakes; real runs build from the profile."""
@@ -101,6 +132,9 @@ class Components:
     host: ImageHost | None = None
     publisher: Publisher | None = None
     usage: UsageLog | None = None
+    # Makes the pop-out poster's subject mask (imaging/cutout.MaskMaker, or a fake in tests). None means
+    # the cut-out isn't installed, so the pop-out style is never offered.
+    mask_maker: Callable[[Image.Image], Image.Image] | None = None
 
     @classmethod
     def from_profile(cls, profile: Profile, *, publish: bool, command: str = "", with_insights: bool = False) -> "Components":
@@ -113,6 +147,7 @@ class Components:
             host=build_host(profile.hosting) if publish else None,
             publisher=InstagramPublisher(profile.instagram) if (publish or with_insights) else None,
             usage=usage,
+            mask_maker=_lazy_mask_maker(profile.selection),
         )
 
 
@@ -124,6 +159,10 @@ class Run:
         self._images: dict[str, PreparedImage] = {}
         self.notes: list[str] = []
         self.style: StyleRequest = style_request(profile.selection)
+        if components.mask_maker is None and "popout" in self.style.any_styles:
+            self.style.any_styles.remove("popout")  # not installed: never offered
+        self.popout: _Popout | None = None
+        self.drawn_style: str | None = None  # what styled_slides actually drew, when it had to fall back
 
     def multi(self) -> dict:
         """The multi-photo settings for today: a grid or story style asks for several photos whatever the
@@ -662,6 +701,24 @@ class Run:
         extra = f" Shown again with hand-drawn notes: {'; '.join(drawn.notes)}." if drawn.notes else " Shown again with hand-drawn marks."
         return [clean.jpeg, _to_jpeg(drawn.image, quality, icc, subsampling=0)], [caption.alt_text[:1000], (caption.alt_text + extra).strip()[:1000]]
 
+    def cut_out(self, photo: Photo) -> str | None:
+        """Runs the cut-out model on the cover and checks the mask. Returns why the pop-out can't be
+        used, or None after keeping the mask for drawing. Never raises: any failure means a plain poster."""
+        try:
+            from .imaging import cutout
+
+            settings = cutout.settings_from(self.profile.selection)
+            image = layouts.load_photo(self.c.source.download(photo))
+            result = cutout.cut_out(image, focus_from(self.c.state.analysis_for(photo.id)), settings, self.c.mask_maker)
+        except Exception as err:  # a missing model or a download failure costs only the pop-out
+            log.warning("The cut-out failed (%s); using a plain poster.", type(err).__name__)
+            return f"the cut-out couldn't run ({type(err).__name__})"
+        log.info("Cut-out: %s %s", result.check.summary(), result.check.stats)
+        if not result.check.ok:
+            return "; ".join(result.check.reasons)
+        self.popout = _Popout(result.mask, result.check.variants, result.model)
+        return None
+
     def styled_slides(self, style: str, photo: Photo, more: list[Photo], caption: Caption, look: Look | None = None) -> tuple[list[bytes], list[str]]:
         """The slides of a styled post, as JPEGs, and an alt text for each."""
         quality = int(self.profile.image.get("jpeg_quality", 95))
@@ -693,7 +750,23 @@ class Run:
             slides += [layouts.Slide(layouts.gallery(p, backdrop=back), p.alt_text) for p in photos[1:]]
             if line:
                 slides.append(layouts.Slide(layouts.closing(line, seed), line))
-        elif style == "poster":
+        elif style == "popout" and self.popout is not None:
+            words = popout.PopoutText(
+                kicker=text.get("kicker"),
+                title=title,
+                line=line,
+                tags=tuple(text[k] for k in ("tag1", "tag2", "tag3", "tag4") if text.get(k)),
+            )
+            placed = popout.popout(photos[0].image, self.popout.mask, self.popout.variants, words, seed=seed, backdrop=back)
+            if placed is not None:
+                self.drawn_style = "popout"
+                self.notes.append(f"Pop-out: the subject steps out of the frame ({placed.variant.replace('_', ' ')}); a composite of the unedited photo.")
+                slides.append(layouts.Slide(placed.image, (photos[0].alt_text + popout.alt_suffix(placed.variant)).strip()))
+            else:
+                self.drawn_style = "poster"
+                self.notes.append("The pop-out's words and photo didn't fit on one page, so it was drawn as a plain poster.")
+                slides.append(layouts.Slide(layouts.poster(photos[0], title, line, None, seed=seed, decor_dir=self.style.decor_dir, backdrop=back), photos[0].alt_text))
+        elif style in ("poster", "popout"):
             slides.append(layouts.Slide(layouts.poster(photos[0], title, line, note, seed=seed, decor_dir=self.style.decor_dir, backdrop=back), photos[0].alt_text))
         elif style == "panorama" and (parts := layouts.panorama(photos[0])):
             slides += [layouts.Slide(img, f"{photos[0].alt_text} (part {n} of {len(parts)})".strip()) for n, img in enumerate(parts, 1)]
@@ -711,6 +784,14 @@ class Run:
         else:  # gallery, and a panorama that can't be split
             slides.append(layouts.Slide(layouts.gallery(photos[0], title, self.label_detail(photo), backdrop=back), photos[0].alt_text))
         return [layouts.to_jpeg(s.image, quality) for s in slides[:10]], [s.alt_text[:1000] for s in slides[:10]]
+
+
+def popout_footer(selection: dict) -> str | None:
+    """The short line that says a pop-out is a composite, added by code after the caption text."""
+    settings = ((selection.get("style") or {}).get("popout") or {})
+    if settings.get("disclose_in_caption", True) is False:
+        return None
+    return str(settings.get("disclosure") or "Cut-out layout · photo unedited").strip() or None
 
 
 def _safe_name(name: str) -> str:
@@ -738,12 +819,15 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         today=r.today,
         last_style=next((h.get("style") for h in components.state.history(limit=1)), None),
         suggested=plan_item.style,
+        popout_available=components.mask_maker is not None,
     )
+    if style == "popout" and (why := r.cut_out(photo)):
+        style, style_note = "poster", f"No pop-out today: {why}. Today's photo was set as a poster instead."
     if style_note:
         r.notes.append(style_note)
     if style == "grid":
         more = more[: grid_size(1 + len(more)) - 1]  # a grid holds 2, 3, 4, 6 or 9 photos
-    elif style in ("gallery", "poster", "panorama", "notes"):
+    elif style in ("gallery", "poster", "panorama", "notes", "popout"):
         more = []  # one photo; the planner's others stay unposted
     elif style == "story":
         more = more[: MULTI_STYLES["story"] - 1]
@@ -755,6 +839,9 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         jpegs, alts = r.post_images(photo, more), [caption.alt_text, *caption.more_alt_texts]
     else:
         jpegs, alts = r.styled_slides(style, photo, more, caption, look)
+        style = r.drawn_style or style
+        if style == "popout" and (footer := popout_footer(profile.selection)):
+            caption.footer = footer
 
     result = PostResult(
         profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason, more_photos=more, style=style
@@ -797,7 +884,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         if len(urls) > 1:
             media_id = components.publisher.publish_carousel(urls, caption.render(), alts)
         else:
-            media_id = components.publisher.publish_image(urls[0], caption.render(), caption.alt_text)
+            media_id = components.publisher.publish_image(urls[0], caption.render(), alts[0] if alts else caption.alt_text)
     finally:
         for key in uploaded:
             try:

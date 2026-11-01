@@ -67,7 +67,7 @@ def to_jpeg(slide: Image.Image, quality: int = 95) -> bytes:
 
 # --- fonts and text -------------------------------------------------------------
 
-FONT_FILES = {"serif": "PlayfairDisplay.ttf", "italic": "PlayfairDisplay-Italic.ttf", "hand": "Caveat.ttf"}
+FONT_FILES = {"serif": "PlayfairDisplay.ttf", "italic": "PlayfairDisplay-Italic.ttf", "hand": "Caveat.ttf", "small": "CormorantGaramond.ttf"}
 
 
 def font(kind: str, size: int, weight: str | None = None) -> ImageFont.FreeTypeFont:

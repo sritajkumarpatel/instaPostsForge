@@ -292,6 +292,7 @@ forge post -p main               # post today's photo (needs GITHUB_TOKEN in .en
 forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
 forge reset -p main              # forget posts, insights, usage and photo analyses (--keep-catalog keeps analyses)
+forge cutout -p main --photo IMG_1234.jpg   # try the pop-out poster's subject cut-out on one photo (needs .[cutout]); --file for a local image
 ```
 
 Instagram tokens last about 60 days. On GitHub, the Refresh Instagram token workflow renews them on the 1st of every month if `GH_SECRETS_TOKEN` is set. Otherwise run `forge refresh-token` at least every 50 days and update `.env` and the GitHub secret.

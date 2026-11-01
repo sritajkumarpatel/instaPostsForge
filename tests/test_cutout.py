@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 from instapostsforge import cli
 from instapostsforge.imaging import Focus
 from instapostsforge.imaging import cutout as cut
-from tests.fakes import FakeMaskMaker
+from fakes import FakeMaskMaker
 
 PHOTO = Image.new("RGB", (600, 800), (90, 120, 80))
 BOX = Focus(top=0.2, bottom=0.8, left=0.35, right=0.65)

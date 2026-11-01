@@ -59,7 +59,10 @@ class FakeAI(AIWorkflow):
         text = self.captions.pop(0) if self.captions else "Quiet streets after rain."
         quote = self.quotes.pop(0) if self.quotes else None
         more_alts = [f"Photo {n} of the set." for n in range(2, 2 + len(more_photos or []))]
-        overlay = (self.overlays.pop(0) if self.overlays else {"title": "Quiet streets", "line": "The city after rain.", "note": "Same roads"}) if style_brief else {}
+        default = {"title": "Quiet streets", "line": "The city after rain.", "note": "Same roads"}
+        if "hand-drawn" in style_brief:
+            default.update({"mark1": "still warm", "mark2": "six pm light"})
+        overlay = (self.overlays.pop(0) if self.overlays else default) if style_brief else {}
         return Caption(text=text, hashtags=[], alt_text="A wet street at night.", quote=quote, more_alt_texts=more_alts, overlay=overlay)
 
     def choose_hashtags(self, *, analysis, caption_text, recent_tag_sets, tag_stats, feedback="", more_analyses=None):

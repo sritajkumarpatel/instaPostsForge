@@ -30,7 +30,7 @@ on:
       style:
         description: Post style for this run (variable = the POST_STYLE repository variable, or config if unset, which is any; any = the AI picks a designed style; single = the photo as shot)
         type: choice
-        options: [variable, any, single, poster, gallery, grid, story, panorama]
+        options: [variable, any, single, poster, gallery, grid, story, panorama, notes]
         default: variable
       mood:
         description: Only photos of this mood for this run (any = no filter)

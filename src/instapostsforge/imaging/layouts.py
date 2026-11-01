@@ -17,6 +17,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 
+from .backdrops import Backdrop, draw_swatches
 from .processor import Focus, _to_jpeg, place
 
 W, H = 1080, 1350
@@ -216,11 +217,14 @@ def overlay_title(canvas: Image.Image, text: str, centre_y: int) -> None:
         draw.text((x, top + i * lh), ln, font=typeface, fill=WHITE)
 
 
-def gallery(photo: LayoutPhoto, title: str | None = None, detail: str | None = None) -> Image.Image:
+def gallery(photo: LayoutPhoto, title: str | None = None, detail: str | None = None, backdrop: Backdrop | None = None) -> Image.Image:
     """The photo on an off-white margin with a small museum-style label under it. The print takes as
-    much of the slide as the label leaves, so the photo, not the margin, fills the frame."""
-    canvas = Image.new("RGB", (W, H), GALLERY)
-    label_space = 150 if (title or detail) else 0
+    much of the slide as the label leaves, so the photo, not the margin, fills the frame. A backdrop
+    replaces the plain margin and sets the label's ink."""
+    canvas = backdrop.image.copy() if backdrop else Image.new("RGB", (W, H), GALLERY)
+    ink, soft = (backdrop.ink, backdrop.soft) if backdrop else (INK, SOFT_INK)
+    swatches = bool(backdrop and backdrop.swatches)
+    label_space = (150 if (title or detail) else 0) + (60 if swatches else 0)
     print_ = contain(photo.image, (W - 120, H - 140 - label_space))
     x = (W - print_.width) // 2
     y = (H - label_space - print_.height) // 2 + (10 if label_space else 0)
@@ -230,11 +234,14 @@ def gallery(photo: LayoutPhoto, title: str | None = None, detail: str | None = N
     ly = y + print_.height + 44
     if title:
         typeface, lines = fitted(draw, title, "serif", 44, W - 220, 1, weight="Medium")
-        draw.text(((W - text_width(draw, lines[0], typeface)) // 2, ly), lines[0], font=typeface, fill=INK)
+        draw.text(((W - text_width(draw, lines[0], typeface)) // 2, ly), lines[0], font=typeface, fill=ink)
         ly += line_height(typeface) + 8
     if detail:
         small = font("italic", 28)
-        draw.text(((W - text_width(draw, detail, small)) // 2, ly), detail, font=small, fill=SOFT_INK)
+        draw.text(((W - text_width(draw, detail, small)) // 2, ly), detail, font=small, fill=soft)
+        ly += line_height(small)
+    if swatches:
+        draw_swatches(canvas, backdrop.colours, (W // 2, ly + 34), 15)
     return canvas
 
 
@@ -265,7 +272,9 @@ def text_block_height(title: str | None, line: str | None, width: int) -> int:
     return height
 
 
-def draw_text_block(canvas: Image.Image, x: int, y: int, width: int, title: str | None, line: str | None, align: str = "left") -> int:
+def draw_text_block(
+    canvas: Image.Image, x: int, y: int, width: int, title: str | None, line: str | None, align: str = "left", ink=INK, soft=SOFT_INK
+) -> int:
     """The spaced title, a short rule and the italic line, from (x, y); returns where it ends."""
     draw = ImageDraw.Draw(canvas)
 
@@ -275,21 +284,21 @@ def draw_text_block(canvas: Image.Image, x: int, y: int, width: int, title: str 
     if title:
         typeface, lines = _title_lines(draw, title, width)
         for ln in lines:
-            draw_spaced(draw, (left_for(text_width(draw, ln, typeface, TITLE_SPACING)), y), ln, typeface, INK, TITLE_SPACING)
+            draw_spaced(draw, (left_for(text_width(draw, ln, typeface, TITLE_SPACING)), y), ln, typeface, ink, TITLE_SPACING)
             y += line_height(typeface) + 2
         y += 18
         rx = left_for(80)
-        draw.line((rx, y, rx + 80, y), fill=SOFT_INK, width=2)
+        draw.line((rx, y, rx + 80, y), fill=soft, width=2)
         y += 26
     if line:
         typeface, lines = fitted(draw, line, "italic", 28, width, 3)
         for ln in lines:
-            draw.text((left_for(text_width(draw, ln, typeface)), y), ln, font=typeface, fill=SOFT_INK)
+            draw.text((left_for(text_width(draw, ln, typeface)), y), ln, font=typeface, fill=soft)
             y += line_height(typeface) + 4
     return y
 
 
-def draw_note(canvas: Image.Image, note: str, box: tuple[int, int, int, int], angle: float) -> None:
+def draw_note(canvas: Image.Image, note: str, box: tuple[int, int, int, int], angle: float, colour=SOFT_INK) -> None:
     """A handwritten aside, underlined and slightly tilted, fitted inside box (x0, y0, x1, y1)."""
     x0, y0, x1, y1 = box
     width = max(160, x1 - x0)
@@ -304,7 +313,7 @@ def draw_note(canvas: Image.Image, note: str, box: tuple[int, int, int, int], an
     layer = layer.crop((0, 0, width, min(layer.height, ny + 30))).rotate(angle, resample=Image.BICUBIC, expand=True)
     nx = min(max(0, x0), W - layer.width)
     ny = min(max(0, y0), H - layer.height)
-    canvas.paste(Image.new("RGB", layer.size, SOFT_INK), (nx, ny), layer)
+    canvas.paste(Image.new("RGB", layer.size, colour), (nx, ny), layer)
 
 
 def place_print(canvas: Image.Image, image: Image.Image, xy: tuple[int, int], rng: random.Random, finish: str) -> tuple[int, int, int, int]:
@@ -338,6 +347,9 @@ POSTER_LAYOUTS = {
 }
 
 
+KEEP_BAND = ("kraft", "linen", "handmade", "slate", "navy", "newsprint", "palette")
+
+
 def poster_layouts(shape: float) -> tuple[str, ...]:
     kind = "landscape" if shape >= 1.15 else "portrait" if shape < 0.9 else "square"
     return POSTER_LAYOUTS[kind]
@@ -353,15 +365,21 @@ def poster(
     decor_dir: str | None = None,
     layout: str | None = None,
     finish: str | None = None,
+    backdrop: Backdrop | None = None,
 ) -> Image.Image:
     """The photo as a large print on warm paper, with a spaced serif title, a quiet italic line and a
     handwritten note. The layout suits the photo's shape (a wide photo spans the page, a tall one
     stands to one side of the note) and, with the print's finish, changes from post to post: the seed
     picks them, so the same post always looks the same and the next one looks different."""
     rng = random.Random(seed)
-    canvas = paper(seed, rng.choice(PAPER_TONES))
+    tone = rng.choice(PAPER_TONES)
+    canvas = backdrop.image.copy() if backdrop else paper(seed, tone)
+    ink, soft = (backdrop.ink, backdrop.soft) if backdrop else (INK, SOFT_INK)
     shape = photo.image.width / photo.image.height
-    layout = layout or rng.choice(poster_layouts(shape))
+    choices = poster_layouts(shape)
+    if backdrop and backdrop.kind not in ("paper", *KEEP_BAND) and len(choices) > 1:
+        choices = tuple(c for c in choices if c != "wide_band")  # a full-width band would hide the background
+    layout = layout or rng.choice(choices)
     finish = finish or rng.choice(("plain", "border", "taped", "taped_border"))
     margin = 70
     text_w = 600
@@ -379,20 +397,20 @@ def poster(
         block = print_.height + gap + text_h + note_room
         top = max(margin, (H - block) // 2)
         if layout == "wide_low":  # words above, the photo below them
-            draw_text_block(canvas, margin + 10, top, text_w, title, line)
+            draw_text_block(canvas, margin + 10, top, text_w, title, line, ink=ink, soft=soft)
             py = top + text_h + gap
             box = place_print(canvas, print_, (px, py), rng, "plain" if full else finish)
             if note:
-                draw_note(canvas, note, (W - 400, box[3] + 16, W - margin, box[3] + 16 + note_room + 40), angle)
+                draw_note(canvas, note, (W - 400, box[3] + 16, W - margin, box[3] + 16 + note_room + 40), angle, soft)
         else:  # the photo first, the words under it
             py = top
             box = place_print(canvas, print_, (px, py), rng, "plain" if full else finish)
             ty = box[3] + gap
             if layout == "square_left" and note:
-                draw_note(canvas, note, (box[2] + 12, py + 40, W - 8, py + 360), angle)
+                draw_note(canvas, note, (box[2] + 12, py + 40, W - 8, py + 360), angle, soft)
             elif note:
-                draw_note(canvas, note, (W - 380, max(box[3] + 10, ty + text_h - 120), W - margin, ty + text_h + note_room), angle)
-            draw_text_block(canvas, margin + 10, ty, text_w if note else W - 2 * margin, title, line)
+                draw_note(canvas, note, (W - 380, max(box[3] + 10, ty + text_h - 120), W - margin, ty + text_h + note_room), angle, soft)
+            draw_text_block(canvas, margin + 10, ty, text_w if note else W - 2 * margin, title, line, ink=ink, soft=soft)
     else:  # tall photos stand to one side, with the note in the column beside them
         note_col = 250 if note else 0
         box_w = W - 2 * margin - note_col
@@ -409,14 +427,16 @@ def poster(
         box = place_print(canvas, print_, (px, py), rng, finish)
         if note:
             if layout == "tall_left":
-                draw_note(canvas, note, (box[2] + 24, py + 50, W - 16, py + 400), angle)
+                draw_note(canvas, note, (box[2] + 24, py + 50, W - 16, py + 400), angle, soft)
             elif layout == "tall_right":
-                draw_note(canvas, note, (16, py + 50, box[0] - 24, py + 400), -abs(angle))
+                draw_note(canvas, note, (16, py + 50, box[0] - 24, py + 400), -abs(angle), soft)
             else:
-                draw_note(canvas, note, (W - 400, box[3] + 10, W - margin, box[3] + 200), angle)
+                draw_note(canvas, note, (W - 400, box[3] + 10, W - margin, box[3] + 200), angle, soft)
         align = "right" if layout == "tall_right" else "left"
-        draw_text_block(canvas, margin + 10, box[3] + gap, W - 2 * margin - 20 - (360 if layout == "tall_centre" and note else 0), title, line, align)
+        draw_text_block(canvas, margin + 10, box[3] + gap, W - 2 * margin - 20 - (360 if layout == "tall_centre" and note else 0), title, line, align, ink=ink, soft=soft)
 
+    if backdrop and backdrop.swatches:
+        draw_swatches(canvas, backdrop.colours, (W // 2, H - 40), 13)
     leaf = decor(decor_dir, seed)
     if leaf is not None:
         leaf = contain(leaf, (380, 380))

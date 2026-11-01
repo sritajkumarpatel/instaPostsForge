@@ -107,16 +107,23 @@ defaults:
     #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
     #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
     #   story     a title slide over the cover, the other photos, and a closing line
+    #   notes     the photo as shot, then the same photo with hand-drawn notes, doodles or marks on top
     #   any       the planner picks one of any_styles for each post ("auto" means the same)
     #   single    the photo as shot, no layout
     # The POST_STYLE, POST_MOOD and POST_CATEGORY environment variables (the Run workflow's choices, or
     # repository variables) override name, mood and category for a run.
     style:
       name: any
-      any_styles: [poster, gallery, grid, story, panorama]   # what "any" chooses from; add single to allow plain posts too
+      any_styles: [poster, gallery, grid, story, panorama, notes]   # what "any" chooses from; add single to allow plain posts too
       mood: ""                # only photos of this mood today: calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe
       category: ""            # only photos of this category (genre) today: landscape, street, food, animals, macro, ...
       decor_dir: config/decor # optional PNGs with transparency (leaves, a sprig) placed on posters; none are bundled
+      # The look on top of the style, chosen by code from the photo's mood and category (no AI call),
+      # never the same as the last post's. Empty lists allow everything; list names to narrow them.
+      looks:
+        backdrops: []   # behind posters and gallery prints: paper, palette, echo, swatches, two_tone, sun, kraft, linen, handmade, slate, navy, newsprint
+        frames: []      # gallery frames and small sets: postcard, ticket, film, magazine, festive, polaroids
+        marks: []       # drawn on notes posts: field_notes, doodles, constellation, date_stamp, viewfinder, highlight, thirds, tape, cover
   image:
     keep_aspect_ratio: true
     min_ratio: 0.8            # 4:5 portrait, the tallest Instagram feed shape

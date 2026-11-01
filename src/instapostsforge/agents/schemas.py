@@ -11,6 +11,15 @@ Mood = Literal["calm", "joyful", "energetic", "nostalgic", "dramatic", "romantic
 CheckName = Literal["accuracy", "hook", "tone", "length", "quote", "hashtags", "alt_text", "safety"]
 
 
+class Anchor(BaseModel):
+    """A thing in the photo that a hand-drawn note could point at."""
+
+    name: str = Field(description="The thing in one to three plain words, e.g. tea glass, window, old bicycle.")
+    x: float = Field(description="The thing's centre across the width: 0 is the left edge, 1 the right edge.")
+    y: float = Field(description="The thing's centre down the height: 0 is the top edge, 1 the bottom edge.")
+    is_person: bool = Field(default=False, description="True if the thing is a person or part of one; code never draws on people.")
+
+
 class PhotoAnalysis(BaseModel):
     category: Category
     mood: Mood
@@ -36,7 +45,14 @@ class PhotoAnalysis(BaseModel):
         default=False,
         description="A political rally, party flag or poster, protest, armed forces or weapons, or a communal or caste message; such photos are never posted.",
     )
+    is_devotional: bool = Field(
+        default=False, description="A deity, idol, shrine, temple interior, prayer or ritual is the subject; such photos get no doodles or notes."
+    )
     themes: list[str] = Field(description="Themes and audiences, specific to broad.")
+    anchors: list[Anchor] = Field(
+        default_factory=list,
+        description="Up to three distinct, clearly visible things (not people) a hand-drawn note could point at, most interesting first.",
+    )
     # Where the main subject sits, so a trim to Instagram's shape can leave it whole. Code checks the
     # numbers (imaging.focus_from); no range limits here, so one odd number can't sink the whole analysis.
     subject_top: float | None = Field(default=None, description="Where the main subject starts, as a fraction of the height: 0 is the top edge.")
@@ -75,6 +91,9 @@ class CaptionDraft(BaseModel):
     overlay_title: str | None = Field(default=None, description="Styled posts only: the short title drawn on the image.")
     overlay_line: str | None = Field(default=None, description="Styled posts only: one short line drawn on the image.")
     overlay_note: str | None = Field(default=None, description="Poster posts only: a handwritten aside of a few words.")
+    overlay_marks: list[str] = Field(
+        default_factory=list, description="Notes-style posts only: one short handwritten note per listed thing, in the brief's order."
+    )
 
 
 class ChosenTag(BaseModel):

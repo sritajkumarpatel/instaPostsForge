@@ -192,7 +192,7 @@ def test_grid_asks_for_a_set_and_posts_a_collage_then_each_photo(tmp_path, monke
     brief = ai.calls["plan"][0]["photo_sets"]
     assert "grid" in brief["todays_style"] and brief["max_photos_per_post"] == 9
     urls, _, alts = c.publisher.posts[0]
-    assert result.style == "grid" and len(urls) == 5 and alts[0].startswith("A grid of 4 photos")
+    assert result.style == "grid" and len(urls) == 5 and alts[0].startswith(("A grid of 4 photos", "4 instant prints"))
     assert all(size_of(j) == (1080, 1350) for j in c.host.uploaded.values())
     state = ProfileState("test", tmp_path / "state")
     assert all(state.is_posted(n) for n in OUTING) and state.history()[0]["style"] == "grid"
@@ -284,7 +284,7 @@ def test_by_default_the_planner_chooses_the_style(tmp_path):
     c = components(tmp_path, {"a.jpg": photo_jpeg(1)}, ai)
     result = pipeline.run(make_profile(), c, publish=True, today=DAY)
     options = ai.calls["plan"][0]["style_options"]
-    assert set(options) == {"poster", "gallery", "grid", "story", "panorama"}
+    assert set(options) == {"poster", "gallery", "grid", "story", "panorama", "notes"}
     assert result.style == "poster" and "warm paper" in ai.calls["caption"][0]["style_brief"]
     assert ProfileState("test", tmp_path / "state").history()[0]["style"] == "poster"
 

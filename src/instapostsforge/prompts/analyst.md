@@ -55,6 +55,12 @@ Report subject_top and subject_bottom: where the main subject starts and ends ve
 
 Include everything that would spoil the photo if it were cut: faces and the tops of heads, hands, readable signs and text, and the whole of the main object (the full table, the full building, the moon). Leave out what can be lost without harm: empty sky, plain floor or ground, blank walls, and out-of-focus edges. If the subject fills the frame or the composition needs every edge, return 0 and 1.
 
+## Things a note could point at
+
+Some posts show the photo with a few hand-drawn notes on top, each with an arrow to one thing in the frame. List up to three anchors: distinct, clearly visible things that are interesting to point at (the tea glass, the bicycle, the lamp, a ripple of light), most interesting first. Give each a plain name of one to three words and its centre as x (0 left edge, 1 right edge) and y (0 top edge, 1 bottom edge). Leave out people and parts of people; if you list one anyway, set is_person to true, and code will skip it. Leave the list empty for a photo with nothing distinct to point at.
+
+Set is_devotional when a deity, idol, shrine, temple interior, prayer or ritual is the subject. These photos are welcome, but get a plain frame instead of notes or doodles.
+
 ## Place
 
 Set place_name only if the place is clearly recognisable (a famous landmark, a readable sign, or the file name says it). Otherwise leave it empty and describe the kind of place in setting. Never guess.

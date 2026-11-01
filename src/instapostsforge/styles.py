@@ -9,12 +9,19 @@ The designed styles are drawn by code (imaging/layouts.py) from templates:
 - poster: one photo as a print on warm paper with a spaced title, a quiet line and a handwritten note.
 - panorama: one wide photo cut into 2 or 3 slides that join up as you swipe.
 - story: a title slide over the cover, the other photos on gallery margins, and a closing line.
+- notes: the photo as shot, then the same photo with a hand-drawn layer on top (notes with arrows,
+  doodles, a star map, a film date stamp, viewfinder marks and more). The photo itself is unchanged.
 - any: the planner picks one of selection.style.any_styles for each post from the photos' notes; if
   its pick can't be drawn, code picks one that suits the photos' mood. "auto" means the same.
 
 The AI's part is choosing the photos (the planner, as for multi-photo posts) and writing the few
 words that go on the image (the caption writer's overlay_* fields). Code checks those words like the
 caption, and a style that can't be drawn falls back to a simpler one, never to a broken post.
+
+On top of the style, code picks a "look" by plain rules (choose_look): the background behind a poster
+or gallery print, a frame (postcard, ticket, film, magazine page, festive border, polaroids), or the
+marks drawn for a notes post. The look follows the photo's mood and category, never repeats yesterday's,
+and changes with the date. No AI call is spent on it.
 
 The choice comes from selection.style in config/profiles.yaml, overridden for a run by the POST_STYLE,
 POST_MOOD and POST_CATEGORY environment variables (the Run workflow's choices).
@@ -32,8 +39,8 @@ from .agents.playbooks import CATEGORIES, MOODS
 
 log = logging.getLogger(__name__)
 
-STYLES = ("any", "single", "grid", "gallery", "poster", "panorama", "story")
-DESIGNED = ("poster", "gallery", "grid", "story", "panorama")  # what "any" chooses from by default
+STYLES = ("any", "single", "grid", "gallery", "poster", "panorama", "story", "notes")
+DESIGNED = ("poster", "gallery", "grid", "story", "panorama", "notes")  # what "any" chooses from by default
 ALIASES = {"auto": "any"}
 # Styles that put several photos in one post, and the most photos each may hold. A carousel has at
 # most 10 slides: a grid adds its collage slide, and a story adds a closing slide.
@@ -49,6 +56,7 @@ STYLE_GUIDE = {
     "panorama": "one wide photo (3:2 or wider, shape 1.5 or more) split into joined slides; suits wide landscapes, skylines and seascapes",
     "grid": "3 to 9 photos from one set tiled on one slide, then each on its own; suits outings with many varied photos",
     "story": "2 to 9 photos from one set as a sequence with a title and a closing line; suits outings that unfold over time",
+    "notes": "the photo as shot, then the same photo with a few hand-drawn notes, arrows or doodles on top; suits photos with two or three distinct things to point at, food, street and travel moments, and night skies; never for photos of a deity, shrine or prayer",
     "single": "the photo as shot, with no layout",
 }
 
@@ -63,6 +71,8 @@ MOOD_STYLES = {
     "energetic": ("gallery",),
     "playful": ("gallery",),
 }
+
+NOTES_CATEGORIES = ("food", "street", "travel", "night", "macro")  # where code's own fallback may pick notes
 
 # What the caption writer is told about the text on the image, per style.
 BRIEFS = {
@@ -150,7 +160,7 @@ class StyleRequest:
     @property
     def single_only(self) -> bool:
         """Whether today's style holds exactly one photo, so the planner shouldn't offer a set."""
-        return self.name in ("gallery", "poster", "panorama")
+        return self.name in ("gallery", "poster", "panorama", "notes")
 
 
 def _pick(kind: str, known: tuple[str, ...], *values) -> str | None:
@@ -211,8 +221,9 @@ def choose_style(
     shape = cover.get("shape") or 1.0
     wide = shape >= PANORAMA_MIN_SHAPE
     name = request.name
+    devotional = bool(cover.get("is_devotional"))
     if name == "any":
-        allowed = request.any_styles
+        allowed = [s for s in request.any_styles if not (s == "notes" and devotional)]  # never draw on a devotional photo
         if suggested in allowed and fits(suggested, photo_count, wide):
             return suggested, None
         if photo_count > 1:
@@ -222,13 +233,231 @@ def choose_style(
                 return choose_style(request, photo_count=1, cover=cover, today=today, last_style=last_style)
         else:
             suits = MOOD_STYLES.get(cover.get("mood") or "", ("gallery",))
-            options = [s for s in (*suits, "poster", "gallery", "single") if s in allowed and (s != "panorama" or wide)]
+            notes_fit = ("notes",) if cover.get("category") in NOTES_CATEGORIES else ()
+            options = [s for s in (*suits, *notes_fit, "poster", "gallery", "single") if s in allowed and (s != "panorama" or wide)]
             options = list(dict.fromkeys(options))
         options = [s for s in options if s != last_style] or options  # a different look from yesterday's when possible
         return (random.Random(today.isoformat()).choice(options) if options else "gallery"), None
     if name in MULTI_STYLES and photo_count < 2:
         fallback = "gallery" if name == "grid" else "poster"
         return fallback, f"The {name} style needs several photos from one outing or place, so today's photo was set as a {fallback} instead."
+    if name == "notes" and devotional:
+        return "gallery", "Nothing is drawn on a photo of a deity, shrine or prayer, so it was set in a gallery frame instead."
     if name == "panorama" and not wide:
         return "gallery", "The photo isn't wide enough to split into a panorama, so it was set in a gallery frame instead."
     return name, None
+
+
+# --- looks: backgrounds, frames and drawn marks, chosen by rules ---------------------------
+
+BACKDROP_NAMES = ("paper", "palette", "echo", "swatches", "two_tone", "sun", "kraft", "linen", "handmade", "slate", "navy", "newsprint")
+FRAME_NAMES = ("postcard", "ticket", "film", "magazine", "festive", "polaroids")
+MARK_NAMES = ("field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover")
+
+# Backgrounds that suit each mood, and the ones a category leans to. Code picks among them by the date.
+MOOD_BACKDROPS = {
+    "calm": ("palette", "linen", "swatches", "echo"),
+    "nostalgic": ("kraft", "paper", "handmade", "newsprint"),
+    "romantic": ("handmade", "palette", "sun"),
+    "awe": ("echo", "navy", "slate", "sun"),
+    "dramatic": ("slate", "echo", "navy"),
+    "joyful": ("two_tone", "sun", "palette", "swatches"),
+    "energetic": ("two_tone", "echo", "swatches"),
+    "playful": ("two_tone", "swatches", "sun"),
+}
+CATEGORY_BACKDROPS = {"night": ("navy", "echo"), "food": ("swatches", "palette"), "street": ("newsprint", "slate"), "sky": ("sun", "echo")}
+# Frames a gallery slide may take instead of a plain margin, by category.
+CATEGORY_FRAMES = {
+    "travel": ("postcard", "ticket"),
+    "landscape": ("postcard", "ticket"),
+    "street": ("film",),
+    "night": ("film",),
+    "city": ("magazine", "film"),
+    "abstract": ("magazine",),
+    "event": ("magazine",),
+    "people": ("film", "magazine"),
+}
+# The marks a notes post can carry, by category; each option is one combination.
+CATEGORY_MARKS = {
+    "food": (("field_notes", "doodles"), ("highlight",)),
+    "street": (("date_stamp", "field_notes"), ("date_stamp",)),
+    "travel": (("field_notes", "tape"), ("tape", "date_stamp")),
+    "landscape": (("viewfinder",), ("thirds",), ("field_notes", "date_stamp")),
+    "sky": (("viewfinder",), ("doodles",), ("thirds",)),
+    "night": (("constellation", "date_stamp"), ("viewfinder",)),
+    "city": (("cover",), ("field_notes",)),
+    "macro": (("highlight",), ("thirds",)),
+    "abstract": (("highlight",), ("thirds",)),
+    "animals": (("field_notes",), ("viewfinder",)),
+    "event": (("doodles", "date_stamp"), ("field_notes",)),
+    "people": (("date_stamp",), ("tape",), ("thirds",)),
+}
+# Marks allowed when a person is in the photo: none of them is drawn on or around a person.
+PEOPLE_SAFE_MARKS = {"date_stamp", "tape", "thirds", "viewfinder"}
+NEEDS_ANCHORS = {"field_notes", "highlight"}
+
+
+@dataclass(frozen=True)
+class Look:
+    backdrop: str | None = None  # behind a poster or gallery print
+    frame: str | None = None  # a gallery slide's frame, or "polaroids" for a small set
+    marks: tuple[str, ...] = ()  # drawn on a notes post
+
+    @property
+    def name(self) -> str:
+        return "+".join([*filter(None, (self.backdrop, self.frame)), *self.marks]) or "plain"
+
+
+def _allowed(settings: dict, key: str, known: tuple[str, ...]) -> tuple[str, ...]:
+    listed = settings.get(key)
+    if not listed:
+        return known
+    kept = tuple(s for s in listed if s in known)
+    return kept or known
+
+
+def usable_anchors(analysis: dict) -> list[dict]:
+    """The analyst's anchors code may point at: never a person, and only with sensible numbers."""
+    out = []
+    for a in analysis.get("anchors") or []:
+        try:
+            x, y = float(a.get("x")), float(a.get("y"))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if a.get("is_person") or not (0 <= x <= 1 and 0 <= y <= 1) or not str(a.get("name") or "").strip():
+            continue
+        out.append({"name": str(a["name"]).strip()[:40], "x": x, "y": y})
+    return out[:3]
+
+
+def choose_look(
+    style: str,
+    analysis: dict,
+    *,
+    seed: int,
+    photo_count: int = 1,
+    last_look: str | None = None,
+    has_time: bool = False,
+    has_place: bool = False,
+    settings: dict | None = None,
+) -> Look:
+    """Today's look for a styled post, by rule: the mood and category choose the candidates, the seed
+    picks one, and yesterday's look is avoided when there is another. Never an AI call."""
+    settings = settings or {}
+    rng = random.Random(seed)
+    mood, category = analysis.get("mood") or "", analysis.get("category") or ""
+    devotional = bool(analysis.get("is_devotional"))
+    backdrops = _allowed(settings, "backdrops", BACKDROP_NAMES)
+    frames = _allowed(settings, "frames", FRAME_NAMES)
+    allowed_marks = set(_allowed(settings, "marks", MARK_NAMES))
+
+    def pick(options: list[Look]) -> Look:
+        fresh = [o for o in options if o.name != last_look] or options
+        return rng.choice(fresh) if fresh else Look()
+
+    def backdrop_options() -> list[str]:
+        liked = (*CATEGORY_BACKDROPS.get(category, ()), *MOOD_BACKDROPS.get(mood, ("palette", "paper")))
+        return [b for b in dict.fromkeys(liked) if b in backdrops] or list(backdrops)  # none suits: any the config allows
+
+    if style in ("poster", "story"):
+        return pick([Look(backdrop=b) for b in backdrop_options()])
+    if style == "gallery":
+        if devotional:
+            return Look(backdrop="palette", frame="festive") if "festive" in frames else Look(backdrop="palette")
+        options = [Look(backdrop=b) for b in backdrop_options()]
+        options += [Look(frame=f) for f in CATEGORY_FRAMES.get(category, ()) if f in frames and f != "festive"]
+        return pick(options)
+    if style == "grid":
+        if 2 <= photo_count <= 4 and "polaroids" in frames and rng.random() < 0.5:
+            return Look(frame="polaroids")
+        return Look()
+    if style == "notes":
+        anchors = usable_anchors(analysis)
+        people = bool(analysis.get("has_people") or analysis.get("has_children"))
+        combos = CATEGORY_MARKS.get(category, (("viewfinder",), ("thirds",)))
+
+        def ok(combo: tuple[str, ...]) -> bool:
+            if any(m not in allowed_marks for m in combo):
+                return False
+            if people and not set(combo) <= PEOPLE_SAFE_MARKS:
+                return False
+            if NEEDS_ANCHORS & set(combo) and not anchors:
+                return False
+            if "date_stamp" in combo and not has_time:
+                return False
+            return not ("tape" in combo and not has_place)
+
+        options = [Look(marks=c) for c in combos if ok(c)]
+        if not options:  # always something to draw: corner brackets need nothing from the photo
+            options = [Look(marks=(m,)) for m in ("viewfinder", "thirds", "date_stamp") if m in allowed_marks and (m != "date_stamp" or has_time)]
+        return pick(options or [Look(marks=("viewfinder",))])
+    return Look()
+
+
+FRAME_BRIEFS = {
+    "postcard": (
+        "Today's photo is printed on a postcard. overlay_line is the handwritten message on its back: one warm sentence, "
+        "at most 80 characters, as if sent to a friend (for example \"Wish you could hear these waves.\"). Code adds the "
+        "place and month on the postmark. Leave overlay_title, overlay_note and overlay_marks empty."
+    ),
+    "ticket": (
+        "Today's photo is set on a ticket stub. overlay_title is the title on the stub: two short phrases separated by a comma, "
+        "at most 32 characters (for example \"Hills, slow roads\"). Code adds the place and month. Leave the other overlay fields empty."
+    ),
+    "film": (
+        "Today's photo is shown on a strip of film. overlay_title is a short title under it, 1 to 4 words, at most 32 characters. "
+        "Leave the other overlay fields empty."
+    ),
+    "magazine": (
+        "Today's photo is laid out as a magazine page. overlay_title is the headline, 2 to 6 words, at most 32 characters. "
+        "overlay_line is the standfirst under it: one sentence, at most 80 characters. Leave overlay_note and overlay_marks empty."
+    ),
+    "festive": (
+        "Today's photo sits in a soft festive border. overlay_title is the title on its label, 1 to 4 words, at most 32 characters, "
+        "kept reverent. Code adds the month. Leave the other overlay fields empty."
+    ),
+    "polaroids": (
+        "Today's photos are laid out as instant prints on paper. overlay_title is one handwritten line under them, 2 to 5 words, "
+        "at most 32 characters, naming what ties them together. Leave the other overlay fields empty."
+    ),
+}
+
+
+def notes_brief(look: Look, anchors: list[dict]) -> str:
+    """What the caption writer is told about the words drawn on a notes post."""
+    parts = [
+        "Today's post shows the photo as shot, then the same photo with a few hand-drawn marks on top "
+        f"({', '.join(m.replace('_', ' ') for m in look.marks)})."
+    ]
+    things = "\n".join(f"{n}. {a['name']}" for n, a in enumerate(anchors, 1))
+    if {"field_notes", "highlight"} & set(look.marks) and anchors:
+        parts.append(
+            "overlay_marks: one handwritten note for each thing below, in the same order, 2 to 4 words and at most 28 characters each, "
+            "like a diary aside about that thing (for example \"still warm\" or \"the six pm light\"). Describe only what is visible.\n"
+            + things
+        )
+    if "cover" in look.marks:
+        parts.append(
+            "The photo is set as a magazine cover. overlay_title is the masthead across it: one or two words, at most 16 characters "
+            "(for example \"Coastline\"), never a real magazine's name."
+            + (" overlay_marks are up to two short cover lines, at most 28 characters each, about these things:\n" + things if anchors else "")
+        )
+    if "constellation" in look.marks:
+        parts.append("overlay_note is a tiny label for the star map drawn in the sky, 2 to 4 words, at most 32 characters (for example \"the quiet seven\").")
+    if "thirds" in look.marks:
+        parts.append("overlay_line is one sentence on why the frame works, at most 80 characters (for example \"The horizon sits on the lower third.\").")
+    if len(parts) == 1:
+        parts.append("Code adds everything drawn today (the date, place or time), so leave every overlay field empty.")
+    parts.append("Leave any overlay field not named here empty.")
+    return "\n\n".join(parts)
+
+
+def look_brief(style: str, look: Look | None, anchors: list[dict] | None = None) -> str:
+    """The caption writer's brief for a styled post, with the look's own words when it has a frame or marks."""
+    if style not in BRIEFS and style != "notes":
+        return ""
+    if look is not None and style == "notes":
+        return f"{notes_brief(look, anchors or [])}\n\n{TEXT_RULES}"
+    if look is not None and look.frame in FRAME_BRIEFS:
+        return f"{FRAME_BRIEFS[look.frame]}\n\n{TEXT_RULES}"
+    return brief_for(style)

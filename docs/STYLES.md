@@ -62,6 +62,12 @@ The photo exactly as shot, then the same photo with a hand-drawn layer on top. T
 | --- | --- | --- |
 | ![Viewfinder corners and time](assets/styles/notes-viewfinder.jpg) | ![Rule-of-thirds lines and a note](assets/styles/notes-thirds.jpg) | ![Tape with the place name](assets/styles/notes-tape.jpg) |
 
+## Pop-out
+
+An editorial poster on light paper. The photo shows through a window, and its main subject steps out of the window onto the page: down onto a faded patch of its own ground (a person walking, a jeep), out of one side, or across the top and bottom of a narrow window. A large serif title sits above it with a small spaced label, a spaced line and up to four words along the foot. The title takes a deep colour from the photo when it reads on the paper.
+
+The subject is found by a local segmentation model and the photo's own pixels are shown through that mask, never repainted. The alt text, and by default a short line after the caption, say the layout is a composite of the unedited photo. When the photo has no single clear subject, the subject touches the photo's edges, its edges are unsure (fog, glass, motion blur), or it's a devotional photo or has children, the post is a plain poster instead. Try one of your photos with `forge cutout -p main --photo <name>`, then `forge preview -p main --style popout`.
+
 ## Looks: backgrounds and frames
 
 On top of the style, code picks a look by rule, with no AI call: the photo's mood and category choose the candidates, the date picks one, and the last post's look is skipped. Narrow them in `selection.style.looks`.

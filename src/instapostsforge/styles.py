@@ -9,6 +9,9 @@ The designed styles are drawn by code (imaging/layouts.py) from templates:
 - poster: one photo as a print on warm paper with a spaced title, a quiet line and a handwritten note.
 - panorama: one wide photo cut into 2 or 3 slides that join up as you swipe.
 - story: a title slide over the cover, the other photos on gallery margins, and a closing line.
+- popout: an editorial poster on paper: the photo shows through a window, and its main subject steps
+  out of the window onto the page (cut out by a local model in imaging/cutout.py, never repainted),
+  under a large serif title and widely spaced small lines.
 - notes: the photo as shot, then the same photo with a hand-drawn layer on top (notes with arrows,
   doodles, a star map, a film date stamp, viewfinder marks and more). The photo itself is unchanged.
 - any: the planner picks one of selection.style.any_styles for each post from the photos' notes; if
@@ -39,8 +42,8 @@ from .agents.playbooks import CATEGORIES, MOODS
 
 log = logging.getLogger(__name__)
 
-STYLES = ("any", "single", "grid", "gallery", "poster", "panorama", "story", "notes")
-DESIGNED = ("poster", "gallery", "grid", "story", "panorama", "notes")  # what "any" chooses from by default
+STYLES = ("any", "single", "grid", "gallery", "poster", "panorama", "story", "notes", "popout")
+DESIGNED = ("poster", "gallery", "grid", "story", "panorama", "notes", "popout")  # what "any" chooses from by default
 ALIASES = {"auto": "any"}
 # Styles that put several photos in one post, and the most photos each may hold. A carousel has at
 # most 10 slides: a grid adds its collage slide, and a story adds a closing slide.
@@ -57,6 +60,7 @@ STYLE_GUIDE = {
     "grid": "3 to 9 photos from one set tiled on one slide, then each on its own; suits outings with many varied photos",
     "story": "2 to 9 photos from one set as a sequence with a title and a closing line; suits outings that unfold over time",
     "notes": "the photo as shot, then the same photo with a few hand-drawn notes, arrows or doodles on top; suits photos with two or three distinct things to point at, food, street and travel moments, and night skies; never for photos of a deity, shrine or prayer",
+    "popout": "an editorial poster: the main subject steps out of the photo's frame onto paper under a big title; only for one clear, sharp subject (a person, vehicle, animal or object) with space around it, never a deity, shrine or prayer, a crowd, a flat scene or a pure landscape",
     "single": "the photo as shot, with no layout",
 }
 
@@ -95,6 +99,18 @@ BRIEFS = {
         "but a little part of someone's tomorrow.\").\n"
         "- overlay_note: a handwritten aside in the margin, 2 to 5 words, at most 32 characters (for example "
         "\"Same roads, different stories\")."
+    ),
+    "popout": (
+        "Today's photo is an editorial poster: the photo sits on paper and its main subject steps out of the frame. "
+        "Write the words for it; code sets them in capitals, spaces them and places them:\n"
+        "- overlay_kicker: a small label above the title, 1 to 3 words, at most 24 characters (for example \"Road trips\" or \"Monsoon diaries\").\n"
+        "- overlay_title: the big title, 1 to 3 words, at most 20 characters, that makes sense on its own (for example "
+        "\"Somewhere ahead\" or \"Into the wild\").\n"
+        "- overlay_line: one spaced line under the title, 3 to 6 words, at most 40 characters, about the feeling of the "
+        "moment rather than the objects (for example \"Good roads, brighter days\").\n"
+        "- overlay_tags: 0 to 4 single words for the foot of the page, at most 12 characters each (for example "
+        "Roads, Photos, People, Stories).\n"
+        "Leave overlay_note and overlay_marks empty."
     ),
     "story": (
         "Today's post is a short story in slides: the cover with a title over it, the other photos, then a closing slide. "
@@ -160,7 +176,7 @@ class StyleRequest:
     @property
     def single_only(self) -> bool:
         """Whether today's style holds exactly one photo, so the planner shouldn't offer a set."""
-        return self.name in ("gallery", "poster", "panorama", "notes")
+        return self.name in ("gallery", "poster", "panorama", "notes", "popout")
 
 
 def _pick(kind: str, known: tuple[str, ...], *values) -> str | None:
@@ -210,8 +226,34 @@ def fits(style: str, photo_count: int, wide: bool) -> bool:
     return True  # single-photo styles take the cover; any other photos are left for later
 
 
+def popout_ready(cover: dict, available: bool = True) -> str | None:
+    """Why the pop-out can't be used for this photo, from the analyst's notes alone (no model run yet),
+    or None when it may be tried. The mask's own checks come later, in imaging/cutout.py."""
+    if not available:
+        return 'the cut-out model isn\'t installed (pip install -e ".[cutout]")'
+    if cover.get("is_devotional"):
+        return "nothing is cut out of a photo of a deity, shrine or prayer"
+    if cover.get("has_children"):
+        return "photos with children are never cut out"
+    values = [cover.get(k) for k in ("subject_top", "subject_bottom", "subject_left", "subject_right")]
+    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 1 for v in values):
+        return "the analyst gave no subject box"
+    top, bottom, left, right = values
+    area = max(0.0, bottom - top) * max(0.0, right - left)
+    if not 0.06 <= area <= 0.70:
+        return "the subject is too small or fills the whole photo"
+    return None
+
+
 def choose_style(
-    request: StyleRequest, *, photo_count: int, cover: dict, today: date, last_style: str | None = None, suggested: str | None = None
+    request: StyleRequest,
+    *,
+    photo_count: int,
+    cover: dict,
+    today: date,
+    last_style: str | None = None,
+    suggested: str | None = None,
+    popout_available: bool = False,
 ) -> tuple[str, str | None]:
     """The style today's post is drawn in, given the photos the planner chose, and a note when the
     requested style couldn't be used. With "any", the planner's suggestion wins when it is allowed and
@@ -224,6 +266,8 @@ def choose_style(
     devotional = bool(cover.get("is_devotional"))
     if name == "any":
         allowed = [s for s in request.any_styles if not (s == "notes" and devotional)]  # never draw on a devotional photo
+        if "popout" in allowed and popout_ready(cover, popout_available):
+            allowed.remove("popout")
         if suggested in allowed and fits(suggested, photo_count, wide):
             return suggested, None
         if photo_count > 1:
@@ -241,6 +285,8 @@ def choose_style(
     if name in MULTI_STYLES and photo_count < 2:
         fallback = "gallery" if name == "grid" else "poster"
         return fallback, f"The {name} style needs several photos from one outing or place, so today's photo was set as a {fallback} instead."
+    if name == "popout" and (why := popout_ready(cover, popout_available)):
+        return "poster", f"The pop-out needs one clear subject to cut out, but {why}, so today's photo was set as a poster instead."
     if name == "notes" and devotional:
         return "gallery", "Nothing is drawn on a photo of a deity, shrine or prayer, so it was set in a gallery frame instead."
     if name == "panorama" and not wide:
@@ -250,6 +296,7 @@ def choose_style(
 
 # --- looks: backgrounds, frames and drawn marks, chosen by rules ---------------------------
 
+POPOUT_BACKDROPS = ("paper", "handmade", "linen", "kraft")
 BACKDROP_NAMES = ("paper", "palette", "echo", "swatches", "two_tone", "sun", "kraft", "linen", "handmade", "slate", "navy", "newsprint")
 FRAME_NAMES = ("postcard", "ticket", "film", "magazine", "festive", "polaroids")
 MARK_NAMES = ("field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover")
@@ -361,6 +408,9 @@ def choose_look(
 
     if style in ("poster", "story"):
         return pick([Look(backdrop=b) for b in backdrop_options()])
+    if style == "popout":  # the subject stands on the page, so the page must be a light paper
+        light = [b for b in backdrop_options() if b in POPOUT_BACKDROPS] or [b for b in POPOUT_BACKDROPS if b in backdrops] or ["paper"]
+        return pick([Look(backdrop=b) for b in light])
     if style == "gallery":
         if devotional:
             return Look(backdrop="palette", frame="festive") if "festive" in frames else Look(backdrop="palette")

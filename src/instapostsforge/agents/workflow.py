@@ -188,7 +188,7 @@ class AgentWorkflow(AIWorkflow):
             quote_rule=QUOTE_RULES.get(self.settings.get("quote", "when_fitting"), QUOTE_RULES["when_fitting"]),
             language=self.settings.get("language", "English"),
             playbook=self.playbooks.for_photo(analysis),
-            style_brief=style_brief or "Nothing is written on the image today: leave overlay_title, overlay_line and overlay_note empty.",
+            style_brief=style_brief or "Nothing is written on the image today: leave overlay_title, overlay_line, overlay_note and overlay_marks empty.",
         )
         blocks, notes = self._photos_content(image_jpeg, analysis, more_photos)
         text = (
@@ -211,7 +211,12 @@ class AgentWorkflow(AIWorkflow):
             more_alt_texts=more_alts,
             overlay={
                 k: v.strip()
-                for k, v in (("title", draft.overlay_title), ("line", draft.overlay_line), ("note", draft.overlay_note))
+                for k, v in (
+                    ("title", draft.overlay_title),
+                    ("line", draft.overlay_line),
+                    ("note", draft.overlay_note),
+                    *((f"mark{n}", m) for n, m in enumerate(draft.overlay_marks[:3], 1)),
+                )
                 if style_brief and v and v.strip()
             },
         )

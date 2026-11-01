@@ -292,6 +292,7 @@ forge post -p main               # post today's photo (needs GITHUB_TOKEN in .en
 forge refresh-token -p main      # extend the Instagram token by 60 days
 forge usage -p main              # AI tokens and estimated cost this month
 forge reset -p main              # forget posts, insights, usage and photo analyses (--keep-catalog keeps analyses)
+forge cutout -p main --photo IMG_1234.jpg   # try the pop-out poster's subject cut-out on one photo (needs .[cutout]); --file for a local image
 ```
 
 Instagram tokens last about 60 days. On GitHub, the Refresh Instagram token workflow renews them on the 1st of every month if `GH_SECRETS_TOKEN` is set. Otherwise run `forge refresh-token` at least every 50 days and update `.env` and the GitHub secret.
@@ -370,17 +371,22 @@ Every post is laid out in a designed style, drawn by code from templates with a 
 
 | Style | What it looks like | Photos |
 | --- | --- | --- |
-| `any` (default) | The planner picks one of `any_styles` (poster, gallery, grid, story, panorama) for each post from the photos' notes, avoiding the last post's look. If its pick can't be drawn, code picks one that suits the photos' mood | any |
+| `any` (default) | The planner picks one of `any_styles` (poster, gallery, grid, story, panorama, notes) for each post from the photos' notes, avoiding the last post's look. If its pick can't be drawn, code picks one that suits the photos' mood | any |
 | `single` | The photo as shot (or a multi-photo post, as above), only when chosen | 1, or a set |
 | `grid` | 2 to 9 photos of one outing or place tiled on one slide with a short line across it, then each photo on its own slide | 2 to 9 |
 | `gallery` | The photo on a wide off-white margin with a museum-style label: a title, then the place and month | 1 |
 | `poster` | The photo as a large print on paper, with a spaced two-phrase title ("Small towns, big dreams"), a quiet line and a handwritten note. The layout suits the photo's shape, and layout, finish (border, tape, tilt) and paper tone change from post to post | 1 |
 | `panorama` | A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe | 1 |
 | `story` | The cover full-bleed with a title, the other photos on gallery margins, then a closing line | 2 to 9 |
+| `notes` | The photo exactly as shot, then the same photo with a hand-drawn layer on top: notes with arrows, doodles, a star map, a film date stamp, viewfinder marks, rule-of-thirds lines, a tape label or a magazine cover | 1 |
+
+**Looks.** On top of the style, code picks a look by plain rules, with no AI call: the background behind a poster or gallery print (paper tinted with the photo's own colours, a blurred copy of the photo, colour swatches, two tones, a sun shape, or kraft, linen, handmade, slate, navy or newsprint paper), a frame (postcard, ticket stub, film strip, magazine page, festive border, or instant prints for a small set), or the marks for a notes post. The photo's mood and category choose the candidates, the date picks one, and the last post's look is skipped. Narrow them with `selection.style.looks`.
 
 - **Choosing:** leave `selection.style.name` at `any`, or set it in `config/profiles.yaml`, or choose **style**, **mood** and **category** when you start the Run workflow by hand. The repository variable `POST_STYLE` sets the style for scheduled runs. Locally: `forge preview -p main --style poster --mood nostalgic`.
 - **Mood and category** narrow today's photos to those the analyst gave that mood or category. If none match, the planner chooses from all photos and the run says so.
 - **Text on the image** comes from the caption writer (`overlay_title`, `overlay_line`, `overlay_note`), is held to 32 or 80 characters, loses any emoji, hashtags or links, goes through the same blocked-terms check as the caption, and is shown to the reviewer. It can't be edited after posting, so the rules for it are the strictest.
+- **Drawing on photos:** the analyst names up to three things in the photo and roughly where they are (`anchors`), and the caption writer writes a short note for each (`overlay_marks`, 28 characters at most). Everything else (where notes go, the date stamp from the capture time, the place on a tape label or postmark, the time on the viewfinder) is code. Marks never touch the analyst's subject band, a note that can't be placed clear of it is dropped, people are never pointed at or drawn on, and photos of a deity, shrine or prayer (`is_devotional`) get a plain festive frame instead.
+- **Colour rules:** backgrounds take the photo's own colours, text is checked for contrast (4.5:1) and switched to dark or light ink when it fails, and colours that read as a flag or party set (saffron, white and green; red, white and blue) are never shown together as bands or swatches. No frame copies a real brand, masthead, ticket or stamp.
 - **Fallbacks, never failures:** a grid or story with no set to draw from becomes a gallery frame or a poster, and a panorama of a photo that isn't wide becomes a gallery frame. An unknown style name falls back to `any`. Add `single` to `any_styles` to let the planner pick plain posts too.
 - **Decorations:** put PNGs with a transparent background (a leafy branch, a sprig) in `config/decor/` to have one placed on each poster. None are bundled.
 - **Fonts:** Playfair Display and Caveat, both under the SIL Open Font License, are bundled in `src/instapostsforge/imaging/fonts/`.

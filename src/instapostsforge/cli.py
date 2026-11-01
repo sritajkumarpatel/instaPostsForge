@@ -198,6 +198,57 @@ def metadata_report(photos) -> str:
     )
 
 
+def cmd_cutout(args) -> int:
+    """Cuts the main subject out of one photo and says whether a pop-out poster could use it. Posts nothing."""
+    from .imaging import focus_from
+    from .imaging.layouts import load_photo
+
+    try:
+        from .imaging import cutout as cut
+    except ImportError:
+        raise ConfigError('The cut-out needs numpy and onnxruntime: pip install -e ".[cutout]".') from None
+    profile = load_profile(args.profile, args.config)
+    try:
+        return _cutout(args, profile, cut, focus_from, load_photo)
+    except cut.CutoutUnavailable as err:
+        raise ConfigError(str(err)) from None
+
+
+def _cutout(args, profile, cut, focus_from, load_photo) -> int:
+    import json
+
+    settings = cut.settings_from(profile.selection)
+    if args.model:
+        settings["model"] = args.model
+    focus, need_box = None, True
+    if args.file:
+        name, original, need_box = Path(args.file).name, Path(args.file).read_bytes(), False
+    else:
+        from .sources import build_source
+        from .state import ProfileState
+
+        source = build_source(profile.source)
+        photo = next((p for p in source.list_photos() if args.photo in (p.id, p.name)), None)
+        if photo is None:
+            raise ConfigError(f"No photo named {args.photo!r} in the photo source.")
+        name, original = photo.name, source.download(photo)
+        focus = focus_from(ProfileState(profile.name).analysis_for(photo.id))
+        if focus is None:
+            print("The analyst hasn't described this photo yet (run forge preview or plan first), so the subject-box check fails.")
+    image = load_photo(original)
+    result = cut.cut_out(image, focus, settings, cut.MaskMaker(settings["model"]), need_box=need_box)
+    out = Path(args.drafts) / f"cutout-{pipeline._safe_name(Path(name).stem)}"
+    out.mkdir(parents=True, exist_ok=True)
+    result.mask.save(out / "mask.png")
+    cut.subject_only(image, result.mask).save(out / "subject.png")
+    report = {"photo": name, "model": settings["model"], "ok": result.check.ok, "variants": result.check.variants,
+              "reasons": result.check.reasons, "stats": result.check.stats}
+    (out / "check.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    print(result.check.summary())
+    print(f"Mask and cut-out saved to {out}/ (mask.png, subject.png, check.json).")
+    return 0
+
+
 def cmd_refresh_token(args) -> int:
     from .publishers.instagram import refresh_long_lived_token
 
@@ -229,19 +280,26 @@ def build_parser() -> argparse.ArgumentParser:
         ("refresh-token", cmd_refresh_token, "Extend the Instagram access token by 60 days"),
         ("usage", cmd_usage, "Show AI token usage and estimated cost for a month"),
         ("reset", cmd_reset, "Forget a profile's posting history, insights, usage and photo analyses"),
+        ("cutout", cmd_cutout, "Cut the main subject out of one photo and check it for a pop-out poster (posts nothing)"),
     ):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--profile", "-p", default="main")
         if name == "plan":
             p.add_argument("--days", type=int, default=7)
         if name in ("preview", "post", "plan"):
-            p.add_argument("--style", help="Post style for this run: any (the AI picks), single (as shot), poster, gallery, grid, story or panorama")
+            p.add_argument("--style", help="Post style for this run: any (the AI picks), single (as shot), poster, gallery, grid, story, panorama or notes")
             p.add_argument("--mood", help="Only photos of this mood for this run")
             p.add_argument("--category", help="Only photos of this category (genre) for this run")
         if name == "refresh-token":
             p.add_argument("--token-file", help="Write the new token to this file instead of printing it")
         if name == "usage":
             p.add_argument("--month", help="YYYY-MM, default this month")
+        if name == "cutout":
+            which = p.add_mutually_exclusive_group(required=True)
+            which.add_argument("--photo", help="A photo in the profile's source, by file name or ID")
+            which.add_argument("--file", help="A local image file instead (skips the analyst's subject-box check)")
+            p.add_argument("--model", choices=("birefnet-lite", "isnet"), help="Override selection.style.popout.model")
+            p.add_argument("--drafts", default="drafts", help="Where to write the mask and report")
         if name == "reset":
             p.add_argument("--keep-catalog", action="store_true", help="Keep the photo analyses, so no photo is analysed again")
         p.set_defaults(func=func)

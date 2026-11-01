@@ -88,6 +88,7 @@ class ProfileState:
                     "all_subjects": self._subjects(key, post),
                     "photo_count": 1 + len(post.get("more_photos", [])),
                     "style": post.get("style", "single"),
+                    "look": post.get("look"),
                     "hashtags": post.get("hashtags", []),
                     "results": self.insights.get(post.get("media_id", ""), {}).get("metrics"),
                 }
@@ -136,6 +137,7 @@ class ProfileState:
         plan_reason: str,
         more_photo_ids: list[str] | None = None,
         style: str | None = None,
+        look: str | None = None,
     ) -> None:
         entry = {
             "name": photo_name,
@@ -149,6 +151,8 @@ class ProfileState:
             entry["more_photos"] = [photo_key(i) for i in more_photo_ids]
         if style:
             entry["style"] = style
+        if look:
+            entry["look"] = look
         self.posts[photo_key(photo_id)] = entry
         self._save("posts.json", self.posts)
 

@@ -46,6 +46,46 @@ A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe. No
 
 ![Panorama in three slides](assets/styles/panorama.jpg)
 
+## Notes
+
+The photo exactly as shot, then the same photo with a hand-drawn layer on top. The analyst names up to three things in the photo and where they are, and the caption writer writes a short note for each. Code places every mark: never inside the subject, never on a person, and never on a photo of a deity, shrine or prayer.
+
+| Slide 1: as shot | Slide 2: field notes | Star map |
+| --- | --- | --- |
+| ![The photo as shot](assets/styles/notes-clean.jpg) | ![Handwritten notes on the photo](assets/styles/notes-field.jpg) | ![A star map in a night sky](assets/styles/notes-constellation.jpg) |
+
+| Film date stamp | Doodles | Magazine cover |
+| --- | --- | --- |
+| ![Orange film date stamp](assets/styles/notes-date-stamp.jpg) | ![White doodles in the sky](assets/styles/notes-doodles.jpg) | ![Magazine cover masthead](assets/styles/notes-cover.jpg) |
+
+| Viewfinder | Photographer's notes | Tape label |
+| --- | --- | --- |
+| ![Viewfinder corners and time](assets/styles/notes-viewfinder.jpg) | ![Rule-of-thirds lines and a note](assets/styles/notes-thirds.jpg) | ![Tape with the place name](assets/styles/notes-tape.jpg) |
+
+## Looks: backgrounds and frames
+
+On top of the style, code picks a look by rule, with no AI call: the photo's mood and category choose the candidates, the date picks one, and the last post's look is skipped. Narrow them in `selection.style.looks`.
+
+Backgrounds are drawn from the photo's own colours or a plain paper texture. Text is checked for contrast, and flag or party colour sets never appear together.
+
+| Blurred echo | Two tones | Colour swatches |
+| --- | --- | --- |
+| ![Poster on a blurred copy of the photo](assets/styles/look-echo.jpg) | ![Poster on two tones](assets/styles/look-two-tone.jpg) | ![Gallery with colour swatches](assets/styles/look-swatches.jpg) |
+
+| Sun shape | Kraft paper | Night navy |
+| --- | --- | --- |
+| ![Poster with a sun shape](assets/styles/look-sun.jpg) | ![Poster on kraft paper](assets/styles/look-kraft.jpg) | ![Gallery on navy](assets/styles/look-navy.jpg) |
+
+Frames suit the kind of photo: a postcard or ticket for travel and landscapes, film for street and night, a magazine page for city and abstract photos, instant prints for a set of two to four, and a festive border for devotional photos. The place and month come from code, and no frame copies a real brand, ticket or stamp.
+
+| Postcard | Ticket stub | Film strip |
+| --- | --- | --- |
+| ![Postcard](assets/styles/frame-postcard.jpg) | ![Ticket stub](assets/styles/frame-ticket.jpg) | ![Film strip](assets/styles/frame-film.jpg) |
+
+| Magazine page | Instant prints | Festive border |
+| --- | --- | --- |
+| ![Magazine page](assets/styles/frame-magazine.jpg) | ![Instant prints](assets/styles/frame-polaroids.jpg) | ![Festive border](assets/styles/frame-festive.jpg) |
+
 ## Any (the default)
 
 The AI planner picks one of the styles above for each post from what the analyst saw in the photos: a panorama for a wide landscape, a poster for a quiet or nostalgic photo, a gallery frame for a strong clean one, a grid or story for a set. It avoids the last post's look. If its pick can't be drawn (a panorama of a photo that isn't wide), code picks one that suits the photos' mood. Limit its choices with `selection.style.any_styles`; plain `single` posts happen only when you choose them, or add `single` to that list.

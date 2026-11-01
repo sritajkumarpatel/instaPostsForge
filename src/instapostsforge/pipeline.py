@@ -10,6 +10,7 @@ same shape from one outing or place (see grouping.py). Code proposes the sets; t
 
 from __future__ import annotations
 
+import io
 import logging
 import os
 import random
@@ -18,6 +19,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from PIL import Image
+
 from .agents import AIWorkflow, PlanItem, SetPhoto, build_workflow
 from .agents.playbooks import NO_QUOTE_CATEGORIES
 from .captions import CaptionError, CaptionRules, ContentPolicy, normalize_caption, trim_caption_text
@@ -25,13 +28,15 @@ from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
 from .imaging import PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
-from .imaging import layouts
+from .imaging import backdrops, frames, layouts, marks
+from .imaging.palette import palette
+from .imaging.processor import _to_jpeg
 from .models import Caption, Photo, PostResult
 from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
 from .state import ProfileState
 from .state.store import photo_key
-from .styles import MULTI_STYLES, StyleRequest, brief_for, choose_style, grid_size, style_request
+from .styles import MULTI_STYLES, Look, StyleRequest, choose_look, choose_style, grid_size, look_brief, style_request, usable_anchors
 from .usage import UsageLog
 
 log = logging.getLogger(__name__)
@@ -471,7 +476,7 @@ class Run:
             analysis["place_name"] = None  # never name the location of a private home
         return analysis
 
-    def compose(self, photo: Photo, plan_item: PlanItem, more: list[Photo] | None = None, style: str = "single") -> Caption:
+    def compose(self, photo: Photo, plan_item: PlanItem, more: list[Photo] | None = None, style: str = "single", look: Look | None = None) -> Caption:
         ai, state, settings = self.c.ai, self.c.state, self.profile.ai
         preview = self.image(photo).preview_jpeg
         analysis = self.notes_for(photo)
@@ -487,7 +492,8 @@ class Run:
         redo_caption = redo_tags = True
         first_failed: set[str] | None = None  # what the first review faulted; later rounds may only re-raise these
         hard_problem = False  # whether the last review raised a concern that must stop the post
-        brief = brief_for(style)  # what goes on a styled image; empty for a plain photo
+        # what goes on a styled image; empty for a plain photo
+        brief = look_brief(style, look, usable_anchors(analysis)) if style != "single" else ""
 
         def write(note: str) -> Caption:
             text = ai.write_caption(
@@ -587,9 +593,81 @@ class Run:
         parts = [p for p in (place_name, when.strftime("%B %Y") if when else None) if p]
         return " · ".join(parts) or None
 
-    def styled_slides(self, style: str, photo: Photo, more: list[Photo], caption: Caption) -> tuple[list[bytes], list[str]]:
+    def seed(self, photo: Photo) -> int:
+        """Picks layouts, finishes and looks: the same post looks the same on a re-run that day, and
+        every other post gets a fresh combination."""
+        return int(photo_key(photo.id)[-8:], 16) ^ self.today.toordinal()
+
+    def place_and_month(self, photo: Photo) -> tuple[str | None, str | None]:
+        """The place (never a private home's) and the month, as code puts them on frames and marks."""
+        analysis = self.c.state.analysis_for(photo.id) or {}
+        place_name = None if analysis.get("shows_private_home") else ((analysis.get("place_name") or "").strip() or None)
+        when = self.known_time(photo)
+        return place_name, (when.strftime("%B %Y") if when else None)
+
+    def light_label(self, photo: Photo) -> str | None:
+        """A viewfinder line such as "6:12 pm · golden hour", made by code from the capture time only."""
+        when = self.known_time(photo)
+        if when is None or (when.hour, when.minute) == (0, 0):
+            return None
+        light = "early light" if 5 <= when.hour < 8 else "golden hour" if 17 <= when.hour < 19 else "after dark" if when.hour >= 19 or when.hour < 5 else "daylight"
+        return f"{when.strftime('%I:%M %p').lstrip('0').lower()} · {light}"
+
+    def look_for(self, style: str, photo: Photo, photo_count: int) -> Look:
+        place_name, _ = self.place_and_month(photo)
+        last = next((h.get("look") for h in self.c.state.history(limit=1)), None)
+        return choose_look(
+            style,
+            self.c.state.analysis_for(photo.id) or {},
+            seed=self.seed(photo),
+            photo_count=photo_count,
+            last_look=last,
+            has_time=self.known_time(photo) is not None,
+            has_place=bool(place_name),
+            settings=(self.profile.selection.get("style") or {}).get("looks") or {},
+        )
+
+    def notes_slides(self, photo: Photo, caption: Caption, look: Look, quality: int) -> tuple[list[bytes], list[str]]:
+        """The photo as it goes out, untouched, then a copy with the look's marks drawn on top."""
+        clean = self.post_image(photo)
+        base = Image.open(io.BytesIO(clean.jpeg))
+        icc = base.info.get("icc_profile")
+        base = base.convert("RGB")
+        analysis = self.c.state.analysis_for(photo.id) or {}
+        text = caption.overlay
+        # A bordered photo's frame doesn't match the analyst's numbers, so nothing points into it.
+        anchors = [] if clean.padded else [
+            marks.Anchor(a["name"], a["x"], a["y"], text.get(f"mark{n}")) for n, a in enumerate(usable_anchors(analysis), 1)
+        ]
+        place_name, month = self.place_and_month(photo)
+        options = dict(
+            anchors=anchors,
+            focus=None if clean.padded else focus_from(analysis),
+            subject_is_person=bool(analysis.get("has_people") or analysis.get("has_children")),
+            taken_at=self.known_time(photo),
+            light_label=self.light_label(photo),
+            place=place_name,
+            title=text.get("title"),
+            line=text.get("line"),
+            note=text.get("note"),
+            issue=f"No. {self.today.timetuple().tm_yday} · {month or self.today.strftime('%B %Y')}",
+            colours=palette(base),
+            steam=analysis.get("category") == "food",
+            seed=self.seed(photo),
+        )
+        drawn = marks.draw(base, list(look.marks), **options)
+        if not drawn.marks:  # nothing could be placed: corner brackets always can be
+            drawn = marks.draw(base, ["viewfinder"], **options)
+        self.notes.append(f"Drawn on the photo: {', '.join(m.replace('_', ' ') for m in drawn.marks)}.")
+        extra = f" Shown again with hand-drawn notes: {'; '.join(drawn.notes)}." if drawn.notes else " Shown again with hand-drawn marks."
+        return [clean.jpeg, _to_jpeg(drawn.image, quality, icc, subsampling=0)], [caption.alt_text[:1000], (caption.alt_text + extra).strip()[:1000]]
+
+    def styled_slides(self, style: str, photo: Photo, more: list[Photo], caption: Caption, look: Look | None = None) -> tuple[list[bytes], list[str]]:
         """The slides of a styled post, as JPEGs, and an alt text for each."""
         quality = int(self.profile.image.get("jpeg_quality", 95))
+        look = look or Look()
+        if style == "notes":
+            return self.notes_slides(photo, caption, look, quality)
         alts = [caption.alt_text, *caption.more_alt_texts]
         photos = [
             layouts.LayoutPhoto(layouts.load_photo(self.c.source.download(p)), focus_from(self.c.state.analysis_for(p.id)), alts[i] if i < len(alts) else "")
@@ -597,25 +675,41 @@ class Run:
         ]
         text = caption.overlay
         title, line, note = text.get("title"), text.get("line"), text.get("note")
-        # Picks the poster's layout, finish and paper: the same post looks the same on a re-run that
-        # day, and every other post gets a fresh combination.
-        seed = int(photo_key(photo.id)[-8:], 16) ^ self.today.toordinal()
+        seed = self.seed(photo)
+        back = backdrops.backdrop(look.backdrop, photos[0].image, seed) if look.backdrop else None
+        place_name, month = self.place_and_month(photo)
         slides: list[layouts.Slide] = []
         if style == "grid":
             joined = "; ".join(a for a in alts if a)
-            slides.append(layouts.Slide(layouts.grid(photos, title), f"A grid of {len(photos)} photos" + (f" titled {title}" if title else "") + (f": {joined}" if joined else ".")))
+            if look.frame == "polaroids" and 2 <= len(photos) <= 4:
+                first = frames.polaroids(photos, title, seed=seed)
+                kind = f"{len(photos)} instant prints"
+            else:
+                first, kind = layouts.grid(photos, title), f"A grid of {len(photos)} photos"
+            slides.append(layouts.Slide(first, kind + (f" titled {title}" if title else "") + (f": {joined}" if joined else ".")))
             slides += [layouts.Slide(layouts.gallery(p), p.alt_text) for p in photos]
         elif style == "story":
             slides.append(layouts.Slide(layouts.title_over(photos[0], title), photos[0].alt_text))
-            slides += [layouts.Slide(layouts.gallery(p), p.alt_text) for p in photos[1:]]
+            slides += [layouts.Slide(layouts.gallery(p, backdrop=back), p.alt_text) for p in photos[1:]]
             if line:
                 slides.append(layouts.Slide(layouts.closing(line, seed), line))
         elif style == "poster":
-            slides.append(layouts.Slide(layouts.poster(photos[0], title, line, note, seed=seed, decor_dir=self.style.decor_dir), photos[0].alt_text))
+            slides.append(layouts.Slide(layouts.poster(photos[0], title, line, note, seed=seed, decor_dir=self.style.decor_dir, backdrop=back), photos[0].alt_text))
         elif style == "panorama" and (parts := layouts.panorama(photos[0])):
             slides += [layouts.Slide(img, f"{photos[0].alt_text} (part {n} of {len(parts)})".strip()) for n, img in enumerate(parts, 1)]
+        elif look.frame == "postcard":
+            slides.append(layouts.Slide(frames.postcard(photos[0], line, place_name, month, seed=seed), photos[0].alt_text))
+        elif look.frame == "ticket":
+            slides.append(layouts.Slide(frames.ticket(photos[0], title, place_name, month, seed % 10000, seed=seed), photos[0].alt_text))
+        elif look.frame == "film":
+            slides.append(layouts.Slide(frames.film(photos[0], title, 1 + seed % 36, seed=seed), photos[0].alt_text))
+        elif look.frame == "magazine":
+            issue = f"No. {self.today.timetuple().tm_yday} · {self.today.strftime('%B %Y')}"
+            slides.append(layouts.Slide(frames.magazine(photos[0], title, line, issue, 2 + seed % 98, seed=seed), photos[0].alt_text))
+        elif look.frame == "festive":
+            slides.append(layouts.Slide(frames.festive(photos[0], title, self.label_detail(photo), seed=seed, back=back), photos[0].alt_text))
         else:  # gallery, and a panorama that can't be split
-            slides.append(layouts.Slide(layouts.gallery(photos[0], title, self.label_detail(photo)), photos[0].alt_text))
+            slides.append(layouts.Slide(layouts.gallery(photos[0], title, self.label_detail(photo), backdrop=back), photos[0].alt_text))
         return [layouts.to_jpeg(s.image, quality) for s in slides[:10]], [s.alt_text[:1000] for s in slides[:10]]
 
 
@@ -649,24 +743,25 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         r.notes.append(style_note)
     if style == "grid":
         more = more[: grid_size(1 + len(more)) - 1]  # a grid holds 2, 3, 4, 6 or 9 photos
-    elif style in ("gallery", "poster", "panorama"):
+    elif style in ("gallery", "poster", "panorama", "notes"):
         more = []  # one photo; the planner's others stay unposted
     elif style == "story":
         more = more[: MULTI_STYLES["story"] - 1]
+    look = r.look_for(style, photo, 1 + len(more)) if style != "single" else None
     if style != "single":
-        log.info("Today's post is drawn in the %s style (%s).", style, r.style.switched_by)
-    caption = r.compose(photo, plan_item, more, style)
+        log.info("Today's post is drawn in the %s style with the %s look (%s).", style, look.name, r.style.switched_by)
+    caption = r.compose(photo, plan_item, more, style, look)
     if style == "single":
         jpegs, alts = r.post_images(photo, more), [caption.alt_text, *caption.more_alt_texts]
     else:
-        jpegs, alts = r.styled_slides(style, photo, more, caption)
+        jpegs, alts = r.styled_slides(style, photo, more, caption, look)
 
     result = PostResult(
         profile=profile.name, photo=photo, caption=caption, published=False, plan_reason=plan_item.reason, more_photos=more, style=style
     )
     result.notes.extend(r.notes)
     if style != "single":
-        result.notes.append(f"Drawn in the {style} style: {len(jpegs)} slide{'s' if len(jpegs) > 1 else ''}.")
+        result.notes.append(f"Drawn in the {style} style ({look.name} look): {len(jpegs)} slide{'s' if len(jpegs) > 1 else ''}.")
     if components.usage is not None:
         result.usage = components.usage.summary()
     if style == "single" and any(r.image(p).padded for p in [photo, *more]):
@@ -682,7 +777,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
             (out / "image.jpg").write_bytes(jpegs[0])
         (out / "caption.txt").write_text(caption.render() + "\n", encoding="utf-8")
         (out / "alt_text.txt").write_text("\n".join(alts) + "\n", encoding="utf-8")
-        styled = f"Style: {style}\n" + "".join(f"Text on the image ({k}): {v}\n" for k, v in caption.overlay.items()) if style != "single" else ""
+        styled = f"Style: {style}\nLook: {look.name if look else 'plain'}\n" + "".join(f"Text on the image ({k}): {v}\n" for k, v in caption.overlay.items()) if style != "single" else ""
         (out / "plan.txt").write_text(f"{plan_item.reason}\nAngle: {plan_item.angle}\n{styled}", encoding="utf-8")
         result.draft_dir = str(out)
         return result
@@ -717,7 +812,7 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         hashtags=caption.hashtags,
         plan_reason=plan_item.reason,
         more_photo_ids=[p.id for p in more],
-        **({"style": style} if style != "single" else {}),
+        **({"style": style, "look": look.name} if style != "single" and look else {}),
     )
     result.published = True
     result.media_id = media_id

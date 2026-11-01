@@ -1,6 +1,6 @@
 # Post styles: what each one looks like
 
-These are rough examples drawn by the real layout code (`src/instapostsforge/imaging/layouts.py`). The sky photo is from the account; the other "photos" are simple placeholder scenes, so judge the layout, not the pictures. Every slide is 1080×1350 (4:5). How to choose a style is in the README, under [Post styles](../README.md#post-styles).
+These are rough examples drawn by the real layout code (`src/instapostsforge/imaging/layouts.py`). The sky photo is from the account; the other "photos" are simple placeholder scenes, so judge the layout, not the pictures. Every slide is 1080×1350 (4:5). By default the AI picks a style for each post. How to choose one yourself is in the README, under [Post styles](../README.md#post-styles).
 
 The words on each image come from the caption writer and go through the same checks as the caption: the blocked-terms list, the length limits and the reviewer.
 
@@ -46,6 +46,6 @@ A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe. No
 
 ![Panorama in three slides](assets/styles/panorama.jpg)
 
-## Auto
+## Any (the default)
 
-Code picks one of the styles above that suits the day's photos and their mood: a poster or gallery frame for calm, nostalgic or romantic photos, a panorama for a wide photo of awe, a grid or story for a set. It never picks the same look two days running. You can limit its choices with `selection.style.auto_styles`.
+The AI planner picks one of the styles above for each post from what the analyst saw in the photos: a panorama for a wide landscape, a poster for a quiet or nostalgic photo, a gallery frame for a strong clean one, a grid or story for a set. It avoids the last post's look. If its pick can't be drawn (a panorama of a photo that isn't wide), code picks one that suits the photos' mood. Limit its choices with `selection.style.any_styles`; plain `single` posts happen only when you choose them, or add `single` to that list.

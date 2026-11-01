@@ -15,6 +15,7 @@ class PlanItem:
     reason: str
     angle: str
     extra_ids: list[str] = field(default_factory=list)  # the other photos of a multi-photo post, in order
+    style: str | None = None  # the post style the planner chose, when the style is "any" (styles.py)
 
 
 @dataclass
@@ -39,10 +40,18 @@ class AIWorkflow(ABC):
 
     @abstractmethod
     def plan(
-        self, candidates: list[dict], history: list[dict], *, today: date, horizon: int, photo_sets: dict | None = None
+        self,
+        candidates: list[dict],
+        history: list[dict],
+        *,
+        today: date,
+        horizon: int,
+        photo_sets: dict | None = None,
+        style_options: dict[str, str] | None = None,
     ) -> list[PlanItem]:
         """Planner: orders unposted photos for the coming days. The first item is today's post.
-        When photo_sets is given, an item may instead be 2 or more photos of one set, posted together."""
+        When photo_sets is given, an item may instead be 2 or more photos of one set, posted together.
+        When style_options is given, each item also names the post style to draw it in."""
 
     @abstractmethod
     def write_caption(

@@ -98,19 +98,22 @@ defaults:
       max_per_7_days: 3       # at most this many multi-photo posts in any 7 posts
       group_hours: 3          # photos taken within this many hours of the previous one form an outing
       group_km: 2             # ...and within this many km of it, when both have GPS (never saved)
-    # Post style: how the day's photo is laid out. "single" posts the photo as shot, as always.
-    # The others are drawn by code from templates, with a few words the AI writes for the image:
+    # Post style: how the day's photo is laid out. "any" (the default) draws every post in one of the
+    # designed styles below, and the AI planner picks the one that suits each day's photos. "single"
+    # posts the photo as shot, only when chosen. The styles are drawn by code from templates, with a
+    # few words the AI writes for the image:
     #   grid      2 to 9 photos of one outing tiled on one slide, then each photo on its own slide
     #   gallery   one photo on a wide margin with a small museum-style label (title, place, month)
     #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
     #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
     #   story     a title slide over the cover, the other photos, and a closing line
-    #   auto      code picks one of auto_styles that suits the day's photos and their mood
+    #   any       the planner picks one of any_styles for each post ("auto" means the same)
+    #   single    the photo as shot, no layout
     # The POST_STYLE, POST_MOOD and POST_CATEGORY environment variables (the Run workflow's choices, or
     # repository variables) override name, mood and category for a run.
     style:
-      name: single
-      auto_styles: [single, gallery, poster, grid, story, panorama]
+      name: any
+      any_styles: [poster, gallery, grid, story, panorama]   # what "any" chooses from; add single to allow plain posts too
       mood: ""                # only photos of this mood today: calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe
       category: ""            # only photos of this category (genre) today: landscape, street, food, animals, macro, ...
       decor_dir: config/decor # optional PNGs with transparency (leaves, a sprig) placed on posters; none are bundled

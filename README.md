@@ -366,22 +366,22 @@ A multi-photo post costs a little more, because the caption writer and reviewer 
 
 ### Post styles
 
-By default (`single`) the photo goes out as shot. A post can instead be laid out in a style, drawn by code from templates with a few words the AI writes for the image. Every slide is 1080×1350 (4:5). **See every style with example images in [docs/STYLES.md](docs/STYLES.md).**
+Every post is laid out in a designed style, drawn by code from templates with a few words the AI writes for the image. By default (`any`) the AI planner picks the style that suits each day's photos; choose `single` to post the photo as shot, or name a style to use it. Every slide is 1080×1350 (4:5). **See every style with example images in [docs/STYLES.md](docs/STYLES.md).**
 
 | Style | What it looks like | Photos |
 | --- | --- | --- |
-| `single` | The photo as shot (or a multi-photo post, as above) | 1, or a set |
+| `any` (default) | The planner picks one of `any_styles` (poster, gallery, grid, story, panorama) for each post from the photos' notes, avoiding the last post's look. If its pick can't be drawn, code picks one that suits the photos' mood | any |
+| `single` | The photo as shot (or a multi-photo post, as above), only when chosen | 1, or a set |
 | `grid` | 2 to 9 photos of one outing or place tiled on one slide with a short line across it, then each photo on its own slide | 2 to 9 |
 | `gallery` | The photo on a wide off-white margin with a museum-style label: a title, then the place and month | 1 |
 | `poster` | The photo as a large print on paper, with a spaced two-phrase title ("Small towns, big dreams"), a quiet line and a handwritten note. The layout suits the photo's shape, and layout, finish (border, tape, tilt) and paper tone change from post to post | 1 |
 | `panorama` | A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe | 1 |
 | `story` | The cover full-bleed with a title, the other photos on gallery margins, then a closing line | 2 to 9 |
-| `auto` | Code picks one of `auto_styles` that suits the photos and their mood, never the same look two days running | any |
 
-- **Choosing:** set `selection.style.name` in `config/profiles.yaml`, or choose **style**, **mood** and **category** when you start the Run workflow by hand. The repository variable `POST_STYLE` sets the style for scheduled runs. Locally: `forge preview -p main --style poster --mood nostalgic`.
+- **Choosing:** leave `selection.style.name` at `any`, or set it in `config/profiles.yaml`, or choose **style**, **mood** and **category** when you start the Run workflow by hand. The repository variable `POST_STYLE` sets the style for scheduled runs. Locally: `forge preview -p main --style poster --mood nostalgic`.
 - **Mood and category** narrow today's photos to those the analyst gave that mood or category. If none match, the planner chooses from all photos and the run says so.
 - **Text on the image** comes from the caption writer (`overlay_title`, `overlay_line`, `overlay_note`), is held to 32 or 80 characters, loses any emoji, hashtags or links, goes through the same blocked-terms check as the caption, and is shown to the reviewer. It can't be edited after posting, so the rules for it are the strictest.
-- **Fallbacks, never failures:** a grid or story with no set to draw from becomes a gallery frame or a poster, and a panorama of a photo that isn't wide becomes a gallery frame. An unknown style name posts a plain photo.
+- **Fallbacks, never failures:** a grid or story with no set to draw from becomes a gallery frame or a poster, and a panorama of a photo that isn't wide becomes a gallery frame. An unknown style name falls back to `any`. Add `single` to `any_styles` to let the planner pick plain posts too.
 - **Decorations:** put PNGs with a transparent background (a leafy branch, a sprig) in `config/decor/` to have one placed on each poster. None are bundled.
 - **Fonts:** Playfair Display and Caveat, both under the SIL Open Font License, are bundled in `src/instapostsforge/imaging/fonts/`.
 

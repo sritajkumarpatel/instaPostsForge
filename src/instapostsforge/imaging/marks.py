@@ -1,8 +1,9 @@
 """A hand-drawn layer on top of a photo: notes with arrows, doodles, a constellation, a film date stamp,
-viewfinder brackets, a highlighter circle, rule-of-thirds lines, a tape label or a magazine cover.
+viewfinder brackets, a highlighter circle, rule-of-thirds lines, a tape label, a magazine cover, or one
+quiet sketch mark (a ring or rays around the subject, a few gulls, a handwritten aside).
 
 The photo underneath is never edited: everything here is drawn on a separate transparent layer and
-laid over a copy, and the post shows the clean photo first. Code decides where every mark goes. The
+laid over a copy; the post is that one image. Code decides where every mark goes. The
 model only names up to three things in the photo and roughly where they are (the analyst's anchors),
 and writes the few words of each note (the caption writer); a note that can't be placed clear of the
 subject is dropped, never squeezed in.
@@ -25,10 +26,14 @@ from . import palette as pal
 from .layouts import draw_spaced, fitted, font, line_height, text_width
 from .processor import Focus
 
-MARKS = ("field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover")
-# Marks that only sit in a corner. On their own they leave the second slide of a notes post looking like
-# the first one again, so a notes post always carries at least one mark that is not one of these.
+MARKS = (
+    "field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover",
+    "orbit", "rays", "birds", "aside",
+)
+# Marks that only sit in a corner. On their own a notes post barely differs from the photo, so
+# `draw_notes` adds a quiet sketch mark (or corner brackets) when only these fit.
 ACCENT_MARKS = frozenset({"date_stamp"})
+SKETCH_FALLBACKS = ("orbit", "rays", "viewfinder")
 MAX_NOTES = 3
 MAX_COVERAGE = 0.10  # share of the frame that notes and doodles may cover
 WHITE = (255, 255, 255, 255)
@@ -272,12 +277,12 @@ def doodles(layer: Layer, photo: Image.Image, keep_out, kinds: tuple[str, ...], 
     if steam_at is not None and "steam" in kinds:  # steam rises from the dish, so it starts just above it
         r = w / 16
         box = (int(steam_at[0] - r), int(steam_at[1] - r * 1.4), int(steam_at[0] + r), int(steam_at[1] - r * 0.2))
-        if not any(overlaps(box, t) for t in layer.taken):
+        if not overlaps(box, keep_out) and not any(overlaps(box, t) for t in layer.taken):
             _steam(layer, steam_at[0], steam_at[1] - r * 0.25, r)
             layer.taken.append(box)
             drawn += 1
     others = [k for k in kinds if k != "steam"] or ["sparkle"]
-    for _ in range(layer.rng.randint(4, 6)):
+    for _ in range(layer.rng.randint(2, 3)):  # a few small accents, never a sticker sheet
         if _coverage(layer) > MAX_COVERAGE:
             break
         r = layer.rng.uniform(w / 40, w / 22)
@@ -357,6 +362,145 @@ def constellation(layer: Layer, photo: Image.Image, label: str | None, keep_out)
             layer.taken.append((spot[0], spot[1], spot[0] + size[0], spot[1] + size[1]))
             written.append(label)
     return written
+
+
+# --- sketch marks: one quiet line that plays off the subject without touching it --------
+#
+# Taken from how photographers and illustrators doodle on photos (a ring around the moon, a few rays
+# off a lamp, two gulls in an empty sky, one handwritten word): one colour, a thin line, drawn in the
+# empty space around the subject so the photo still reads first.
+
+
+def _ring_points(cx: float, cy: float, rx: float, ry: float, tilt: float, start: float, sweep: float, n: int = 48):
+    pts = []
+    for k in range(n + 1):
+        t = start + sweep * k / n
+        x, y = rx * math.cos(t), ry * math.sin(t)
+        pts.append((cx + x * math.cos(tilt) - y * math.sin(tilt), cy + x * math.sin(tilt) + y * math.cos(tilt)))
+    return pts
+
+
+def _runs_outside(points: list[tuple[float, float]], box) -> list[list[tuple[float, float]]]:
+    """The points split into runs that stay out of box, so a line can skip the subject."""
+    runs: list[list[tuple[float, float]]] = [[]]
+    for p in points:
+        if inside(p, box):
+            if runs[-1]:
+                runs.append([])
+        else:
+            runs[-1].append(p)
+    return [r for r in runs if len(r) > 1]
+
+
+def orbit(layer: Layer, photo: Image.Image, subject) -> bool:
+    """A thin, slightly tilted hand-drawn ring around the subject, left open like a pen loop, with a
+    small dot riding on it. Only around a subject with room to spare; never around a person."""
+    if subject is None:
+        return False
+    w, h = photo.size
+    x0, y0, x1, y1 = subject
+    bw, bh = x1 - x0, y1 - y0
+    if bw > w * 0.6 or bh > h * 0.6:
+        return False
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    rx, ry = bw / 2 * 1.7 + 18, bh / 2 * 1.45 + 18  # wide enough that the loop clears the subject's corners
+    if bw < bh * 0.8:  # a tall subject gets an upright ring
+        rx, ry = bw / 2 * 1.45 + 18, bh / 2 * 1.7 + 18
+    tilt = layer.rng.uniform(-0.28, -0.12)
+    start = layer.rng.uniform(0, 2 * math.pi)
+    pts = _ring_points(cx, cy, rx, ry, tilt, start, 2 * math.pi * 0.86)
+    if any(not (24 <= x <= w - 24 and 24 <= y <= h - 24) for x, y in pts):
+        return False
+    runs = _runs_outside(pts, subject)
+    if sum(len(r) for r in runs) < len(pts) * 0.8:
+        return False
+    for run in runs:
+        layer.wobbly(run, 3, fill=(255, 255, 255, 235), jitter=0.9)
+    dot = _ring_points(cx, cy, rx, ry, tilt, start + 2 * math.pi * 0.93, 0, 1)[0]
+    if not inside(dot, subject):
+        layer.draw.ellipse((dot[0] - 7, dot[1] - 7, dot[0] + 7, dot[1] + 7), fill=WHITE)
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    layer.taken.append((int(min(xs)) - 8, int(min(ys)) - 8, int(max(xs)) + 8, int(max(ys)) + 8))
+    return True
+
+
+def rays(layer: Layer, photo: Image.Image, subject) -> bool:
+    """Short hand-drawn strokes radiating from just outside the subject, like a pen sketch of its glow.
+    Never around a person; at least four strokes must fit in the frame."""
+    if subject is None:
+        return False
+    w, h = photo.size
+    x0, y0, x1, y1 = subject
+    if x1 - x0 > w * 0.55 or y1 - y0 > h * 0.55:
+        return False
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    reach = math.dist((x0, y0), (cx, cy)) + 12  # beyond the box's corners, so no stroke starts inside it
+    count = 8
+    turn = layer.rng.uniform(0, math.pi / count)
+    strokes = []
+    for k in range(count):
+        a = turn + 2 * math.pi * k / count
+        length = max(28, min(w // 14, reach * (0.3 if k % 2 == 0 else 0.18)))
+        s = (cx + reach * math.cos(a), cy + reach * math.sin(a))
+        e = (cx + (reach + length) * math.cos(a), cy + (reach + length) * math.sin(a))
+        if all(24 <= v <= lim - 24 for v, lim in ((s[0], w), (e[0], w), (s[1], h), (e[1], h))) and not crosses(s, e, subject):
+            strokes.append((s, e))
+    if len(strokes) < 4:
+        return False
+    for s, e in strokes:
+        layer.wobbly([s, e], 3, fill=(255, 255, 255, 235), jitter=0.5)
+    pts = [p for st in strokes for p in st]
+    layer.taken.append((int(min(p[0] for p in pts)) - 6, int(min(p[1] for p in pts)) - 6, int(max(p[0] for p in pts)) + 6, int(max(p[1] for p in pts)) + 6))
+    return True
+
+
+def _gull(layer: Layer, x: float, y: float, r: float) -> None:
+    """A gull as a child or a sketchbook draws one: two soft wing arcs meeting in a dip."""
+    for side in (-1, 1):
+        wing = [(x + side * r * t, y - math.sin(math.pi * (0.15 + 0.7 * t)) * r * 0.42 + t * r * 0.1) for t in (i / 10 for i in range(11))]
+        layer.wobbly(wing, 3, jitter=0.3)
+
+
+def birds(layer: Layer, photo: Image.Image, keep_out) -> bool:
+    """Two or three small gulls, a few pen strokes each, in the calmest part of the upper frame."""
+    w, h = photo.size
+    size = (int(w * 0.3), int(w * 0.13))
+    spot = free_spot(layer, photo, size, (w * layer.rng.choice((0.28, 0.72)), h * 0.18), keep_out)
+    if spot is None or spot[1] + size[1] > h * 0.55 or busyness(photo, (spot[0], spot[1], spot[0] + size[0], spot[1] + size[1])) > 12:
+        return False
+    bx, by = spot
+    flock = [(0.22, 0.62, 1.0), (0.55, 0.3, 0.7), (0.8, 0.7, 0.55)][: layer.rng.choice((2, 3))]
+    r = w / 22
+    for fx, fy, scale in flock:
+        _gull(layer, bx + size[0] * fx, by + size[1] * fy, r * scale)
+    layer.taken.append((bx, by, bx + size[0], by + size[1]))
+    return True
+
+
+def aside(layer: Layer, photo: Image.Image, text: str | None, keep_out) -> list[str] | None:
+    """One handwritten aside with a loose underline, in a calm spot near the subject, the way a
+    photographer jots a word on a print. None without words or a place to write them."""
+    if not text:
+        return None
+    w, h = photo.size
+    hand, lines, size = note_box(text, w)
+    size = (size[0], size[1] + 18)
+    near = None
+    if keep_out is not None:
+        near = ((keep_out[0] + keep_out[2]) / 2, keep_out[3] + 70 if keep_out[3] < h * 0.7 else keep_out[1] - 70)
+    spot = free_spot(layer, photo, size, near, keep_out)
+    if spot is None:
+        return None
+    y = spot[1]
+    for ln in lines:
+        layer.text((spot[0] + 8, y), ln, hand)
+        y += line_height(hand) - 6
+    last = text_width(ImageDraw.Draw(Image.new("L", (1, 1))), lines[-1], hand)
+    ux, uy = spot[0] + 6, y + 8
+    swoosh = [(ux + last * t, uy + math.sin(t * math.pi) * 5 - t * 4) for t in (i / 10 for i in range(11))]
+    layer.wobbly(swoosh, 3, jitter=0.6)
+    layer.taken.append((spot[0], spot[1], spot[0] + size[0], spot[1] + size[1]))
+    return [text]
 
 
 # Seven-segment digits, as an old film camera printed the date: segments a to g.
@@ -577,6 +721,15 @@ def draw(
         elif mark == "tape" and place and (strip := tape(photo, place, colours or [], keep_out, seed)) is not None:
             extra_layers.append(strip)
             drawn.append(mark)
+        elif mark == "orbit" and orbit(layer, photo, subject):
+            drawn.append(mark)
+        elif mark == "rays" and rays(layer, photo, subject):
+            drawn.append(mark)
+        elif mark == "birds" and not subject_is_person and birds(layer, photo, keep_out):
+            drawn.append(mark)
+        elif mark == "aside" and (got := aside(layer, photo, note, keep_out)) is not None:
+            drawn.append(mark)
+            words += got
         elif mark == "cover" and title and (got := cover(layer, photo, title, [a.note for a in anchors if a.note], issue, keep_out)) is not None:
             words += got
             drawn.append(mark)
@@ -586,3 +739,20 @@ def draw(
         base.alpha_composite(extra)
         out = base.convert("RGB")
     return Drawn(out, drawn, words)
+
+
+def draw_notes(photo: Image.Image, marks: list[str], **options) -> Drawn:
+    """The marks for a notes post. When only a corner accent (the date stamp) or nothing
+    could be placed, a quiet sketch mark is added (a ring or rays around the subject, else corner
+    brackets), so the post is never just the photo with a date in the corner."""
+    drawn = draw(photo, marks, **options)
+    if set(drawn.marks) - ACCENT_MARKS:
+        return drawn
+    accents = [m for m in drawn.marks if m in ACCENT_MARKS]
+    for extra in SKETCH_FALLBACKS:
+        if extra in marks:
+            continue
+        again = draw(photo, [extra, *accents], **options)
+        if extra in again.marks:
+            return again
+    return draw(photo, ["viewfinder", *accents], **options)

@@ -107,7 +107,7 @@ defaults:
     #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
     #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
     #   story     a title slide over the cover, the other photos, and a closing line
-    #   notes     the photo as shot, then the same photo with hand-drawn notes, doodles or marks on top
+    #   notes     the photo with hand-drawn notes, doodles or marks on top, as one image
     #   popout    an editorial poster: the main subject steps out of the photo's frame onto paper (needs .[cutout])
     #   any       the planner picks one of any_styles for each post ("auto" means the same)
     #   single    the photo as shot, no layout
@@ -124,7 +124,7 @@ defaults:
       looks:
         backdrops: []   # behind posters and gallery prints: paper, palette, echo, swatches, two_tone, sun, kraft, linen, handmade, slate, navy, newsprint
         frames: []      # gallery frames and small sets: postcard, ticket, film, magazine, festive, polaroids
-        marks: []       # drawn on notes posts: field_notes, doodles, constellation, date_stamp, viewfinder, highlight, thirds, tape, cover
+        marks: []       # drawn on notes posts: field_notes, doodles, constellation, date_stamp, viewfinder, highlight, thirds, tape, cover, orbit, rays, birds, aside
       # The pop-out poster's subject cut-out (pip install -e ".[cutout]"). A local model makes a mask of the
       # main subject; the photo's pixels are only shown through it, never changed. Every check below must
       # pass, or the post gets a plain poster. Try a photo with: forge cutout -p main --photo <name>

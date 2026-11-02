@@ -299,7 +299,10 @@ def choose_style(
 POPOUT_BACKDROPS = ("paper", "handmade", "linen", "kraft")
 BACKDROP_NAMES = ("paper", "palette", "echo", "swatches", "two_tone", "sun", "kraft", "linen", "handmade", "slate", "navy", "newsprint")
 FRAME_NAMES = ("postcard", "ticket", "film", "magazine", "festive", "polaroids")
-MARK_NAMES = ("field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover")
+MARK_NAMES = (
+    "field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover",
+    "orbit", "rays", "birds", "aside",
+)
 
 # Backgrounds that suit each mood, and the ones a category leans to. Code picks among them by the date.
 MOOD_BACKDROPS = {
@@ -326,22 +329,23 @@ CATEGORY_FRAMES = {
 }
 # The marks a notes post can carry, by category; each option is one combination.
 CATEGORY_MARKS = {
-    "food": (("field_notes", "doodles"), ("highlight",)),
-    "street": (("date_stamp", "field_notes"), ("date_stamp",)),
-    "travel": (("field_notes", "tape"), ("tape", "date_stamp")),
-    "landscape": (("viewfinder",), ("thirds",), ("field_notes", "date_stamp")),
-    "sky": (("viewfinder",), ("doodles",), ("thirds",)),
-    "night": (("constellation", "date_stamp"), ("viewfinder",)),
+    "food": (("field_notes", "doodles"), ("highlight",), ("aside",)),
+    "street": (("date_stamp", "field_notes"), ("aside", "date_stamp")),
+    "travel": (("field_notes", "tape"), ("tape", "date_stamp"), ("birds", "aside")),
+    "landscape": (("viewfinder",), ("thirds",), ("field_notes", "date_stamp"), ("birds",)),
+    "sky": (("viewfinder",), ("doodles",), ("birds",), ("rays",)),
+    "night": (("constellation", "date_stamp"), ("orbit", "date_stamp"), ("rays", "aside"), ("viewfinder",)),
     "city": (("cover",), ("field_notes",)),
-    "macro": (("highlight",), ("thirds",)),
-    "abstract": (("highlight",), ("thirds",)),
-    "animals": (("field_notes",), ("viewfinder",)),
+    "macro": (("highlight",), ("orbit",), ("thirds",)),
+    "abstract": (("highlight",), ("thirds",), ("orbit",)),
+    "animals": (("field_notes",), ("orbit", "aside"), ("viewfinder",)),
     "event": (("doodles", "date_stamp"), ("field_notes",)),
-    "people": (("date_stamp",), ("tape",), ("thirds",)),
+    "people": (("date_stamp", "viewfinder"), ("tape",), ("thirds",)),
 }
 # Marks allowed when a person is in the photo: none of them is drawn on or around a person.
 PEOPLE_SAFE_MARKS = {"date_stamp", "tape", "thirds", "viewfinder"}
 NEEDS_ANCHORS = {"field_notes", "highlight"}
+NEEDS_SUBJECT = {"orbit", "rays"}  # a ring or rays need a lone subject with room around it
 
 
 @dataclass(frozen=True)
@@ -375,6 +379,16 @@ def usable_anchors(analysis: dict) -> list[dict]:
             continue
         out.append({"name": str(a["name"]).strip()[:40], "x": x, "y": y})
     return out[:3]
+
+
+def lone_subject(analysis: dict) -> bool:
+    """Whether the analyst's subject band leaves room for a ring or rays around it."""
+    try:
+        top, bottom = float(analysis["subject_top"]), float(analysis["subject_bottom"])
+        left, right = float(analysis.get("subject_left", 0)), float(analysis.get("subject_right", 1))
+    except (KeyError, TypeError, ValueError):
+        return False
+    return 0 < bottom - top <= 0.5 and 0 < right - left <= 0.5
 
 
 def choose_look(
@@ -432,6 +446,8 @@ def choose_look(
             if people and not set(combo) <= PEOPLE_SAFE_MARKS:
                 return False
             if NEEDS_ANCHORS & set(combo) and not anchors:
+                return False
+            if NEEDS_SUBJECT & set(combo) and not lone_subject(analysis):
                 return False
             if "date_stamp" in combo and not has_time:
                 return False
@@ -491,6 +507,11 @@ def notes_brief(look: Look, anchors: list[dict]) -> str:
             "The photo is set as a magazine cover. overlay_title is the masthead across it: one or two words, at most 16 characters "
             "(for example \"Coastline\"), never a real magazine's name."
             + (" overlay_marks are up to two short cover lines, at most 28 characters each, about these things:\n" + things if anchors else "")
+        )
+    if "aside" in look.marks:
+        parts.append(
+            "overlay_note is one handwritten aside written on the photo, 1 to 4 words, at most 24 characters, like the photographer "
+            "jotting a thought beside the subject (for example \"hello, moon\" or \"still here\"). About what is visible; no hashtags or emoji."
         )
     if "constellation" in look.marks:
         parts.append("overlay_note is a tiny label for the star map drawn in the sky, 2 to 4 words, at most 32 characters (for example \"the quiet seven\").")

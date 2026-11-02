@@ -694,12 +694,9 @@ class Run:
             steam=analysis.get("category") == "food",
             seed=self.seed(photo),
         )
-        drawn = marks.draw(base, list(look.marks), **options)
-        if not set(drawn.marks) - marks.ACCENT_MARKS:
-            # Nothing was placed, or only a corner date stamp (a moon with no stars around it for a
-            # constellation): the second slide would read as the same photo posted twice. Corner
-            # brackets can always be placed, and keep whatever accent did fit.
-            drawn = marks.draw(base, [*drawn.marks, "viewfinder"], **options)
+        # draw_notes never leaves only a corner date stamp (a moon with no stars around it for a
+        # constellation), which would make the second slide read as the same photo posted twice.
+        drawn = marks.draw_notes(base, list(look.marks), **options)
         self.notes.append(f"Drawn on the photo: {', '.join(m.replace('_', ' ') for m in drawn.marks)}.")
         extra = f" Shown again with hand-drawn notes: {'; '.join(drawn.notes)}." if drawn.notes else " Shown again with hand-drawn marks."
         return [clean.jpeg, _to_jpeg(drawn.image, quality, icc, subsampling=0)], [caption.alt_text[:1000], (caption.alt_text + extra).strip()[:1000]]

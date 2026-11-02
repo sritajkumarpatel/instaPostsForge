@@ -260,6 +260,35 @@ def test_notes_post_shows_the_photo_untouched_then_the_drawn_copy(tmp_path, monk
     assert entry["style"] == "notes" and entry["look"]
 
 
+def moon_jpeg() -> bytes:
+    """A lone moon in a dark, starless sky: nothing for a constellation to join."""
+    sky = Image.new("RGB", (1080, 1350), (14, 14, 18))
+    ImageDraw.Draw(sky).ellipse((420, 560, 660, 800), fill=(225, 220, 215))
+    out = io.BytesIO()
+    sky.save(out, format="JPEG", quality=95)
+    return out.getvalue()
+
+
+def test_notes_never_go_out_as_the_same_photo_twice(tmp_path):
+    """A moon with no stars got a constellation that couldn't be drawn and a date stamp that could: the
+    second slide was the first again with a small date in the corner, and read as a duplicate post."""
+    from instapostsforge.styles import Look
+
+    name = "IMG20260926194248.jpg"
+    moon = {"category": "night", "mood": "calm", "subject_top": 0.4, "subject_bottom": 0.6, "subject_left": 0.38, "subject_right": 0.62}
+    c = components(tmp_path, {name: moon_jpeg()}, FakeAI(analyses={name: moon}))
+    run = pipeline.Run(make_profile(), c, DAY)
+    photo = c.source.list_photos()[0]
+    run.analyse_new([photo])
+    caption = Caption(text="Quiet moon.", hashtags=[], alt_text="The moon in a dark sky.")
+    jpegs, _ = run.styled_slides("notes", photo, [], caption, Look(marks=("constellation", "date_stamp")))
+    assert len(jpegs) == 2
+    assert any("viewfinder" in n for n in run.notes) and any("date stamp" in n for n in run.notes)
+    first, second = (Image.open(io.BytesIO(j)).convert("L") for j in jpegs)
+    changed = ImageChops.difference(first, second).point(lambda v: 255 if v > 40 else 0).histogram()[255]
+    assert changed > 1080 * 1350 * 0.002  # visibly more than a corner stamp
+
+
 def test_any_style_records_a_look_and_changes_it_next_time(tmp_path):
     ai = FakeAI(styles={"a.jpg": "poster", "b.jpg": "poster"}, analyses={"a.jpg": {"mood": "calm"}, "b.jpg": {"mood": "calm"}})
     c = components(tmp_path, {"a.jpg": photo_jpeg(1), "b.jpg": photo_jpeg(2)}, ai)

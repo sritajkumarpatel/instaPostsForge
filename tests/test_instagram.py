@@ -107,3 +107,50 @@ def test_expired_token_says_how_to_fix_it():
     publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
     with pytest.raises(PublishError, match="expired or was revoked"):
         publisher.publish_image("https://x/1.jpg", "hi")
+
+
+class LostReplySession(FakeSession):
+    """Instagram publishes, but the reply to media_publish never arrives."""
+
+    def request(self, method, url, params=None, timeout=None):
+        if url.endswith("/media_publish"):
+            self.calls.append((method, url.rsplit("/", 2)[-2:], dict(params)))
+            import requests
+
+            raise requests.ConnectionError("reset")
+        return super().request(method, url, params, timeout)
+
+
+def test_a_lost_publish_reply_is_checked_not_posted_again():
+    session = LostReplySession([
+        {"id": "c1"}, {"status_code": "FINISHED"},  # container ready
+        {"status_code": "PUBLISHED"},  # it did go out
+        {"data": [{"id": "m9", "caption": "hello"}, {"id": "m8", "caption": "older"}]},
+    ])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    assert publisher.publish_image("https://x/img.jpg", "hello") == "m9"
+    assert sum(1 for c in session.calls if c[1][-1] == "media_publish") == 1  # never resent
+
+
+def test_a_lost_carousel_reply_is_found_by_caption():
+    session = LostReplySession([
+        {"id": "k1"}, {"status_code": "FINISHED"}, {"id": "k2"}, {"status_code": "FINISHED"},
+        {"id": "c1"}, {"status_code": "FINISHED"},
+        {"status_code": "PUBLISHED"}, {"data": [{"id": "m5", "caption": "cap"}]},
+    ])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    assert publisher.publish_carousel(["https://x/1.jpg", "https://x/2.jpg"], "cap") == "m5"
+
+
+def test_a_publish_that_did_not_go_out_still_fails():
+    session = LostReplySession([{"id": "c1"}, {"status_code": "FINISHED"}, {"status_code": "FINISHED"}])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match="could not reach Instagram"):
+        publisher.publish_image("https://x/img.jpg", "hello")
+
+
+def test_a_published_post_that_cannot_be_found_stops_the_run():
+    session = LostReplySession([{"id": "c1"}, {"status_code": "FINISHED"}, {"status_code": "PUBLISHED"}, {"data": []}])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match="Check Instagram"):
+        publisher.publish_image("https://x/img.jpg", "hello")

@@ -26,6 +26,9 @@ from .layouts import draw_spaced, fitted, font, line_height, text_width
 from .processor import Focus
 
 MARKS = ("field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover")
+# Marks that only sit in a corner. On their own they leave the second slide of a notes post looking like
+# the first one again, so a notes post always carries at least one mark that is not one of these.
+ACCENT_MARKS = frozenset({"date_stamp"})
 MAX_NOTES = 3
 MAX_COVERAGE = 0.10  # share of the frame that notes and doodles may cover
 WHITE = (255, 255, 255, 255)

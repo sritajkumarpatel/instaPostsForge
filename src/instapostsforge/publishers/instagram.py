@@ -101,7 +101,7 @@ class InstagramPublisher(Publisher):
             params["alt_text"] = alt_text
         container_id = self._call("POST", f"{self.user_id}/media", **params)["id"]
         self._wait_until_ready(container_id)
-        return self._call("POST", f"{self.user_id}/media_publish", creation_id=container_id)["id"]
+        return self._publish(self.user_id, container_id, caption)
 
     def publish_carousel(self, image_urls: list[str], caption: str, alt_texts: list[str | None] | None = None) -> str:
         """One container per photo, then a carousel container that holds them, then publish.
@@ -127,7 +127,46 @@ class InstagramPublisher(Publisher):
             "POST", f"{user_id}/media", media_type="CAROUSEL", children=",".join(children), caption=caption
         )["id"]
         self._wait_until_ready(container_id)
-        return self._call("POST", f"{user_id}/media_publish", creation_id=container_id)["id"]
+        return self._publish(user_id, container_id, caption)
+
+    def _publish(self, user_id: str, container_id: str, caption: str) -> str:
+        """Publishes a finished container, once. requests never resends a POST, and this never retries
+        one: the reply can be lost after Instagram has already published, and a second call would post
+        the photo twice. So a failed publish is checked with Instagram before it counts as a failure."""
+        try:
+            return self._call("POST", f"{user_id}/media_publish", creation_id=container_id)["id"]
+        except PublishError:
+            media_id = self._published_anyway(user_id, container_id, caption)
+            if media_id is None:
+                raise
+            return media_id
+        except (KeyError, TypeError):
+            media_id = self._published_anyway(user_id, container_id, caption)
+            if media_id is None:
+                raise PublishError("Instagram didn't return the new post's ID.") from None
+            return media_id
+
+    def _published_anyway(self, user_id: str, container_id: str, caption: str) -> str | None:
+        """The media ID of the post made from the container if Instagram did publish it, else None. A
+        post that went out but can't be found among the latest ones is an error, never a retry, so the
+        run stops instead of recording nothing and posting the photo again the next day."""
+        try:
+            status = self._call("GET", container_id, fields="status_code").get("status_code")
+        except PublishError:
+            return None
+        if status != "PUBLISHED":
+            return None
+        try:
+            recent = self._call("GET", f"{user_id}/media", fields="id,caption", limit="10").get("data") or []
+        except PublishError:
+            recent = []
+        for item in recent:
+            if isinstance(item, dict) and (item.get("caption") or "").strip() == caption.strip() and item.get("id"):
+                return str(item["id"])
+        raise PublishError(
+            "Instagram published the post but its reply was lost, and it couldn't be found to record it. "
+            "Check Instagram and add it to state/<profile>/posts.json before posting this photo again."
+        )
 
     def _wait_until_ready(self, container_id: str, attempts: int = 10, delay: float = 5.0) -> None:
         for _ in range(attempts):

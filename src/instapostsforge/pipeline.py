@@ -667,7 +667,8 @@ class Run:
         )
 
     def notes_slides(self, photo: Photo, caption: Caption, look: Look, quality: int) -> tuple[list[bytes], list[str]]:
-        """The photo as it goes out, untouched, then a copy with the look's marks drawn on top."""
+        """A notes post: one image, the photo as a single post sends it with the look's marks drawn on a
+        layer over it. Never the clean photo and then a marked copy, which read as the same photo twice."""
         clean = self.post_image(photo)
         base = Image.open(io.BytesIO(clean.jpeg))
         icc = base.info.get("icc_profile")
@@ -694,12 +695,12 @@ class Run:
             steam=analysis.get("category") == "food",
             seed=self.seed(photo),
         )
-        drawn = marks.draw(base, list(look.marks), **options)
-        if not drawn.marks:  # nothing could be placed: corner brackets always can be
-            drawn = marks.draw(base, ["viewfinder"], **options)
+        # draw_notes never leaves only a corner date stamp (a moon with no stars around it for a
+        # constellation): a post that barely differs from the photo isn't worth calling notes.
+        drawn = marks.draw_notes(base, list(look.marks), **options)
         self.notes.append(f"Drawn on the photo: {', '.join(m.replace('_', ' ') for m in drawn.marks)}.")
-        extra = f" Shown again with hand-drawn notes: {'; '.join(drawn.notes)}." if drawn.notes else " Shown again with hand-drawn marks."
-        return [clean.jpeg, _to_jpeg(drawn.image, quality, icc, subsampling=0)], [caption.alt_text[:1000], (caption.alt_text + extra).strip()[:1000]]
+        extra = f" With hand-drawn notes: {'; '.join(drawn.notes)}." if drawn.notes else " With hand-drawn marks."
+        return [_to_jpeg(drawn.image, quality, icc, subsampling=0)], [(caption.alt_text + extra).strip()[:1000]]
 
     def cut_out(self, photo: Photo) -> str | None:
         """Runs the cut-out model on the cover and checks the mask. Returns why the pop-out can't be

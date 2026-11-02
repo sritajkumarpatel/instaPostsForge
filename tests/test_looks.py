@@ -27,6 +27,7 @@ from instapostsforge.styles import (
     choose_look,
     choose_style,
     look_brief,
+    notes_brief,
     usable_anchors,
 )
 from test_agents import workflow
@@ -167,6 +168,60 @@ def test_constellation_needs_a_starry_sky():
     assert marks.draw(scene(), ["constellation"], seed=1).marks == []
 
 
+def moonlit(w=1080, h=1350):
+    """A night sky with a lone moon and no stars: the photo a star map can't be drawn on."""
+    image = Image.new("RGB", (w, h), (14, 16, 26))
+    ImageDraw.Draw(image).ellipse((w * 0.45, h * 0.27, w * 0.65, h * 0.43), fill=(232, 226, 214))
+    return image
+
+
+MOON = Focus(0.27, 0.43, 0.45, 0.65)
+
+
+def test_notes_never_end_up_as_only_a_date_stamp():
+    # the moon post that looked posted twice: no stars, so only the date stamp was drawn
+    plain = marks.draw(moonlit(), ["constellation", "date_stamp"], focus=MOON, taken_at=datetime(2026, 9, 26, 19, 42), seed=3)
+    assert plain.marks == ["date_stamp"]
+    fixed = marks.draw_notes(moonlit(), ["constellation", "date_stamp"], focus=MOON, taken_at=datetime(2026, 9, 26, 19, 42), seed=3)
+    assert "date_stamp" in fixed.marks and set(fixed.marks) - marks.ACCENT_MARKS
+    changed = ImageChops.difference(moonlit(), fixed.image).convert("L").point(lambda v: 255 if v > 24 else 0)
+    assert changed.histogram()[255] > plain_changed(plain.image)  # clearly more drawn than the stamp alone
+    # a person in the frame: no ring or rays around them, corner brackets instead
+    person = marks.draw_notes(moonlit(), ["date_stamp"], focus=MOON, subject_is_person=True, taken_at=datetime(2026, 9, 26), seed=3)
+    assert "viewfinder" in person.marks and not {"orbit", "rays"} & set(person.marks)
+
+
+def plain_changed(image):
+    return ImageChops.difference(moonlit(), image).convert("L").point(lambda v: 255 if v > 24 else 0).histogram()[255]
+
+
+def test_ring_and_rays_go_around_a_lone_subject_only():
+    for kind in ("orbit", "rays"):
+        drawn = marks.draw(moonlit(), [kind], focus=MOON, seed=2)
+        assert drawn.marks == [kind] and unchanged_inside(moonlit(), drawn.image, MOON)
+        assert marks.draw(moonlit(), [kind], focus=Focus(0.05, 0.95, 0.1, 0.9), seed=2).marks == []  # no room around it
+        assert marks.draw(moonlit(), [kind], seed=2).marks == []  # no subject band, nothing to circle
+        assert marks.draw(moonlit(), [kind], focus=MOON, subject_is_person=True, seed=2).marks == []
+
+
+def test_birds_fly_only_in_a_calm_sky():
+    assert marks.draw(scene(), ["birds"], focus=SUBJECT, seed=1).marks == ["birds"]
+    busy = Image.effect_noise((1080, 1350), 90).convert("RGB")
+    assert marks.draw(busy, ["birds"], focus=SUBJECT, seed=1).marks == []
+    assert marks.draw(scene(), ["birds"], focus=SUBJECT, subject_is_person=True, seed=1).marks == []
+
+
+def test_aside_writes_one_note_and_needs_words():
+    drawn = marks.draw(scene(), ["aside"], focus=SUBJECT, note="hello, moon", seed=1)
+    assert drawn.marks == ["aside"] and drawn.notes == ["hello, moon"]
+    assert marks.draw(scene(), ["aside"], focus=SUBJECT, seed=1).marks == []
+
+
+def test_doodles_stay_few():
+    layer = marks.Layer((1080, 1350), 1)
+    assert marks.doodles(layer, scene(), marks.subject_box((1080, 1350), SUBJECT), ("sparkle", "star")) <= 3
+
+
 # --- choosing the look by rule -----------------------------------------------------------
 
 
@@ -177,7 +232,10 @@ def test_look_follows_mood_and_category_and_avoids_yesterday():
     first = choose_look("poster", calm, seed=7)
     assert choose_look("poster", calm, seed=7, last_look=first.name).name != first.name
     night = choose_look("notes", {"category": "night", "mood": "awe"}, seed=1, has_time=True)
-    assert night.marks in (("constellation", "date_stamp"), ("viewfinder",))
+    assert night.marks in (("constellation", "date_stamp"), ("viewfinder",))  # no subject band: nothing to ring
+    lone = {"category": "night", "subject_top": 0.3, "subject_bottom": 0.45, "subject_left": 0.4, "subject_right": 0.6}
+    rings = {choose_look("notes", lone, seed=s, has_time=True).marks for s in range(40)}
+    assert ("orbit", "date_stamp") in rings and ("rays", "aside") in rings
 
 
 def test_people_get_only_marks_that_stay_off_them():
@@ -200,6 +258,13 @@ def test_person_anchors_are_never_pointed_at():
     # without anchors there are no notes to point, but there is always something to draw
     look = choose_look("notes", {"category": "food"}, seed=1)
     assert look.marks and "field_notes" not in look.marks
+
+
+def test_aside_brief_asks_for_one_short_note():
+    from instapostsforge.styles import Look
+
+    brief = notes_brief(Look(marks=("rays", "aside")), [])
+    assert "overlay_note" in brief and "24 characters" in brief
 
 
 def test_config_can_narrow_the_looks():
@@ -242,22 +307,53 @@ def test_notes_with_a_blocked_word_are_refused():
 # --- the pipeline -------------------------------------------------------------------------
 
 
-def test_notes_post_shows_the_photo_untouched_then_the_drawn_copy(tmp_path, monkeypatch):
+def test_notes_post_is_one_image_with_the_marks(tmp_path, monkeypatch):
     monkeypatch.setenv("POST_STYLE", "notes")
     analyses = {"a.jpg": {"category": "food", "mood": "calm", "anchors": [{"name": "tea glass", "x": 0.3, "y": 0.3}], "subject_top": 0.4, "subject_bottom": 0.6, "subject_left": 0.4, "subject_right": 0.6}}
     ai = FakeAI(analyses=analyses)
     c = components(tmp_path, {"a.jpg": photo_jpeg(1, 1080, 1350)}, ai)
     result = pipeline.run(make_profile(), c, publish=True, today=DAY)
-    urls, _, alts = c.publisher.posts[0]
-    assert result.style == "notes" and len(urls) == 2
+    url, _, alt = c.publisher.posts[0]
+    assert result.style == "notes" and isinstance(url, str)  # one image, never a carousel of the photo twice
     assert "hand-drawn" in ai.calls["caption"][0]["style_brief"]
     posted = list(c.host.uploaded.values()) if hasattr(c.host, "uploaded") else None
     if posted:
         clean = pipeline.Run(make_profile(), c, DAY).post_image(result.photo).jpeg
-        assert posted[0] == clean  # the first slide is the photo exactly as a single post would send it
-    assert "hand-drawn" in alts[1]
+        assert posted == [posted[0]] and posted[0] != clean  # the marks are on it
+    assert "hand-drawn" in alt
     entry = next(iter(c.state.posts.values()))
     assert entry["style"] == "notes" and entry["look"]
+
+
+def moon_jpeg() -> bytes:
+    """A lone moon in a dark, starless sky: nothing for a constellation to join."""
+    sky = Image.new("RGB", (1080, 1350), (14, 14, 18))
+    ImageDraw.Draw(sky).ellipse((420, 560, 660, 800), fill=(225, 220, 215))
+    out = io.BytesIO()
+    sky.save(out, format="JPEG", quality=95)
+    return out.getvalue()
+
+
+def test_notes_never_go_out_as_the_same_photo_twice(tmp_path):
+    """A moon with no stars got a constellation that couldn't be drawn and a date stamp that could: the
+    second slide was the first again with a small date in the corner, and read as a duplicate post."""
+    from instapostsforge.styles import Look
+
+    name = "IMG20260926194248.jpg"
+    moon = {"category": "night", "mood": "calm", "subject_top": 0.4, "subject_bottom": 0.6, "subject_left": 0.38, "subject_right": 0.62}
+    c = components(tmp_path, {name: moon_jpeg()}, FakeAI(analyses={name: moon}))
+    run = pipeline.Run(make_profile(), c, DAY)
+    photo = c.source.list_photos()[0]
+    run.analyse_new([photo])
+    caption = Caption(text="Quiet moon.", hashtags=[], alt_text="The moon in a dark sky.")
+    jpegs, _ = run.styled_slides("notes", photo, [], caption, Look(marks=("constellation", "date_stamp")))
+    assert len(jpegs) == 1  # one image, never the clean photo and then the marked copy
+    drawn = next(n for n in run.notes if n.startswith("Drawn on the photo"))
+    assert "date stamp" in drawn and any(m in drawn for m in ("orbit", "rays", "viewfinder"))  # a ring, rays or brackets join it
+    first = Image.open(io.BytesIO(run.post_image(photo).jpeg)).convert("L")
+    second = Image.open(io.BytesIO(jpegs[0])).convert("L")
+    changed = ImageChops.difference(first, second).point(lambda v: 255 if v > 40 else 0).histogram()[255]
+    assert changed > 1080 * 1350 * 0.002  # visibly more than a corner stamp
 
 
 def test_any_style_records_a_look_and_changes_it_next_time(tmp_path):

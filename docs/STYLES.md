@@ -48,11 +48,11 @@ A wide photo (3:2 or wider) cut into 2 or 3 slides that join up as you swipe. No
 
 ## Notes
 
-The photo exactly as shot, then the same photo with a hand-drawn layer on top. The analyst names up to three things in the photo and where they are, and the caption writer writes a short note for each. Code places every mark: never inside the subject, never on a person, and never on a photo of a deity, shrine or prayer.
+One image: the photo with a hand-drawn layer on top. The photo's own pixels are never changed; the marks are drawn on a layer over it. (It used to be the clean photo and then the marked copy, which read as the same photo posted twice.) The analyst names up to three things in the photo and where they are, and the caption writer writes a short note for each. Code places every mark: never inside the subject, never on a person, and never on a photo of a deity, shrine or prayer.
 
-| Slide 1: as shot | Slide 2: field notes | Star map |
+| The photo | With field notes | Star map |
 | --- | --- | --- |
-| ![The photo as shot](assets/styles/notes-clean.jpg) | ![Handwritten notes on the photo](assets/styles/notes-field.jpg) | ![A star map in a night sky](assets/styles/notes-constellation.jpg) |
+| ![The photo before marks](assets/styles/notes-clean.jpg) | ![Handwritten notes on the photo](assets/styles/notes-field.jpg) | ![A star map in a night sky](assets/styles/notes-constellation.jpg) |
 
 | Film date stamp | Doodles | Magazine cover |
 | --- | --- | --- |
@@ -61,6 +61,21 @@ The photo exactly as shot, then the same photo with a hand-drawn layer on top. T
 | Viewfinder | Photographer's notes | Tape label |
 | --- | --- | --- |
 | ![Viewfinder corners and time](assets/styles/notes-viewfinder.jpg) | ![Rule-of-thirds lines and a note](assets/styles/notes-thirds.jpg) | ![Tape with the place name](assets/styles/notes-tape.jpg) |
+
+### Sketch marks
+
+Quiet pen marks taken from how photographers and illustrators doodle on prints: one colour, a thin wavering line, drawn in the empty space around the subject so the photo still reads first. A look carries one of them, sometimes with the date stamp or a single handwritten word.
+
+- **Ring:** a loose loop around a lone subject (a moon, a lamp, a flower, an animal), left open like a pen stroke, with a small dot riding on it.
+- **Rays:** a few short strokes off a bright subject, like a sketch of its glow.
+- **Birds:** two or three gulls in the calmest part of an open sky.
+- **Aside:** one handwritten word or two with a loose underline, near the subject (the caption writer writes it, at most 24 characters).
+
+| Ring and date stamp | Rays and an aside | Birds |
+| --- | --- | --- |
+| ![A pen ring around the moon](assets/styles/notes-orbit.jpg) | ![Short rays around the sun and a handwritten word](assets/styles/notes-rays.jpg) | ![Three gulls in the sky](assets/styles/notes-birds.jpg) |
+
+A ring or rays need a lone subject with room around it, and none of the four is drawn on a photo with people. Doodles are kept to two or three small marks. A post always carries more than a date stamp: when a look's marks can't be placed (a star map in a sky with no stars, say), code adds a ring or rays around the subject, or corner brackets.
 
 ## Pop-out
 

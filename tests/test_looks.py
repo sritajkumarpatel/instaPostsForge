@@ -307,20 +307,20 @@ def test_notes_with_a_blocked_word_are_refused():
 # --- the pipeline -------------------------------------------------------------------------
 
 
-def test_notes_post_shows_the_photo_untouched_then_the_drawn_copy(tmp_path, monkeypatch):
+def test_notes_post_is_one_image_with_the_marks(tmp_path, monkeypatch):
     monkeypatch.setenv("POST_STYLE", "notes")
     analyses = {"a.jpg": {"category": "food", "mood": "calm", "anchors": [{"name": "tea glass", "x": 0.3, "y": 0.3}], "subject_top": 0.4, "subject_bottom": 0.6, "subject_left": 0.4, "subject_right": 0.6}}
     ai = FakeAI(analyses=analyses)
     c = components(tmp_path, {"a.jpg": photo_jpeg(1, 1080, 1350)}, ai)
     result = pipeline.run(make_profile(), c, publish=True, today=DAY)
-    urls, _, alts = c.publisher.posts[0]
-    assert result.style == "notes" and len(urls) == 2
+    url, _, alt = c.publisher.posts[0]
+    assert result.style == "notes" and isinstance(url, str)  # one image, never a carousel of the photo twice
     assert "hand-drawn" in ai.calls["caption"][0]["style_brief"]
     posted = list(c.host.uploaded.values()) if hasattr(c.host, "uploaded") else None
     if posted:
         clean = pipeline.Run(make_profile(), c, DAY).post_image(result.photo).jpeg
-        assert posted[0] == clean  # the first slide is the photo exactly as a single post would send it
-    assert "hand-drawn" in alts[1]
+        assert posted == [posted[0]] and posted[0] != clean  # the marks are on it
+    assert "hand-drawn" in alt
     entry = next(iter(c.state.posts.values()))
     assert entry["style"] == "notes" and entry["look"]
 
@@ -347,10 +347,11 @@ def test_notes_never_go_out_as_the_same_photo_twice(tmp_path):
     run.analyse_new([photo])
     caption = Caption(text="Quiet moon.", hashtags=[], alt_text="The moon in a dark sky.")
     jpegs, _ = run.styled_slides("notes", photo, [], caption, Look(marks=("constellation", "date_stamp")))
-    assert len(jpegs) == 2
+    assert len(jpegs) == 1  # one image, never the clean photo and then the marked copy
     drawn = next(n for n in run.notes if n.startswith("Drawn on the photo"))
     assert "date stamp" in drawn and any(m in drawn for m in ("orbit", "rays", "viewfinder"))  # a ring, rays or brackets join it
-    first, second = (Image.open(io.BytesIO(j)).convert("L") for j in jpegs)
+    first = Image.open(io.BytesIO(run.post_image(photo).jpeg)).convert("L")
+    second = Image.open(io.BytesIO(jpegs[0])).convert("L")
     changed = ImageChops.difference(first, second).point(lambda v: 255 if v > 40 else 0).histogram()[255]
     assert changed > 1080 * 1350 * 0.002  # visibly more than a corner stamp
 

@@ -3,7 +3,7 @@ viewfinder brackets, a highlighter circle, rule-of-thirds lines, a tape label, a
 quiet sketch mark (a ring or rays around the subject, a few gulls, a handwritten aside).
 
 The photo underneath is never edited: everything here is drawn on a separate transparent layer and
-laid over a copy, and the post shows the clean photo first. Code decides where every mark goes. The
+laid over a copy; the post is that one image. Code decides where every mark goes. The
 model only names up to three things in the photo and roughly where they are (the analyst's anchors),
 and writes the few words of each note (the caption writer); a note that can't be placed clear of the
 subject is dropped, never squeezed in.
@@ -30,8 +30,8 @@ MARKS = (
     "field_notes", "doodles", "constellation", "date_stamp", "viewfinder", "highlight", "thirds", "tape", "cover",
     "orbit", "rays", "birds", "aside",
 )
-# Marks that only sit in a corner. On their own they leave the second slide of a notes post looking like
-# the first one again, so `draw_notes` adds a quiet sketch mark (or corner brackets) when only these fit.
+# Marks that only sit in a corner. On their own a notes post barely differs from the photo, so
+# `draw_notes` adds a quiet sketch mark (or corner brackets) when only these fit.
 ACCENT_MARKS = frozenset({"date_stamp"})
 SKETCH_FALLBACKS = ("orbit", "rays", "viewfinder")
 MAX_NOTES = 3
@@ -742,9 +742,9 @@ def draw(
 
 
 def draw_notes(photo: Image.Image, marks: list[str], **options) -> Drawn:
-    """The marks for a notes post's second slide. When only a corner accent (the date stamp) or nothing
+    """The marks for a notes post. When only a corner accent (the date stamp) or nothing
     could be placed, a quiet sketch mark is added (a ring or rays around the subject, else corner
-    brackets), so the second slide never looks like the first one posted twice."""
+    brackets), so the post is never just the photo with a date in the corner."""
     drawn = draw(photo, marks, **options)
     if set(drawn.marks) - ACCENT_MARKS:
         return drawn

@@ -107,7 +107,7 @@ defaults:
     #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
     #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
     #   story     a title slide over the cover, the other photos, and a closing line
-    #   notes     the photo as shot, then the same photo with hand-drawn notes, doodles or marks on top
+    #   notes     the photo with hand-drawn notes, doodles or marks on top, as one image
     #   popout    an editorial poster: the main subject steps out of the photo's frame onto paper (needs .[cutout])
     #   any       the planner picks one of any_styles for each post ("auto" means the same)
     #   single    the photo as shot, no layout

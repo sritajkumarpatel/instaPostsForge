@@ -12,8 +12,8 @@ The designed styles are drawn by code (imaging/layouts.py) from templates:
 - popout: an editorial poster on paper: the photo shows through a window, and its main subject steps
   out of the window onto the page (cut out by a local model in imaging/cutout.py, never repainted),
   under a large serif title and widely spaced small lines.
-- notes: the photo as shot, then the same photo with a hand-drawn layer on top (notes with arrows,
-  doodles, a star map, a film date stamp, viewfinder marks and more). The photo itself is unchanged.
+- notes: one image, the photo with a hand-drawn layer on top (notes with arrows, a pen ring or rays,
+  doodles, a star map, a film date stamp, viewfinder marks and more). The photo's pixels are unchanged.
 - any: the planner picks one of selection.style.any_styles for each post from the photos' notes; if
   its pick can't be drawn, code picks one that suits the photos' mood. "auto" means the same.
 
@@ -59,7 +59,7 @@ STYLE_GUIDE = {
     "panorama": "one wide photo (3:2 or wider, shape 1.5 or more) split into joined slides; suits wide landscapes, skylines and seascapes",
     "grid": "3 to 9 photos from one set tiled on one slide, then each on its own; suits outings with many varied photos",
     "story": "2 to 9 photos from one set as a sequence with a title and a closing line; suits outings that unfold over time",
-    "notes": "the photo as shot, then the same photo with a few hand-drawn notes, arrows or doodles on top; suits photos with two or three distinct things to point at, food, street and travel moments, and night skies; never for photos of a deity, shrine or prayer",
+    "notes": "the photo with a few hand-drawn notes, arrows or doodles on top, as one image; suits photos with two or three distinct things to point at, food, street and travel moments, and night skies; never for photos of a deity, shrine or prayer",
     "popout": "an editorial poster: the main subject steps out of the photo's frame onto paper under a big title; only for one clear, sharp subject (a person, vehicle, animal or object) with space around it, never a deity, shrine or prayer, a crowd, a flat scene or a pure landscape",
     "single": "the photo as shot, with no layout",
 }
@@ -492,7 +492,7 @@ FRAME_BRIEFS = {
 def notes_brief(look: Look, anchors: list[dict]) -> str:
     """What the caption writer is told about the words drawn on a notes post."""
     parts = [
-        "Today's post shows the photo as shot, then the same photo with a few hand-drawn marks on top "
+        "Today's post is the photo with a few hand-drawn marks on top "
         f"({', '.join(m.replace('_', ' ') for m in look.marks)})."
     ]
     things = "\n".join(f"{n}. {a['name']}" for n, a in enumerate(anchors, 1))

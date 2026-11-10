@@ -41,6 +41,74 @@
     "fingerprint": "5c1c7d9f9face41f",
     "name": "IMG20261011112054.jpg"
   },
+  "h:08f1fc644a452df1df780050f82abb80": {
+    "analysed_at": "2026-11-10T07:56:43+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "cat face",
+          "x": 0.6,
+          "y": 0.38
+        },
+        {
+          "is_person": false,
+          "name": "green eyes",
+          "x": 0.6,
+          "y": 0.42
+        },
+        {
+          "is_person": false,
+          "name": "front paw",
+          "x": 0.3,
+          "y": 0.68
+        }
+      ],
+      "category": "animals",
+      "colors": [
+        "brown",
+        "beige",
+        "grey",
+        "green",
+        "terracotta"
+      ],
+      "description": "A tabby cat with green eyes lies stretched out on a patterned tiled pavement, head raised and gazing straight into the lens. The background is softly blurred into warm brown tones with a dark round shape at the top edge.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "cat",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "street pavement",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "a stray tabby cat lying on a tiled pavement",
+      "subject_bottom": 0.87,
+      "subject_left": 0.0,
+      "subject_right": 0.82,
+      "subject_top": 0.18,
+      "taken_at": "Sunday 08 November 2026, 12:20",
+      "themes": [
+        "cats",
+        "street animals",
+        "pets",
+        "macro animal portrait",
+        "Bengaluru streets",
+        "mobile photography"
+      ],
+      "time_of_day": "day"
+    },
+    "fingerprint": "6c33706c203b4c16",
+    "name": "IMG20261108122012.jpg"
+  },
   "h:112b0cfbe2b682831612c8cd5e588aa7": {
     "analysed_at": "2026-10-26T19:26:53+00:00",
     "analysis": {
@@ -380,6 +448,73 @@
     "fingerprint": "30e86133e3327169",
     "name": "IMG20261024190135.jpg"
   },
+  "h:1d2e35ab103b4c8b2ad3bc23e6ea2d10": {
+    "analysed_at": "2026-11-10T07:57:04+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "tall tree",
+          "x": 0.82,
+          "y": 0.55
+        },
+        {
+          "is_person": false,
+          "name": "ridge line",
+          "x": 0.4,
+          "y": 0.32
+        },
+        {
+          "is_person": false,
+          "name": "hill slope",
+          "x": 0.7,
+          "y": 0.3
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "pale grey",
+        "sage green",
+        "dark green",
+        "misty white"
+      ],
+      "description": "Layers of forested hills fade into a pale hazy sky, with the nearest tree canopy in deeper green on the right. Thin power lines cross the lower left, and the haze gives the scene a soft, quiet depth.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "hills",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "forest hills",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "misty forested hills",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.22,
+      "taken_at": "Monday 09 November 2026, 11:50",
+      "themes": [
+        "forest haze",
+        "hill landscapes",
+        "Karnataka nature",
+        "quiet morning walks",
+        "mobile landscape photography",
+        "Bannerghatta wildlife"
+      ],
+      "time_of_day": "late morning"
+    },
+    "fingerprint": "0e31f7cf7bf3fdf5",
+    "name": "IMG20261109115010.jpg"
+  },
   "h:1ef315480b7f19313b95c862f69ebd38": {
     "analysed_at": "2026-10-26T19:27:08+00:00",
     "analysis": {
@@ -467,6 +602,73 @@
     "fingerprint": "0f0f0f2f1f191913",
     "name": "IMG20260926210511.jpg"
   },
+  "h:298df3cd933826fc11620deca121766d": {
+    "analysed_at": "2026-11-10T07:56:16+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "flame column",
+          "x": 0.5,
+          "y": 0.45
+        },
+        {
+          "is_person": false,
+          "name": "glowing base",
+          "x": 0.5,
+          "y": 0.8
+        },
+        {
+          "is_person": false,
+          "name": "small ground glow",
+          "x": 0.38,
+          "y": 0.9
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "amber",
+        "gold",
+        "brown",
+        "black"
+      ],
+      "description": "A long exposure captures a tall, flowing column of fire rising from a small glowing base on dark, dusty ground. Smoke curls at the top and tiny sparks drift around the scene. The warm amber light stands out sharply against the black night.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "flame",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "dirt ground at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "A long-exposure flame rising from a glowing object on the ground at night",
+      "subject_bottom": 1.0,
+      "subject_left": 0.25,
+      "subject_right": 0.9,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 19:24",
+      "themes": [
+        "night photography",
+        "long exposure",
+        "fire light",
+        "light painting",
+        "Bengaluru nights",
+        "mobile photography"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "03234f47070f1b1b",
+    "name": "IMG20261109192412.jpg"
+  },
   "h:2d1fabf1df284a87ddfcf4758b0c8c4c": {
     "analysed_at": "2026-10-26T19:06:39+00:00",
     "analysis": {
@@ -552,6 +754,73 @@
     "fingerprint": "4e986353876f2e79",
     "name": "IMG20260920163348.jpg"
   },
+  "h:32be2da1a09dd1c85cb06eab1b8860bc": {
+    "analysed_at": "2026-11-10T07:56:38+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "rocky cliff face",
+          "x": 0.55,
+          "y": 0.52
+        },
+        {
+          "is_person": false,
+          "name": "large foreground tree",
+          "x": 0.36,
+          "y": 0.75
+        },
+        {
+          "is_person": false,
+          "name": "hazy forested ridge",
+          "x": 0.15,
+          "y": 0.45
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "grey",
+        "muted green",
+        "pale tan",
+        "dusty beige"
+      ],
+      "description": "Layers of forested hills fade into a soft morning haze under a pale grey sky. A pale, rocky cliff face stands out in the middle of the range, with trees and dry grass in the foreground.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "hills",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 5,
+      "season": "late autumn",
+      "setting": "hill country with forest and open scrub",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "misty forested hills with a pale rocky cliff",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 16:16",
+      "themes": [
+        "landscape photography",
+        "hills and forests",
+        "Karnataka nature",
+        "mobile photography",
+        "quiet travel",
+        "early morning walks"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "073c0347274f6e67",
+    "name": "IMG20261109161631.jpg"
+  },
   "h:33309d3cff0f4e47284bde45df7516b0": {
     "analysed_at": "2026-10-26T19:06:22+00:00",
     "analysis": {
@@ -596,6 +865,73 @@
     },
     "fingerprint": "c28f0d8f06321e5a",
     "name": "IMG20261020204639.jpg"
+  },
+  "h:353816ee031d3058bd3c6393d3c6eee8": {
+    "analysed_at": "2026-11-10T07:56:29+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "flame",
+          "x": 0.42,
+          "y": 0.25
+        },
+        {
+          "is_person": false,
+          "name": "wick",
+          "x": 0.53,
+          "y": 0.33
+        },
+        {
+          "is_person": false,
+          "name": "clay bowl",
+          "x": 0.52,
+          "y": 0.6
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "terracotta",
+        "amber",
+        "dark brown",
+        "warm cream"
+      ],
+      "description": "A small terracotta oil lamp sits in a dark, grainy surface, with its wick burning and a tall warm flame rising from the rim. The light glows on the clay and the pale oil around the wick, and the rest of the frame falls into deep brown shadow.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": true,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "diya",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "dim indoor corner, lit by one flame",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "A lit clay diya with a flame rising from its wick",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 18:54",
+      "themes": [
+        "diya lamps",
+        "festival lights",
+        "Diwali",
+        "puja and devotion",
+        "macro flame photography",
+        "Karnataka home rituals"
+      ],
+      "time_of_day": "evening"
+    },
+    "fingerprint": "3f1d9e8b9b9bc6a5",
+    "name": "IMG20261109185408.jpg"
   },
   "h:3639c6d44282cab5b3ea759976e6e74b": {
     "analysed_at": "2026-10-26T19:17:56+00:00",
@@ -765,6 +1101,208 @@
     },
     "fingerprint": "e48723474764119f",
     "name": "IMG20261020204840.jpg"
+  },
+  "h:413df56774d474506f22680ed414e165": {
+    "analysed_at": "2026-11-10T07:56:21+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "sun",
+          "x": 0.46,
+          "y": 0.085
+        },
+        {
+          "is_person": false,
+          "name": "palm tree",
+          "x": 0.53,
+          "y": 0.8
+        },
+        {
+          "is_person": false,
+          "name": "hill ridge",
+          "x": 0.5,
+          "y": 0.45
+        }
+      ],
+      "category": "sky",
+      "colors": [
+        "peach",
+        "amber",
+        "grey",
+        "dark green"
+      ],
+      "description": "A pale, glowing sun hangs in a warm peach haze above layered hills. Palm trees and dark shrubs in the foreground fade into silhouette as the light softens.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "sun",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 6,
+      "season": "winter",
+      "setting": "hill countryside at dusk",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "hazy sun over hills at dusk",
+      "subject_bottom": 0.5,
+      "subject_left": 0.4,
+      "subject_right": 0.6,
+      "subject_top": 0.06,
+      "taken_at": "Monday 09 November 2026, 16:17",
+      "themes": [
+        "sunset photography",
+        "hazy landscape",
+        "Karnataka countryside",
+        "mobile photography",
+        "quiet evenings"
+      ],
+      "time_of_day": "dusk"
+    },
+    "fingerprint": "0f0f07c080337394",
+    "name": "IMG20261109161732.jpg"
+  },
+  "h:4994121e13d3b7f86972639f9a67f077": {
+    "analysed_at": "2026-11-10T07:57:25+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "flame burst",
+          "x": 0.45,
+          "y": 0.55
+        },
+        {
+          "is_person": false,
+          "name": "sparks trail",
+          "x": 0.15,
+          "y": 0.3
+        },
+        {
+          "is_person": false,
+          "name": "smoke cloud",
+          "x": 0.6,
+          "y": 0.3
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "black",
+        "orange",
+        "amber",
+        "smoky pink",
+        "white"
+      ],
+      "description": "A firecracker burns bright at the end of a thin stick, throwing a spray of glowing sparks and a cloud of lit smoke against a dark background. Long streaks of light trail off to the left, and a thin fuse hangs below the flame.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "fireworks",
+      "mood": "energetic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 6,
+      "season": null,
+      "setting": "night street celebration",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "A lit firecracker throwing sparks and smoke at night",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 0.8,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 19:23",
+      "themes": [
+        "night photography",
+        "fireworks",
+        "festival lights",
+        "celebrations",
+        "Bengaluru nights",
+        "long exposure"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "797e3f1f8f4f673f",
+    "name": "IMG20261109192342.jpg"
+  },
+  "h:4c758eb739e8255846611cd12f210ec8": {
+    "analysed_at": "2026-11-10T07:57:17+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "rose centre",
+          "x": 0.47,
+          "y": 0.52
+        },
+        {
+          "is_person": false,
+          "name": "golden stamens",
+          "x": 0.5,
+          "y": 0.53
+        },
+        {
+          "is_person": false,
+          "name": "outer petal",
+          "x": 0.18,
+          "y": 0.6
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "orange",
+        "yellow",
+        "gold",
+        "green",
+        "dark green"
+      ],
+      "description": "A single orange-and-yellow rose seen from above, its layered petals opening toward a cluster of golden stamens at the centre. Soft green leaves and dark foliage blur into the background, letting the flower hold the frame.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "rose",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "garden bush",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "orange rose in bloom",
+      "subject_bottom": 0.83,
+      "subject_left": 0.05,
+      "subject_right": 0.99,
+      "subject_top": 0.16,
+      "taken_at": "Monday 09 November 2026, 10:49",
+      "themes": [
+        "macro flowers",
+        "flower photography",
+        "garden blooms",
+        "mobile photography",
+        "nature close-ups",
+        "Bengaluru gardens"
+      ],
+      "time_of_day": "day"
+    },
+    "fingerprint": "cd4f27333317cfe2",
+    "name": "IMG20261109104943.jpg"
   },
   "h:5608f48e2363ad1910018644972a29d6": {
     "analysed_at": "2026-10-26T19:18:00+00:00",
@@ -1061,6 +1599,208 @@
     "fingerprint": "634c2c579636764d",
     "name": "IMG20260926173149.jpg"
   },
+  "h:78601a6cf64f5ab5a2fd8b81925abb76": {
+    "analysed_at": "2026-11-10T07:57:39+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "rose bloom",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "is_person": false,
+          "name": "red new leaves",
+          "x": 0.3,
+          "y": 0.25
+        },
+        {
+          "is_person": false,
+          "name": "green leaf",
+          "x": 0.25,
+          "y": 0.88
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "coral",
+        "peach",
+        "dark green",
+        "maroon"
+      ],
+      "description": "A single coral-peach rose opens at the centre of the frame, its layered petals curling softly around a tight bud heart. Dark green foliage blurs into the background, and a small cluster of reddish new leaves sits at the upper left.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "rose",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "garden bush",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "peach-coral rose in bloom",
+      "subject_bottom": 0.84,
+      "subject_left": 0.07,
+      "subject_right": 0.89,
+      "subject_top": 0.24,
+      "taken_at": "Monday 09 November 2026, 20:15",
+      "themes": [
+        "macro flowers",
+        "rose photography",
+        "garden blooms",
+        "Bengaluru gardens",
+        "mobile photography",
+        "nature close-ups"
+      ],
+      "time_of_day": "daytime"
+    },
+    "fingerprint": "bb5c176327bdac3c",
+    "name": "IMG20261109201547.jpg"
+  },
+  "h:7900b13f06bfd1d38e63d396f7d91c61": {
+    "analysed_at": "2026-11-10T07:57:35+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "open pink lily",
+          "x": 0.3,
+          "y": 0.47
+        },
+        {
+          "is_person": false,
+          "name": "tall pink lily",
+          "x": 0.44,
+          "y": 0.37
+        },
+        {
+          "is_person": false,
+          "name": "half-open bud",
+          "x": 0.78,
+          "y": 0.69
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "pink",
+        "magenta",
+        "green",
+        "dark brown"
+      ],
+      "description": "Three pink water lilies rise from a dark, still pond covered with broad green lily pads. Two open blooms stand tall on the left and centre while a third, half-open bud sits low on the right, and their reflections ripple faintly in the water.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "water lily",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "pond",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "pink water lilies on a dark pond among floating leaves",
+      "subject_bottom": 0.9,
+      "subject_left": 0.1,
+      "subject_right": 0.94,
+      "subject_top": 0.29,
+      "taken_at": "Sunday 08 November 2026, 08:19",
+      "themes": [
+        "water lilies",
+        "pond nature",
+        "macro flowers",
+        "calm morning",
+        "Karnataka nature",
+        "mobile photography"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "3982d03acc1a4e64",
+    "name": "IMG20261108081924.jpg"
+  },
+  "h:7b1cc75b999a2550b8c4cf16c0771082": {
+    "analysed_at": "2026-11-10T07:55:48+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "white grass plumes",
+          "x": 0.33,
+          "y": 0.67
+        },
+        {
+          "is_person": false,
+          "name": "lone tree",
+          "x": 0.14,
+          "y": 0.25
+        },
+        {
+          "is_person": false,
+          "name": "concrete drain",
+          "x": 0.6,
+          "y": 0.92
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "sage green",
+        "dusty gold",
+        "misty grey",
+        "white",
+        "rust brown"
+      ],
+      "description": "A hazy morning field of tall wind-bent grass, with a cluster of white feathery plumes in the middle distance. Trees and low scrub fade into pale grey sky at the back, and a dusty gold patch of harvested field runs across the middle.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "grassland",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 6,
+      "season": "late autumn",
+      "setting": "open field at the edge of a village, early morning",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "misty grassland with white feathery grass at dawn",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 17:16",
+      "themes": [
+        "grassland landscape",
+        "morning mist",
+        "Karnataka countryside",
+        "mobile photography",
+        "quiet nature",
+        "rural India"
+      ],
+      "time_of_day": "early morning"
+    },
+    "fingerprint": "10095c4834121621",
+    "name": "IMG20261109171639.jpg"
+  },
   "h:7c38b08c58c704eee1f0acd68e2f5050": {
     "analysed_at": "2026-10-26T19:26:51+00:00",
     "analysis": {
@@ -1232,6 +1972,80 @@
     "fingerprint": "8f87a6c65409c9cc",
     "name": "IMG20261020202230.jpg"
   },
+  "h:87b215f441a7b6083369af517db96c3d": {
+    "analysed_at": "2026-11-10T07:56:03+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "pink flower",
+          "x": 0.5,
+          "y": 0.66
+        },
+        {
+          "is_person": false,
+          "name": "top flower",
+          "x": 0.42,
+          "y": 0.33
+        },
+        {
+          "is_person": false,
+          "name": "backlit leaf",
+          "x": 0.65,
+          "y": 0.2
+        },
+        {
+          "is_person": false,
+          "name": "flower bud",
+          "x": 0.7,
+          "y": 0.4
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "pink",
+        "magenta",
+        "green",
+        "dark green",
+        "gold"
+      ],
+      "description": "A cluster of pale pink trumpet flowers with magenta throats rises on a green stem, with heart-shaped leaves lit from behind so the veins glow. The background is a soft, dark green blur, and the warm low sun gives the scene a quiet morning feel.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "morning glory",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "garden edge or roadside vegetation",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "pink morning glory flowers on a green vine in warm backlight",
+      "subject_bottom": 0.98,
+      "subject_left": 0.1,
+      "subject_right": 1.0,
+      "subject_top": 0.05,
+      "taken_at": "Sunday 08 November 2026, 08:23",
+      "themes": [
+        "macro flowers",
+        "backlit nature",
+        "morning light",
+        "Karnataka nature",
+        "flower photography",
+        "mobile photography"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "43130b9a1f8f3034",
+    "name": "IMG20261108082331.jpg"
+  },
   "h:8a0e825c5a8c5d2ed2ce004215695329": {
     "analysed_at": "2026-10-26T19:06:24+00:00",
     "analysis": {
@@ -1359,6 +2173,75 @@
     "fingerprint": "0f296cc4d4cc6c6d",
     "name": "IMG20261020202545.jpg"
   },
+  "h:8d0d044f0a313acaa2bbc2ef1d97c662": {
+    "analysed_at": "2026-11-10T07:57:53+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "flame column",
+          "x": 0.5,
+          "y": 0.4
+        },
+        {
+          "is_person": false,
+          "name": "firework cone",
+          "x": 0.5,
+          "y": 0.75
+        },
+        {
+          "is_person": false,
+          "name": "smoke plume",
+          "x": 0.6,
+          "y": 0.15
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "orange",
+        "gold",
+        "brown",
+        "smoke grey",
+        "black"
+      ],
+      "description": "A cone firework is burning on a dusty ground at night, throwing a bright column of orange flame, sparks and drifting smoke. The light falls on the rough soil around it, and the dark edges make the fire the clear focus.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": true,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "firework",
+      "mood": "energetic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "autumn",
+      "setting": "dusty open ground at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "firework fountain burning on the ground",
+      "subject_bottom": 0.85,
+      "subject_left": 0.2,
+      "subject_right": 0.8,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 19:24",
+      "themes": [
+        "night photography",
+        "fireworks",
+        "celebrations",
+        "long exposure",
+        "mobile night photography",
+        "Bengaluru nights",
+        "festival lights"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "4b070f4f0f133301",
+    "name": "IMG20261109192403.jpg"
+  },
   "h:8dfd8416473ece79df89ef77183408db": {
     "analysed_at": "2026-10-26T19:06:18+00:00",
     "analysis": {
@@ -1443,6 +2326,74 @@
     },
     "fingerprint": "317135e4ce921700",
     "name": "IMG20260726193405.jpg"
+  },
+  "h:9653df425605dfd0f23a0235e28e5a5f": {
+    "analysed_at": "2026-11-10T07:56:50+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "stream",
+          "x": 0.5,
+          "y": 0.8
+        },
+        {
+          "is_person": false,
+          "name": "white grass patch",
+          "x": 0.2,
+          "y": 0.75
+        },
+        {
+          "is_person": false,
+          "name": "lone tree",
+          "x": 0.22,
+          "y": 0.4
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "white",
+        "cream",
+        "muted green",
+        "hazy grey-blue",
+        "beige"
+      ],
+      "description": "A narrow stream winds through open fields where tall, feathery white grass glows in soft haze. Scattered trees and a dark, wooded hill line sit under a pale, misty sky, giving the scene a quiet early-morning feel.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "white grass",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "winter",
+      "setting": "open countryside by a stream, hill edge",
+      "shape": 1.332,
+      "shows_private_home": false,
+      "subject": "A narrow stream running between fields of white feathery grass, with hazy hills behind",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 16:16",
+      "themes": [
+        "landscape photography",
+        "Karnataka countryside",
+        "quiet nature",
+        "misty morning",
+        "mobile photography",
+        "Bengaluru day trips"
+      ],
+      "time_of_day": "early morning"
+    },
+    "fingerprint": "040107840d8c0c6c",
+    "name": "IMG20261109161639.jpg"
   },
   "h:9a49b89716c21f1417fe79d2fbd66d31": {
     "analysed_at": "2026-10-26T19:27:13+00:00",
@@ -1953,6 +2904,73 @@
     "fingerprint": "0f117261e1616960",
     "name": "IMG20260926173002.jpg"
   },
+  "h:bf41e850676efd1bd8f13dcdc86a7df2": {
+    "analysed_at": "2026-11-10T07:57:45+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "firework base",
+          "x": 0.5,
+          "y": 0.82
+        },
+        {
+          "is_person": false,
+          "name": "spark fountain",
+          "x": 0.4,
+          "y": 0.25
+        },
+        {
+          "is_person": false,
+          "name": "smoke plume",
+          "x": 0.62,
+          "y": 0.4
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "black",
+        "amber",
+        "white",
+        "brown"
+      ],
+      "description": "A small firework burns on bare ground at night, throwing a fountain of bright sparks and thin glowing trails upward. Smoke rises through the frame and the ground around the base is speckled with embers.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "fireworks",
+      "mood": "energetic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open ground at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "a ground firework throwing sparks and smoke into the dark",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 18:53",
+      "themes": [
+        "night photography",
+        "fireworks",
+        "festival lights",
+        "mobile night photography",
+        "Karnataka",
+        "Bengaluru"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "0b1b474f0f0f0f0f",
+    "name": "IMG20261109185323.jpg"
+  },
   "h:c359b900f6c9da6a25a816ad34c85701": {
     "analysed_at": "2026-10-26T19:26:58+00:00",
     "analysis": {
@@ -1995,6 +3013,54 @@
     },
     "fingerprint": "9080863427c1c12d",
     "name": "IMG20260927172351.jpg"
+  },
+  "h:c394304d66dcef632de65e9e895e3596": {
+    "analysed_at": "2026-11-10T07:57:11+00:00",
+    "analysis": {
+      "anchors": [],
+      "category": "night",
+      "colors": [
+        "black",
+        "terracotta",
+        "amber",
+        "warm gold"
+      ],
+      "description": "A small terracotta diya sits on a dark, rough stone surface, its cotton wick burning with a single warm flame. The light falls only on the lamp and the nearby ground, leaving the rest of the frame in deep shadow.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": true,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "diya",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 8,
+      "season": "autumn",
+      "setting": "dark floor at night, indoors or in a courtyard",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "A lit clay diya with a cotton wick on a dark textured surface",
+      "subject_bottom": 0.88,
+      "subject_left": 0.3,
+      "subject_right": 0.76,
+      "subject_top": 0.22,
+      "taken_at": "Sunday 08 November 2026, 18:08",
+      "themes": [
+        "diya and lamp light",
+        "festival lamps",
+        "Diwali evenings",
+        "night photography",
+        "Karnataka home traditions",
+        "mobile night photography"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "0b070f0f3b5dcc31",
+    "name": "IMG20261108180800.jpg"
   },
   "h:c735cde78e07c300b6e1b320d3384bd5": {
     "analysed_at": "2026-10-26T19:18:05+00:00",
@@ -2251,6 +3317,72 @@
     "fingerprint": "9c8e8b3b2a199996",
     "name": "IMG20261020195709.jpg"
   },
+  "h:dcef595d850d8e7f058c970a71c956be": {
+    "analysed_at": "2026-11-10T07:55:56+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "glowing flame base",
+          "x": 0.41,
+          "y": 0.73
+        },
+        {
+          "is_person": false,
+          "name": "sparks trail",
+          "x": 0.3,
+          "y": 0.85
+        },
+        {
+          "is_person": false,
+          "name": "smoke column",
+          "x": 0.5,
+          "y": 0.35
+        }
+      ],
+      "category": "event",
+      "colors": [
+        "orange",
+        "gold",
+        "smoky brown",
+        "black"
+      ],
+      "description": "A ground-level firework lights up a dusty patch of earth at night, throwing up a column of smoke and glowing orange sparks. Thin white sparks trail across the ground in curling streaks, with a bright flame glowing at the base.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "fireworks",
+      "mood": "energetic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "open ground at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "fireworks burst on the ground at night",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 18:53",
+      "themes": [
+        "fireworks",
+        "night photography",
+        "celebration",
+        "mobile night photography",
+        "Bengaluru nights"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "0e0d392c1c193f1f",
+    "name": "IMG20261109185329.jpg"
+  },
   "h:e1167f6f262b452ab5f37c27d1a37588": {
     "analysed_at": "2026-10-26T19:26:46+00:00",
     "analysis": {
@@ -2293,6 +3425,74 @@
     },
     "fingerprint": "94322e4ddd951d1b",
     "name": "IMG20261020205445.jpg"
+  },
+  "h:e4661a2fe0168acc0a13865f926e65c3": {
+    "analysed_at": "2026-11-10T07:56:59+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "winding stream",
+          "x": 0.45,
+          "y": 0.85
+        },
+        {
+          "is_person": false,
+          "name": "lone tree",
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "is_person": false,
+          "name": "utility pole",
+          "x": 0.92,
+          "y": 0.45
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "cream",
+        "sage green",
+        "misty grey",
+        "dusty pink",
+        "dark green"
+      ],
+      "description": "A hazy early-morning valley where soft white grass plumes fill the foreground and a narrow stream winds toward the viewer. Layered forested hills fade into pale pink mist, with a few trees and a single utility pole standing among the grass.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "grass",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "autumn",
+      "setting": "misty valley near forested hills",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "Misty valley with feathery white grass beside a winding stream",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 16:15",
+      "themes": [
+        "misty landscapes",
+        "Karnataka countryside",
+        "grass fields",
+        "quiet morning walks",
+        "nature photography",
+        "mobile photographers"
+      ],
+      "time_of_day": "early morning"
+    },
+    "fingerprint": "07071e0ee1197b3f",
+    "name": "IMG20261109161533.jpg"
   },
   "h:ed2879e6748e42ee54a85e0c28959266": {
     "analysed_at": "2026-10-26T19:06:29+00:00",
@@ -2504,6 +3704,73 @@
     "fingerprint": "0ccc23178e292535",
     "name": "IMG20260928081814.jpg"
   },
+  "h:fcdbd5843887b9155f08a3fa40415001": {
+    "analysed_at": "2026-11-10T07:56:07+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "red sun",
+          "x": 0.58,
+          "y": 0.14
+        },
+        {
+          "is_person": false,
+          "name": "grass plumes",
+          "x": 0.3,
+          "y": 0.7
+        },
+        {
+          "is_person": false,
+          "name": "utility pole",
+          "x": 0.17,
+          "y": 0.48
+        }
+      ],
+      "category": "sky",
+      "colors": [
+        "red",
+        "grey",
+        "pink",
+        "green",
+        "yellow"
+      ],
+      "description": "A pale red sun hangs low in a hazy, grey-pink sky above a silhouetted tree line and open farmland. In the foreground, reddish grass plumes and leafy plants sweep across the frame, softening the scene with a quiet, misty glow.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "sunset",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "winter",
+      "setting": "farmland at dusk",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "red sun over hazy fields at dusk",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.09,
+      "taken_at": "Monday 09 November 2026, 16:56",
+      "themes": [
+        "sunset photography",
+        "rural Karnataka",
+        "mobile photography",
+        "quiet evening walks",
+        "nature calm"
+      ],
+      "time_of_day": "dusk"
+    },
+    "fingerprint": "070748c95a268cda",
+    "name": "IMG20261109165651.jpg"
+  },
   "h:fd3007e4a5645cb120f39bf34c7bfaf2": {
     "analysed_at": "2026-10-26T19:18:03+00:00",
     "analysis": {
@@ -2545,5 +3812,71 @@
     },
     "fingerprint": "cbcd3f0cecc1e093",
     "name": "IMG20260927172757.jpg"
+  },
+  "h:febae07111ffb465453d8c3eff73ca78": {
+    "analysed_at": "2026-11-10T07:57:30+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "waterfall streams",
+          "x": 0.4,
+          "y": 0.4
+        },
+        {
+          "is_person": false,
+          "name": "green trees",
+          "x": 0.25,
+          "y": 0.12
+        },
+        {
+          "is_person": false,
+          "name": "rock ledge",
+          "x": 0.8,
+          "y": 0.6
+        }
+      ],
+      "category": "landscape",
+      "colors": [
+        "rust brown",
+        "green",
+        "white",
+        "blue"
+      ],
+      "description": "A tall waterfall spills down a rust-coloured rock cliff in several thin streams, with green trees clinging to the ledge at the top. Looking up from the base, the sky is a small patch of blue at the very top of the frame.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "waterfall",
+      "mood": "awe",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "rocky gorge waterfall",
+      "shape": 0.751,
+      "shows_private_home": false,
+      "subject": "waterfall cascading down a rock face",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 13:46",
+      "themes": [
+        "waterfall",
+        "nature photography",
+        "Karnataka travel",
+        "monsoon landscapes",
+        "Bengaluru weekend trips"
+      ],
+      "time_of_day": "midday"
+    },
+    "fingerprint": "63460a1a272e4b4d",
+    "name": "IMG20261109134654.jpg"
   }
 }

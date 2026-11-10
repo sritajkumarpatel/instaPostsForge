@@ -602,6 +602,73 @@
     "fingerprint": "0f0f0f2f1f191913",
     "name": "IMG20260926210511.jpg"
   },
+  "h:257820860628108d716e56a2d0e2ea5c": {
+    "analysed_at": "2026-11-10T08:10:59+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "lone tree",
+          "x": 0.32,
+          "y": 0.6
+        },
+        {
+          "is_person": false,
+          "name": "forested hill",
+          "x": 0.6,
+          "y": 0.45
+        },
+        {
+          "is_person": false,
+          "name": "road curve",
+          "x": 0.35,
+          "y": 0.8
+        }
+      ],
+      "category": "travel",
+      "colors": [
+        "grey",
+        "muted green",
+        "golden ochre",
+        "pale blue-grey"
+      ],
+      "description": "A quiet two-lane road runs toward a forested hill softened by morning haze. Dry golden grass and a lone tree line the roadside, with power lines stretching across a pale, misty sky.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "road",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 5,
+      "season": "winter",
+      "setting": "rural highway through forest hills",
+      "shape": 1.332,
+      "shows_private_home": false,
+      "subject": "empty road through hazy hills",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.35,
+      "taken_at": "Monday 09 November 2026, 11:50",
+      "themes": [
+        "road trip",
+        "rural Karnataka",
+        "hazy hills",
+        "quiet travel",
+        "morning light",
+        "landscape photography"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "0305033f4f793f4f",
+    "name": "IMG20261109115000.jpg"
+  },
   "h:298df3cd933826fc11620deca121766d": {
     "analysed_at": "2026-11-10T07:56:16+00:00",
     "analysis": {
@@ -1168,6 +1235,74 @@
     "fingerprint": "0f0f07c080337394",
     "name": "IMG20261109161732.jpg"
   },
+  "h:41462c400a705f1da3cfd8cc80093699": {
+    "analysed_at": "2026-11-10T08:11:22+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "flame",
+          "x": 0.33,
+          "y": 0.4
+        },
+        {
+          "is_person": false,
+          "name": "clay bowl",
+          "x": 0.5,
+          "y": 0.7
+        },
+        {
+          "is_person": false,
+          "name": "wick",
+          "x": 0.47,
+          "y": 0.55
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "amber",
+        "orange",
+        "deep brown",
+        "warm gold"
+      ],
+      "description": "A clay oil lamp burns on a brick-paved path after dark, its flame leaning over a wick that floats in warm oil. The warm glow lights the bowl and the worn bricks around it, while the rest of the frame falls into shadow.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": true,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "diya",
+      "mood": "calm",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 7,
+      "season": "autumn",
+      "setting": "brick path at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "Lit clay diya oil lamp on a brick path at night",
+      "subject_bottom": 0.82,
+      "subject_left": 0.19,
+      "subject_right": 0.83,
+      "subject_top": 0.33,
+      "taken_at": "Sunday 08 November 2026, 18:01",
+      "themes": [
+        "diya lamp",
+        "festival lights",
+        "Diwali",
+        "puja",
+        "night photography",
+        "Bengaluru evenings",
+        "warm light"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "161fb71f6b4fc195",
+    "name": "IMG20261108180126.jpg"
+  },
   "h:4994121e13d3b7f86972639f9a67f077": {
     "analysed_at": "2026-11-10T07:57:25+00:00",
     "analysis": {
@@ -1345,6 +1480,74 @@
     },
     "fingerprint": "da6769735d7f9636",
     "name": "IMG20260927174027.jpg"
+  },
+  "h:599887185114f1d97965e7363aa365d9": {
+    "analysed_at": "2026-11-10T08:11:07+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "firework burst",
+          "x": 0.42,
+          "y": 0.78
+        },
+        {
+          "is_person": false,
+          "name": "smoke plume",
+          "x": 0.5,
+          "y": 0.3
+        },
+        {
+          "is_person": false,
+          "name": "trailing sparks",
+          "x": 0.18,
+          "y": 0.5
+        }
+      ],
+      "category": "night",
+      "colors": [
+        "black",
+        "amber",
+        "orange",
+        "white"
+      ],
+      "description": "A single firework or firecracker has just burst on bare ground, throwing a bright orange flame and a billowing column of smoke up into the dark. Thin glowing sparks and curling trails of light scatter across the whole frame, caught in a long exposure.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "fireworks",
+      "mood": "energetic",
+      "orientation": "portrait",
+      "place_name": null,
+      "quality_score": 8,
+      "season": null,
+      "setting": "open ground at night",
+      "shape": 0.75,
+      "shows_private_home": false,
+      "subject": "A firecracker burst on dark ground at night, with flame, smoke and sparks rising",
+      "subject_bottom": 1.0,
+      "subject_left": 0.0,
+      "subject_right": 1.0,
+      "subject_top": 0.0,
+      "taken_at": "Monday 09 November 2026, 18:58",
+      "themes": [
+        "night photography",
+        "fireworks",
+        "long exposure",
+        "celebration lights",
+        "Diwali",
+        "Bengaluru night",
+        "mobile photography"
+      ],
+      "time_of_day": "night"
+    },
+    "fingerprint": "078f0f0e0f4f0f13",
+    "name": "IMG20261109185815.jpg"
   },
   "h:5e09fb0a00d5865dc90e84faa6b41920": {
     "analysed_at": "2026-10-26T19:06:42+00:00",
@@ -3703,6 +3906,74 @@
     },
     "fingerprint": "0ccc23178e292535",
     "name": "IMG20260928081814.jpg"
+  },
+  "h:fc2964b5cf8b73f1b09a9aaf35028f9a": {
+    "analysed_at": "2026-11-10T08:11:14+00:00",
+    "analysis": {
+      "anchors": [
+        {
+          "is_person": false,
+          "name": "left water lily",
+          "x": 0.4,
+          "y": 0.55
+        },
+        {
+          "is_person": false,
+          "name": "right water lily",
+          "x": 0.79,
+          "y": 0.35
+        },
+        {
+          "is_person": false,
+          "name": "lily pad",
+          "x": 0.5,
+          "y": 0.2
+        }
+      ],
+      "category": "macro",
+      "colors": [
+        "magenta",
+        "pink",
+        "dark brown",
+        "deep green",
+        "black"
+      ],
+      "description": "Two bright magenta water lilies rise above dark, lobed lily pads on still water. The left bloom sits low and wide while the right one stands tall on a slender stem.",
+      "has_children": false,
+      "has_identifiable_strangers": false,
+      "has_people": false,
+      "has_text_or_logo": false,
+      "is_devotional": false,
+      "is_explicit": false,
+      "is_screenshot_or_meme": false,
+      "is_sensitive_topic": false,
+      "main_subject": "water lily",
+      "mood": "calm",
+      "orientation": "landscape",
+      "place_name": null,
+      "quality_score": 7,
+      "season": null,
+      "setting": "pond with lily pads",
+      "shape": 1.333,
+      "shows_private_home": false,
+      "subject": "two pink water lilies on dark pond leaves",
+      "subject_bottom": 0.93,
+      "subject_left": 0.11,
+      "subject_right": 0.93,
+      "subject_top": 0.28,
+      "taken_at": "Sunday 08 November 2026, 08:19",
+      "themes": [
+        "flower photography",
+        "water lily",
+        "macro nature",
+        "mobile photography",
+        "Karnataka nature",
+        "calm pond scenes"
+      ],
+      "time_of_day": "morning"
+    },
+    "fingerprint": "bc8f19fbda20d8ef",
+    "name": "IMG20261108081951.jpg"
   },
   "h:fcdbd5843887b9155f08a3fa40415001": {
     "analysed_at": "2026-11-10T07:56:07+00:00",

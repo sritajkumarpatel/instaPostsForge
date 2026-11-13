@@ -6,6 +6,7 @@ No password is ever used; the account owner grants a long-lived access token.
 
 from __future__ import annotations
 
+import logging
 import time
 
 import requests
@@ -14,10 +15,18 @@ from ..config import env_value
 from .base import Publisher
 
 GRAPH_HOST = "https://graph.instagram.com"
+log = logging.getLogger(__name__)
 
 
 class PublishError(Exception):
-    pass
+    def __init__(self, message: str, code: int | None = None, subcode: int | None = None):
+        super().__init__(message)
+        self.code, self.subcode = code, subcode
+
+
+# Meta's "media not ready" reply to media_publish. It can come even after the container reports
+# FINISHED, most often for carousels; the container is still unpublished and can be published later.
+NOT_READY = 9007
 
 
 # What to do about the errors Meta returns most often, by error code.
@@ -34,17 +43,23 @@ _ERROR_HINTS = {
     17: "Rate limited by Meta. Wait an hour and run again.",
     32: "Rate limited by Meta. Wait an hour and run again.",
     613: "Rate limited by Meta. Wait an hour and run again.",
+    NOT_READY: "Instagram had not finished preparing the post. Nothing was posted; run again in a few minutes.",
 }
 
 
 def _api_error(what: str, error: dict, fallback: str) -> PublishError:
     message = error.get("message") or fallback
     code = error.get("code")
+    subcode = error.get("error_subcode")
     hint = _ERROR_HINTS.get(code) if isinstance(code, int) else None
     if not hint and "access blocked" in message.lower():
         hint = _ERROR_HINTS[200]
-    detail = f" (code {code})" if code is not None else ""
-    return PublishError(f"{what} failed: {message}{detail}" + (f" {hint}" if hint else ""))
+    detail = f" (code {code}" + (f", subcode {subcode}" if subcode is not None else "") + ")" if code is not None else ""
+    return PublishError(
+        f"{what} failed: {message}{detail}" + (f" {hint}" if hint else ""),
+        code=code if isinstance(code, int) else None,
+        subcode=subcode if isinstance(subcode, int) else None,
+    )
 
 
 def _network_error(what: str, err: requests.RequestException) -> PublishError:
@@ -53,6 +68,9 @@ def _network_error(what: str, err: requests.RequestException) -> PublishError:
 
 
 class InstagramPublisher(Publisher):
+    publish_attempts = 5  # media_publish tries while Instagram says the container isn't ready (NOT_READY)
+    publish_delay = 10.0  # seconds between them
+
     def __init__(self, settings: dict, session: requests.Session | None = None, sleep=time.sleep):
         self.token = env_value(settings.get("access_token_env"))
         self.base = f"{GRAPH_HOST}/{settings.get('api_version', 'v23.0')}"
@@ -130,32 +148,37 @@ class InstagramPublisher(Publisher):
         return self._publish(user_id, container_id, caption)
 
     def _publish(self, user_id: str, container_id: str, caption: str) -> str:
-        """Publishes a finished container, once. requests never resends a POST, and this never retries
-        one: the reply can be lost after Instagram has already published, and a second call would post
-        the photo twice. So a failed publish is checked with Instagram before it counts as a failure."""
-        try:
-            return self._call("POST", f"{user_id}/media_publish", creation_id=container_id)["id"]
-        except PublishError:
-            media_id = self._published_anyway(user_id, container_id, caption)
-            if media_id is None:
-                raise
-            return media_id
-        except (KeyError, TypeError):
-            media_id = self._published_anyway(user_id, container_id, caption)
-            if media_id is None:
+        """Publishes a finished container. requests never resends a POST, and a failed publish is
+        checked with Instagram before anything else: the reply can be lost after Instagram has already
+        published, and a second call would post the photo twice. The one case that is tried again is
+        NOT_READY, and only after the container's status shows it was not published."""
+        for attempt in range(1, self.publish_attempts + 1):
+            try:
+                return self._call("POST", f"{user_id}/media_publish", creation_id=container_id)["id"]
+            except PublishError as err:
+                status = self._container_status(container_id)
+                if status == "PUBLISHED":
+                    return self._find_published(user_id, caption)
+                if err.code != NOT_READY or status not in ("FINISHED", "IN_PROGRESS") or attempt == self.publish_attempts:
+                    raise
+                log.info("Instagram isn't ready to publish yet (status %s); trying again in %ss.", status, self.publish_delay)
+                self.sleep(self.publish_delay)
+            except (KeyError, TypeError):
+                if self._container_status(container_id) == "PUBLISHED":
+                    return self._find_published(user_id, caption)
                 raise PublishError("Instagram didn't return the new post's ID.") from None
-            return media_id
+        raise PublishError("Instagram never became ready to publish the post.")  # not reached
 
-    def _published_anyway(self, user_id: str, container_id: str, caption: str) -> str | None:
-        """The media ID of the post made from the container if Instagram did publish it, else None. A
-        post that went out but can't be found among the latest ones is an error, never a retry, so the
-        run stops instead of recording nothing and posting the photo again the next day."""
+    def _container_status(self, container_id: str) -> str | None:
         try:
-            status = self._call("GET", container_id, fields="status_code").get("status_code")
+            return self._call("GET", container_id, fields="status_code").get("status_code")
         except PublishError:
             return None
-        if status != "PUBLISHED":
-            return None
+
+    def _find_published(self, user_id: str, caption: str) -> str:
+        """The media ID of a post Instagram did publish, found among the latest by its caption. A post
+        that went out but can't be found is an error, never a retry, so the run stops instead of
+        recording nothing and posting the photo again the next day."""
         try:
             recent = self._call("GET", f"{user_id}/media", fields="id,caption", limit="10").get("data") or []
         except PublishError:

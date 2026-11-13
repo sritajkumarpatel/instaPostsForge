@@ -154,3 +154,52 @@ def test_a_published_post_that_cannot_be_found_stops_the_run():
     publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
     with pytest.raises(PublishError, match="Check Instagram"):
         publisher.publish_image("https://x/img.jpg", "hello")
+
+
+NOT_READY = {"error": {"message": "Media ID is not available", "code": 9007, "error_subcode": 2207027}}
+
+
+def test_a_not_ready_carousel_is_published_once_it_is_ready():
+    """Instagram can say 9007 right after the carousel reports FINISHED; nothing went out, so wait and try again."""
+    waits = []
+    session = FakeSession([
+        {"id": "k1"}, {"status_code": "FINISHED"}, {"id": "k2"}, {"status_code": "FINISHED"},
+        {"id": "car"}, {"status_code": "FINISHED"},
+        NOT_READY, {"status_code": "FINISHED"},  # not published, so a second try is safe
+        {"id": "m7"},
+    ])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=waits.append)
+    assert publisher.publish_carousel(["https://x/1.jpg", "https://x/2.jpg"], "hi") == "m7"
+    assert sum(1 for c in session.calls if c[1][-1] == "media_publish") == 2
+    assert waits[-1] == publisher.publish_delay
+
+
+def test_not_ready_but_already_published_is_found_not_posted_again():
+    session = FakeSession([
+        {"id": "c1"}, {"status_code": "FINISHED"},
+        NOT_READY, {"status_code": "PUBLISHED"}, {"data": [{"id": "m3", "caption": "hello"}]},
+    ])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    assert publisher.publish_image("https://x/img.jpg", "hello") == "m3"
+    assert sum(1 for c in session.calls if c[1][-1] == "media_publish") == 1
+
+
+def test_not_ready_gives_up_after_a_few_tries_and_says_nothing_was_posted():
+    publisher = InstagramPublisher(SETTINGS, session=None, sleep=lambda s: None)
+    replies = [{"id": "c1"}, {"status_code": "FINISHED"}]
+    for _ in range(publisher.publish_attempts):
+        replies += [NOT_READY, {"status_code": "FINISHED"}]
+    session = FakeSession(replies)
+    publisher.http = session
+    with pytest.raises(PublishError, match=r"code 9007, subcode 2207027\).*Nothing was posted") as err:
+        publisher.publish_image("https://x/img.jpg", "hello")
+    assert err.value.code == 9007
+    assert sum(1 for c in session.calls if c[1][-1] == "media_publish") == publisher.publish_attempts
+
+
+def test_other_publish_errors_are_not_tried_again():
+    session = FakeSession([{"id": "c1"}, {"status_code": "FINISHED"}, {"error": {"message": "Fatal", "code": 1}}, {"status_code": "FINISHED"}])
+    publisher = InstagramPublisher(SETTINGS, session=session, sleep=lambda s: None)
+    with pytest.raises(PublishError, match="Fatal"):
+        publisher.publish_image("https://x/img.jpg", "hello")
+    assert sum(1 for c in session.calls if c[1][-1] == "media_publish") == 1

@@ -280,14 +280,14 @@ def build_parser() -> argparse.ArgumentParser:
         ("refresh-token", cmd_refresh_token, "Extend the Instagram access token by 60 days"),
         ("usage", cmd_usage, "Show AI token usage and estimated cost for a month"),
         ("reset", cmd_reset, "Forget a profile's posting history, insights, usage and photo analyses"),
-        ("cutout", cmd_cutout, "Cut the main subject out of one photo and check it for a pop-out poster (posts nothing)"),
+        ("cutout", cmd_cutout, "Cut the main subject out of one photo and check it for a pop-out (posts nothing)"),
     ):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--profile", "-p", default="main")
         if name == "plan":
             p.add_argument("--days", type=int, default=7)
         if name in ("preview", "post", "plan"):
-            p.add_argument("--style", help="Post style for this run: any (the AI picks), single (as shot), poster, gallery, grid, story, panorama, notes or popout")
+            p.add_argument("--style", help="Post style for this run: any (the AI picks), single (as shot), palette, details, film, panorama, notes, popout, grid, story, contact_sheet, seamless or sequence")
             p.add_argument("--mood", help="Only photos of this mood for this run")
             p.add_argument("--category", help="Only photos of this category (genre) for this run")
         if name == "refresh-token":

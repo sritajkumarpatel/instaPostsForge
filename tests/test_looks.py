@@ -97,22 +97,17 @@ def test_every_background_is_four_by_five_and_its_ink_reads(kind):
 def test_every_frame_is_four_by_five_and_shows_the_whole_photo():
     photo = layouts.LayoutPhoto(scene(1500, 1000))
     slides = [
-        frames.postcard(photo, "Wish you were here.", "Goa", "November 2026"),
-        frames.ticket(photo, "Hills, slow roads", "Munnar", "November 2026", 427),
         frames.film(photo, "Market morning", 12),
-        frames.magazine(photo, "The long way round", "Three days on one bus.", "No. 305 · November 2026", 42),
-        frames.festive(photo, "Evening lamps", "November 2026"),
         frames.polaroids([photo, photo, photo], "One slow weekend"),
     ]
     assert all(s.size == (1080, 1350) for s in slides)
 
 
-def test_poster_and_gallery_take_a_background():
+def test_polaroids_take_a_background():
     photo = layouts.LayoutPhoto(scene(1500, 1000))
     for kind in ("echo", "swatches", "sun", "navy"):
         back = backdrops.backdrop(kind, photo.image, seed=2)
-        assert layouts.poster(photo, "Old walls, new light", "A line.", "a note", seed=5, backdrop=back).size == (1080, 1350)
-        assert layouts.gallery(photo, "After the rain", "Goa", backdrop=back).size == (1080, 1350)
+        assert frames.polaroids([photo, photo], "One slow weekend", seed=5, back=back).size == (1080, 1350)
 
 
 # --- the drawn layer -----------------------------------------------------------------
@@ -226,11 +221,10 @@ def test_doodles_stay_few():
 
 
 def test_look_follows_mood_and_category_and_avoids_yesterday():
-    calm = {"mood": "calm", "category": "landscape"}
-    looks = {choose_look("poster", calm, seed=s).backdrop for s in range(30)}
-    assert looks <= {"palette", "linen", "swatches", "echo"} and len(looks) > 1
-    first = choose_look("poster", calm, seed=7)
-    assert choose_look("poster", calm, seed=7, last_look=first.name).name != first.name
+    looks = {choose_look("popout", {"mood": "nostalgic"}, seed=s).backdrop for s in range(30)}
+    assert looks <= {"kraft", "paper", "handmade"} and len(looks) > 1  # a light paper the subject can stand on
+    first = choose_look("popout", {"mood": "nostalgic"}, seed=7)
+    assert choose_look("popout", {"mood": "nostalgic"}, seed=7, last_look=first.name).name != first.name
     night = choose_look("notes", {"category": "night", "mood": "awe"}, seed=1, has_time=True)
     assert night.marks in (("constellation", "date_stamp"), ("viewfinder",))  # no subject band: nothing to ring
     lone = {"category": "night", "subject_top": 0.3, "subject_bottom": 0.45, "subject_left": 0.4, "subject_right": 0.6}
@@ -245,11 +239,11 @@ def test_people_get_only_marks_that_stay_off_them():
             assert set(look.marks) <= PEOPLE_SAFE_MARKS
 
 
-def test_devotional_photos_get_a_plain_frame_never_marks():
+def test_devotional_photos_never_get_marks():
     analysis = {"category": "event", "is_devotional": True}
-    assert choose_style(StyleRequest("notes"), photo_count=1, cover=analysis, today=DAY)[0] == "gallery"
-    assert choose_style(StyleRequest("any"), photo_count=1, cover=analysis, today=DAY, suggested="notes")[0] != "notes"
-    assert choose_look("gallery", analysis, seed=3).frame == "festive"
+    assert choose_style(StyleRequest("notes"), photo_count=1, cover=analysis, today=DAY)[0] == "palette"
+    for day in range(1, 20):
+        assert choose_style(StyleRequest("any"), photo_count=1, cover=analysis, today=date(2026, 11, day), suggested="notes")[0] != "notes"
 
 
 def test_person_anchors_are_never_pointed_at():
@@ -268,7 +262,7 @@ def test_aside_brief_asks_for_one_short_note():
 
 
 def test_config_can_narrow_the_looks():
-    look = choose_look("poster", {"mood": "calm"}, seed=1, settings={"backdrops": ["kraft"]})
+    look = choose_look("popout", {"mood": "calm"}, seed=1, settings={"backdrops": ["kraft"]})
     assert look.backdrop == "kraft"
 
 
@@ -276,8 +270,8 @@ def test_brief_lists_the_things_to_annotate():
     look = choose_look("notes", {"category": "food", "anchors": [{"name": "tea glass", "x": 0.5, "y": 0.5}]}, seed=2)
     brief = look_brief("notes", look, [{"name": "tea glass", "x": 0.5, "y": 0.5}])
     assert "hand-drawn" in brief and ("1. tea glass" in brief or "overlay_marks" not in brief)
-    frame = look_brief("gallery", choose_look("gallery", {"category": "travel"}, seed=5, settings={"backdrops": ["paper"], "frames": ["postcard"]}))
-    assert "Text on the image can't be edited" in frame
+    details = look_brief("details", None, [{"name": "tea glass", "x": 0.5, "y": 0.5}, {"name": "kettle", "x": 0.2, "y": 0.3}])
+    assert "close crop" in details and "1. tea glass" in details and "2. kettle" in details and "Text on the image can't be edited" in details
 
 
 # --- AI fields: only where code can't do it -------------------------------------------------
@@ -356,17 +350,26 @@ def test_notes_never_go_out_as_the_same_photo_twice(tmp_path):
     assert changed > 1080 * 1350 * 0.002  # visibly more than a corner stamp
 
 
-def test_any_style_records_a_look_and_changes_it_next_time(tmp_path):
-    ai = FakeAI(styles={"a.jpg": "poster", "b.jpg": "poster"}, analyses={"a.jpg": {"mood": "calm"}, "b.jpg": {"mood": "calm"}})
-    c = components(tmp_path, {"a.jpg": photo_jpeg(1), "b.jpg": photo_jpeg(2)}, ai)
+def test_a_styled_post_records_its_look_and_changes_it_next_time(tmp_path, monkeypatch):
+    monkeypatch.setenv("POST_STYLE", "notes")
+    analyses = {n: {"category": "landscape", "mood": "calm"} for n in ("a.jpg", "b.jpg")}
+    c = components(tmp_path, {"a.jpg": photo_jpeg(1), "b.jpg": photo_jpeg(2)}, FakeAI(analyses=analyses))
     first = pipeline.run(make_profile(), c, publish=True, today=DAY)
     second = pipeline.run(make_profile(), c, publish=True, today=date(2026, 10, 21))
     looks = [p["look"] for p in c.state.posts.values()]
-    assert first.style == second.style == "poster" and all(looks) and looks[0] != looks[1]
+    assert first.style == second.style == "notes" and all(looks) and looks[0] != looks[1]
+
+
+def test_any_style_never_repeats_the_last_posts_style(tmp_path):
+    ai = FakeAI(styles={"a.jpg": "film", "b.jpg": "film"}, analyses={"a.jpg": {"mood": "calm"}, "b.jpg": {"mood": "calm"}})
+    c = components(tmp_path, {"a.jpg": photo_jpeg(1), "b.jpg": photo_jpeg(2)}, ai)
+    first = pipeline.run(make_profile(), c, publish=True, today=DAY)
+    second = pipeline.run(make_profile(), c, publish=True, today=date(2026, 10, 21))
+    assert first.style == "film" and second.style != "film"
 
 
 def test_slides_decode_as_jpeg(tmp_path, monkeypatch):
-    monkeypatch.setenv("POST_STYLE", "gallery")
+    monkeypatch.setenv("POST_STYLE", "film")
     c = components(tmp_path, {"a.jpg": photo_jpeg(3)}, FakeAI(analyses={"a.jpg": {"category": "travel"}}))
     pipeline.run(make_profile(), c, publish=False, today=DAY, drafts_dir=tmp_path / "drafts")
     image = next(p for p in (tmp_path / "drafts").rglob("*.jpg") if p.is_file())

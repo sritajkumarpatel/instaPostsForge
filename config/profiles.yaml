@@ -102,32 +102,36 @@ defaults:
     # designed styles below, and the AI planner picks the one that suits each day's photos. "single"
     # posts the photo as shot, only when chosen. The styles are drawn by code from templates, with a
     # few words the AI writes for the image:
-    #   grid      2 to 9 photos of one outing tiled on one slide, then each photo on its own slide
-    #   gallery   one photo on a wide margin with a small museum-style label (title, place, month)
-    #   poster    one photo as a print on warm paper, with a spaced title, a quiet line and a handwritten note
-    #   panorama  one wide photo split into 2 or 3 slides that join up as you swipe
-    #   story     a title slide over the cover, the other photos, and a closing line
-    #   notes     the photo with hand-drawn notes, doodles or marks on top, as one image
-    #   popout    an editorial poster: the main subject steps out of the photo's frame onto paper (needs .[cutout])
+    #   palette        the photo, then a card of the colours it is made of
+    #   details        the photo, then close crops on two or three things in it, each labelled
+    #   film           one photo on a strip of film with a frame number and a short title
+    #   panorama       one wide photo split into 2 or 3 slides that join up as you swipe
+    #   notes          the photo with hand-drawn notes, doodles or marks on top, as one image
+    #   popout         an editorial poster: the main subject steps out of the photo's frame onto paper (needs .[cutout])
+    #   grid           2 to 9 photos of one outing tiled on one slide, then each photo on its own slide
+    #   story          a title slide over the cover, the other photos, and a closing line
+    #   contact_sheet  the best photo, then the set on a film contact sheet with the best circled, then the rest
+    #   seamless       2 to 4 photos across joined slides with one hand-drawn line running through them
+    #   sequence       3 to 8 photos of one scene minutes apart, each with its capture time
+    # (poster and gallery were retired in November 2026; naming them falls back to any)
     #   any       the planner picks one of any_styles for each post ("auto" means the same)
     #   single    the photo as shot, no layout
     # The POST_STYLE, POST_MOOD and POST_CATEGORY environment variables (the Run workflow's choices, or
     # repository variables) override name, mood and category for a run.
     style:
       name: any
-      any_styles: [poster, gallery, grid, story, panorama, notes, popout]   # what "any" chooses from; add single to allow plain posts too
+      any_styles: [palette, details, film, panorama, notes, popout, grid, story, contact_sheet, seamless, sequence]   # what "any" chooses from; add single to allow plain posts too
       mood: ""                # only photos of this mood today: calm, joyful, energetic, nostalgic, dramatic, romantic, playful, awe
       category: ""            # only photos of this category (genre) today: landscape, street, food, animals, macro, ...
-      decor_dir: config/decor # optional PNGs with transparency (leaves, a sprig) placed on posters; none are bundled
       # The look on top of the style, chosen by code from the photo's mood and category (no AI call),
       # never the same as the last post's. Empty lists allow everything; list names to narrow them.
       looks:
-        backdrops: []   # behind posters and gallery prints: paper, palette, echo, swatches, two_tone, sun, kraft, linen, handmade, slate, navy, newsprint
-        frames: []      # gallery frames and small sets: postcard, ticket, film, magazine, festive, polaroids
+        backdrops: []   # behind a pop-out (light papers only) or polaroids: paper, palette, echo, swatches, two_tone, sun, kraft, linen, handmade, slate, navy, newsprint
+        frames: []      # small grids: polaroids
         marks: []       # drawn on notes posts: field_notes, doodles, constellation, date_stamp, viewfinder, highlight, thirds, tape, cover, orbit, rays, birds, aside
       # The pop-out poster's subject cut-out (pip install -e ".[cutout]"). A local model makes a mask of the
       # main subject; the photo's pixels are only shown through it, never changed. Every check below must
-      # pass, or the post gets a plain poster. Try a photo with: forge cutout -p main --photo <name>
+      # pass, or the post gets a colour palette. Try a photo with: forge cutout -p main --photo <name>
       popout:
         enabled: true           # false: never offer the pop-out
         disclose_in_caption: true   # add "Cut-out layout · photo unedited" after the caption (the alt text always says it)

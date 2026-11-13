@@ -1,4 +1,4 @@
-"""Backgrounds behind a poster or gallery print, drawn from the photo's own colours or a plain texture.
+"""Backgrounds behind the pop-out poster and the polaroids, drawn from the photo's own colours or a plain texture.
 
 Nothing here touches the photo: the print is pasted on top, as it is. The "echo" background is the
 photo itself, enlarged and blurred, behind the sharp print. Every background reports which ink reads
@@ -17,7 +17,7 @@ from . import palette as pal
 W, H = 1080, 1350
 RGB = tuple[int, int, int]
 
-# Every background a poster or gallery slide can have. "paper" is the warm paper posters always had.
+# Every background a pop-out or polaroid slide can have. "paper" is plain warm paper.
 BACKGROUNDS = ("paper", "palette", "echo", "swatches", "two_tone", "sun", "kraft", "linen", "handmade", "slate", "navy", "newsprint")
 TEXTURES = {  # name: (base colour, grain strength, vignette strength)
     "kraft": ((196, 166, 128), 1.4, 0.26),

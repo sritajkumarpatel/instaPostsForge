@@ -60,7 +60,7 @@ class FakeAI(AIWorkflow):
         quote = self.quotes.pop(0) if self.quotes else None
         more_alts = [f"Photo {n} of the set." for n in range(2, 2 + len(more_photos or []))]
         default = {"title": "Quiet streets", "line": "The city after rain.", "note": "Same roads"}
-        if "hand-drawn" in style_brief:
+        if "hand-drawn" in style_brief or "close crop" in style_brief:
             default.update({"mark1": "still warm", "mark2": "six pm light"})
         if "editorial poster" in style_brief:
             default = {"kicker": "Road trips", "title": "Somewhere ahead", "line": "Good roads, brighter days", "tag1": "Roads", "tag2": "People"}

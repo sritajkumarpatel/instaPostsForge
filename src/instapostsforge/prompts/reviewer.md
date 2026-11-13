@@ -26,7 +26,7 @@ Fail the matching item whenever any of these is true:
 
 ## Text on the image
 
-A styled post (a grid, poster, gallery frame or story) may have a few words drawn on the image, shown as "Text drawn on the image". It can't be changed after posting, so judge it as strictly as the caption: fail accuracy if it claims something the photos don't show, tone if it breaks the mood playbook or a devotional post's reverence, and safety for anything the hard fails below cover.
+A styled post (a grid, palette, details, film strip, contact sheet, seamless strip, story or pop-out) may have a few words drawn on the image, shown as "Text drawn on the image". It can't be changed after posting, so judge it as strictly as the caption: fail accuracy if it claims something the photos don't show, tone if it breaks the mood playbook or a devotional post's reverence, and safety for anything the hard fails below cover.
 
 ## Multi-photo posts
 

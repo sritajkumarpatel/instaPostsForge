@@ -29,7 +29,7 @@ from .config import Profile
 from .hosting import ImageHost, build_host
 from .grouping import PhotoSet, propose_sets
 from .imaging import PreparedImage, fingerprint, fingerprint_distance, focus_from, name_time, prepare_image
-from .imaging import backdrops, frames, layouts, marks, popout
+from .imaging import backdrops, carousels, frames, layouts, marks, popout
 from .imaging.palette import palette
 from .imaging.processor import _to_jpeg
 from .models import Caption, Photo, PostResult
@@ -37,7 +37,7 @@ from .publishers import InstagramPublisher, Publisher
 from .sources import PhotoSource, build_source
 from .state import ProfileState
 from .state.store import photo_key
-from .styles import MULTI_STYLES, Look, StyleRequest, choose_look, choose_style, grid_size, look_brief, style_request, usable_anchors
+from .styles import FALLBACK, MULTI_STYLES, SINGLE_STYLES, Look, StyleRequest, choose_look, choose_style, grid_size, look_brief, style_request, usable_anchors
 from .usage import UsageLog
 
 log = logging.getLogger(__name__)
@@ -624,14 +624,6 @@ class Run:
 
     # --- styled posts (code: layouts from templates) -----------------------------
 
-    def label_detail(self, photo: Photo) -> str | None:
-        """The small line under a gallery title: the place (never a private home's) and the month."""
-        analysis = self.c.state.analysis_for(photo.id) or {}
-        place_name = None if analysis.get("shows_private_home") else (analysis.get("place_name") or "").strip()
-        when = self.known_time(photo)
-        parts = [p for p in (place_name, when.strftime("%B %Y") if when else None) if p]
-        return " · ".join(parts) or None
-
     def seed(self, photo: Photo) -> int:
         """Picks layouts, finishes and looks: the same post looks the same on a re-run that day, and
         every other post gets a fresh combination."""
@@ -712,7 +704,7 @@ class Run:
             image = layouts.load_photo(self.c.source.download(photo))
             result = cutout.cut_out(image, focus_from(self.c.state.analysis_for(photo.id)), settings, self.c.mask_maker)
         except Exception as err:  # a missing model or a download failure costs only the pop-out
-            log.warning("The cut-out failed (%s); using a plain poster.", type(err).__name__)
+            log.warning("The cut-out failed (%s); using a colour palette.", type(err).__name__)
             return f"the cut-out couldn't run ({type(err).__name__})"
         log.info("Cut-out: %s %s", result.check.summary(), result.check.stats)
         if not result.check.ok:
@@ -732,11 +724,12 @@ class Run:
             for i, p in enumerate([photo, *more])
         ]
         text = caption.overlay
-        title, line, note = text.get("title"), text.get("line"), text.get("note")
+        title, line = text.get("title"), text.get("line")
         seed = self.seed(photo)
         back = backdrops.backdrop(look.backdrop, photos[0].image, seed) if look.backdrop else None
         place_name, month = self.place_and_month(photo)
         slides: list[layouts.Slide] = []
+        opening = layouts.Slide(carousels.opening(photos[0]), photos[0].alt_text)
         if style == "grid":
             joined = "; ".join(a for a in alts if a)
             if look.frame == "polaroids" and 2 <= len(photos) <= 4:
@@ -745,12 +738,34 @@ class Run:
             else:
                 first, kind = layouts.grid(photos, title), f"A grid of {len(photos)} photos"
             slides.append(layouts.Slide(first, kind + (f" titled {title}" if title else "") + (f": {joined}" if joined else ".")))
-            slides += [layouts.Slide(layouts.gallery(p), p.alt_text) for p in photos]
+            slides += [layouts.Slide(carousels.opening(p), p.alt_text) for p in photos]
         elif style == "story":
             slides.append(layouts.Slide(layouts.title_over(photos[0], title), photos[0].alt_text))
-            slides += [layouts.Slide(layouts.gallery(p, backdrop=back), p.alt_text) for p in photos[1:]]
+            slides += [layouts.Slide(carousels.opening(p), p.alt_text) for p in photos[1:]]
             if line:
                 slides.append(layouts.Slide(layouts.closing(line, seed), line))
+        elif style == "contact_sheet":
+            label = " · ".join(p for p in (place_name, month) if p) or None
+            sheet = carousels.contact_sheet(photos, 0, title, label, seed)
+            slides += [opening, layouts.Slide(sheet, f"A film contact sheet of all {len(photos)} photos, the first circled in red pencil.")]
+            slides += [layouts.Slide(carousels.opening(p), p.alt_text) for p in photos[1:]]
+        elif style == "seamless":
+            parts = carousels.seamless(photos, title, seed)
+            joined = "; ".join(a for a in alts[: len(photos)] if a)
+            slides += [
+                layouts.Slide(img, (f"Part {n} of {len(parts)} of one strip of {len(photos)} photos joined by a drawn line" + (f": {joined}" if joined and n == 1 else ".")))
+                for n, img in enumerate(parts, 1)
+            ]
+        elif style == "sequence" and (order := carousels.sequence_order(times := [self.known_time(p) for p in [photo, *more]])):
+            by_time = sorted(range(len(times)), key=lambda i: times[i])
+            for i in order:
+                slide = carousels.sequence_slide(photos[i], times[i], len(times), by_time.index(i))
+                slides.append(layouts.Slide(slide, f"{photos[i].alt_text} ({carousels.time_label(times[i])})".strip()))
+        elif style == "sequence":  # the times don't make a sequence: told as a story instead
+            self.drawn_style = "story"
+            self.notes.append("The photos' capture times don't make one short sequence, so they were posted as a story instead.")
+            slides.append(layouts.Slide(layouts.title_over(photos[0], title), photos[0].alt_text))
+            slides += [layouts.Slide(carousels.opening(p), p.alt_text) for p in photos[1:]]
         elif style == "popout" and self.popout is not None:
             words = popout.PopoutText(
                 kicker=text.get("kicker"),
@@ -764,27 +779,40 @@ class Run:
                 self.notes.append(f"Pop-out: the subject steps out of the frame ({placed.variant.replace('_', ' ')}); a composite of the unedited photo.")
                 slides.append(layouts.Slide(placed.image, (photos[0].alt_text + popout.alt_suffix(placed.variant)).strip()))
             else:
-                self.drawn_style = "poster"
-                self.notes.append("The pop-out's words and photo didn't fit on one page, so it was drawn as a plain poster.")
-                slides.append(layouts.Slide(layouts.poster(photos[0], title, line, None, seed=seed, decor_dir=self.style.decor_dir, backdrop=back), photos[0].alt_text))
-        elif style in ("poster", "popout"):
-            slides.append(layouts.Slide(layouts.poster(photos[0], title, line, note, seed=seed, decor_dir=self.style.decor_dir, backdrop=back), photos[0].alt_text))
+                self.notes.append("The pop-out's words and photo didn't fit on one page, so it was set as a colour palette.")
+                slides += self.palette_slides(photos[0], None)
+        elif style == "details" and (crops := self.detail_crops(photos[0], photo, text)):
+            slides.append(opening)
+            for n, detail in enumerate(crops, 1):
+                about = f"A close look at part of the photo{': ' + detail.label if detail.label else ''}."
+                slides.append(layouts.Slide(carousels.detail_slide(photos[0], detail, n), about))
         elif style == "panorama" and (parts := layouts.panorama(photos[0])):
             slides += [layouts.Slide(img, f"{photos[0].alt_text} (part {n} of {len(parts)})".strip()) for n, img in enumerate(parts, 1)]
-        elif look.frame == "postcard":
-            slides.append(layouts.Slide(frames.postcard(photos[0], line, place_name, month, seed=seed), photos[0].alt_text))
-        elif look.frame == "ticket":
-            slides.append(layouts.Slide(frames.ticket(photos[0], title, place_name, month, seed % 10000, seed=seed), photos[0].alt_text))
-        elif look.frame == "film":
+        elif style == "film":
             slides.append(layouts.Slide(frames.film(photos[0], title, 1 + seed % 36, seed=seed), photos[0].alt_text))
-        elif look.frame == "magazine":
-            issue = f"No. {self.today.timetuple().tm_yday} · {self.today.strftime('%B %Y')}"
-            slides.append(layouts.Slide(frames.magazine(photos[0], title, line, issue, 2 + seed % 98, seed=seed), photos[0].alt_text))
-        elif look.frame == "festive":
-            slides.append(layouts.Slide(frames.festive(photos[0], title, self.label_detail(photo), seed=seed, back=back), photos[0].alt_text))
-        else:  # gallery, and a panorama that can't be split
-            slides.append(layouts.Slide(layouts.gallery(photos[0], title, self.label_detail(photo), backdrop=back), photos[0].alt_text))
+        else:  # palette, and any single-photo style that couldn't be drawn
+            if style != FALLBACK:
+                self.drawn_style = FALLBACK
+                self.notes.append(f"The {style} style couldn't be drawn for this photo, so it was set as a colour palette.")
+            slides += self.palette_slides(photos[0], title if style == FALLBACK else None)
         return [layouts.to_jpeg(s.image, quality) for s in slides[:10]], [s.alt_text[:1000] for s in slides[:10]]
+
+    def palette_slides(self, photo: layouts.LayoutPhoto, title: str | None) -> list[layouts.Slide]:
+        if self.drawn_style is None:
+            self.drawn_style = FALLBACK
+        card, named = carousels.palette_card(photo, title)
+        colours = ", ".join(name for name, _ in named)
+        return [
+            layouts.Slide(carousels.opening(photo), photo.alt_text),
+            layouts.Slide(card, f"The photo above a row of its colours: {colours}." + (f" Titled {title}." if title else "")),
+        ]
+
+    def detail_crops(self, image: layouts.LayoutPhoto, photo: Photo, text: dict[str, str]) -> list[carousels.Detail]:
+        """The detail walk's crops: one per anchor (never a person) that makes a sharp crop, labelled
+        with the writer's mark text. Fewer than two means the walk isn't worth posting."""
+        anchors = usable_anchors(self.c.state.analysis_for(photo.id) or {})
+        crops = carousels.detail_boxes(image, [(a["x"], a["y"], text.get(f"mark{n}")) for n, a in enumerate(anchors, 1)])
+        return crops if len(crops) >= 2 else []
 
 
 def popout_footer(selection: dict) -> str | None:
@@ -818,20 +846,21 @@ def run(profile: Profile, components: Components, *, publish: bool, today: date 
         photo_count=1 + len(more),
         cover=r.c.state.analysis_for(photo.id) or {},
         today=r.today,
-        last_style=next((h.get("style") for h in components.state.history(limit=1)), None),
+        recent_styles=[h.get("style") or "single" for h in components.state.history(limit=2)],
         suggested=plan_item.style,
         popout_available=components.mask_maker is not None,
+        sequence_ok=bool(more) and carousels.sequence_order([r.known_time(p) for p in [photo, *more]]) is not None,
     )
     if style == "popout" and (why := r.cut_out(photo)):
-        style, style_note = "poster", f"No pop-out today: {why}. Today's photo was set as a poster instead."
+        style, style_note = FALLBACK, f"No pop-out today: {why}. Today's photo was set as a colour palette instead."
     if style_note:
         r.notes.append(style_note)
     if style == "grid":
         more = more[: grid_size(1 + len(more)) - 1]  # a grid holds 2, 3, 4, 6 or 9 photos
-    elif style in ("gallery", "poster", "panorama", "notes", "popout"):
+    elif style in SINGLE_STYLES:
         more = []  # one photo; the planner's others stay unposted
-    elif style == "story":
-        more = more[: MULTI_STYLES["story"] - 1]
+    elif style in MULTI_STYLES:
+        more = more[: MULTI_STYLES[style] - 1]
     look = r.look_for(style, photo, 1 + len(more)) if style != "single" else None
     if style != "single":
         log.info("Today's post is drawn in the %s style with the %s look (%s).", style, look.name, r.style.switched_by)

@@ -88,12 +88,12 @@ def test_the_pop_out_is_only_tried_on_a_clear_subject(cover, reason):
     assert popout_ready(SUBJECT) is None and "installed" in popout_ready(SUBJECT, available=False)
 
 
-def test_a_fixed_pop_out_falls_back_to_a_poster_with_a_reason():
+def test_a_fixed_pop_out_falls_back_to_a_palette_with_a_reason():
     request = StyleRequest(name="popout")
     style, note = choose_style(request, photo_count=1, cover={**SUBJECT, "is_devotional": True}, today=DAY, popout_available=True)
-    assert style == "poster" and "deity" in note
+    assert style == "palette" and "deity" in note
     assert choose_style(request, photo_count=1, cover=SUBJECT, today=DAY, popout_available=True) == ("popout", None)
-    assert choose_style(request, photo_count=1, cover=SUBJECT, today=DAY)[0] == "poster"  # not installed
+    assert choose_style(request, photo_count=1, cover=SUBJECT, today=DAY)[0] == "palette"  # not installed
 
 
 def test_any_keeps_the_planners_pop_out_only_when_it_can_be_tried():
@@ -156,21 +156,21 @@ def test_the_composite_line_can_be_switched_off(tmp_path, monkeypatch):
     assert "Cut-out layout" not in caption and "not edited" in alt  # the alt text always says it
 
 
-def test_a_mask_that_fails_its_checks_gives_a_poster(tmp_path, monkeypatch):
+def test_a_mask_that_fails_its_checks_gives_a_palette(tmp_path, monkeypatch):
     result, c, ai = run_popout(tmp_path, monkeypatch, FakeMaskMaker(shapes=((0.0, 0.1, 1.0, 1.0),)))
-    assert result.style == "poster" and any("No pop-out today" in n for n in result.notes)
-    assert "warm paper" in ai.calls["caption"][0]["style_brief"]
+    assert result.style == "palette" and any("No pop-out today" in n for n in result.notes)
+    assert "colours it is made of" in ai.calls["caption"][0]["style_brief"]
     assert "Cut-out layout" not in c.publisher.posts[0][1]
 
 
-def test_a_broken_model_gives_a_poster(tmp_path, monkeypatch):
+def test_a_broken_model_gives_a_palette(tmp_path, monkeypatch):
     def broken(image):
         raise RuntimeError("model file missing")
 
     result, _, _ = run_popout(tmp_path, monkeypatch, broken)
-    assert result.style == "poster" and any("couldn't run" in n for n in result.notes)
+    assert result.style == "palette" and any("couldn't run" in n for n in result.notes)
 
 
 def test_without_the_cut_out_installed_the_pop_out_is_never_tried(tmp_path, monkeypatch):
     result, _, _ = run_popout(tmp_path, monkeypatch, None)
-    assert result.style == "poster" and any("isn't installed" in n for n in result.notes)
+    assert result.style == "palette" and any("isn't installed" in n for n in result.notes)
